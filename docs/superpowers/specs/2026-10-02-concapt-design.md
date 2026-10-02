@@ -47,12 +47,14 @@ All three stages are visible on one screen. Each stage shows:
 ### 3.2 Statistics
 
 - **Series:** 9, one per stage × slot (S1-L, S1-M, S1-R, …, S3-R)
-- **Assumption:** each slot holds the same character for every run in a session; a team change means a new session
+- **Rule:** each slot holds the same character for every run in a session; a character change means a new session
+- **Session size:** typically 200–500 runs
 - **Per series:** n, mean, median, min, max, P25, P75
 - **Mean:** shown rounded to a whole number
 - **Median:** average of the two middle values when n is even
 - **Percentiles:** linear interpolation, matching Excel `PERCENTILE.INC`
 - **Empty series:** shown as "—"
+- **Distribution:** histogram per series (§7.3)
 
 ### 3.3 Device
 
@@ -87,6 +89,7 @@ Reloads on resume ◀── same SQLite database (WAL mode) ──┘
 | ResultParser | Pure Dart | `TextPiece`s → `ParseResult` |
 | SumCheck | Pure Dart | Validates each stage |
 | Stats | Pure Dart | Values → `Summary` |
+| Histogram | Pure Dart | Values → bins (§7.3) |
 | Repository | Dart, drift on SQLite (WAL) | Sessions and runs; opened by both engines |
 
 ### 4.3 Platform seams
@@ -186,11 +189,28 @@ run,captured_at,s1_left,s1_middle,s1_right,s1_bonus,s1_total,s2_left,…,s3_tota
 ### 7.2 Session detail
 
 - **Start capturing:** overlay permission check → capture consent → CaptureService → overlay bound to this session
-- **Stats:** three cards, one per stage; columns L/M/R; rows n, mean, median, min, max, P25, P75
+- **Stats:** three cards, one per stage; columns L/M/R; rows n, mean, median, min, max, P25, P75; tap a column → series detail
 - **Runs:** newest first; time, 9 scores, "edited" mark; tap to edit, long-press to delete
 - **Export CSV**
 
-### 7.3 Run editor
+### 7.3 Series detail
+
+One series (e.g. Stage 1 · Left), opened from its stats column.
+
+- **Histogram:** run count per score range, drawn with `fl_chart`
+- **Markers:** vertical lines at mean and median
+- **Stats:** the same seven values as the card
+
+Binning:
+
+- **Bin width:** Freedman–Diaconis, `2 × IQR / n^(1/3)`, rounded up to a nice step (1, 2, or 5 × 10^k)
+- **Bin count:** clamped to 8–40; widen the step if outside
+- **Edges:** aligned to multiples of the step, so labels read as round numbers (e.g. 115,000–120,000)
+- **Edge cases:** n = 0 shows "No runs yet"; all values equal (IQR = 0) shows a single bar
+
+For roughly bell-shaped scores, this gives about 12–18 bins at 200–500 runs.
+
+### 7.4 Run editor
 
 The same form as the overlay edit panel, opened from the run list.
 
@@ -217,6 +237,7 @@ The same form as the overlay edit panel, opened from the run list.
 | ResultParser unit | Host (`flutter test`) | Fixtures: `TextPiece` JSON recorded from the corpus. Synthetic: missing number, merged tokens, `O`/`0` misread, only 2 totals, 総合力 row |
 | Accuracy | Device or emulator (integration test) | All 206 images through TextReader + ResultParser + SumCheck; reports the pass rate; exports the fixture JSON |
 | Stats unit | Host | Hand-computed values, including even-n median and percentile interpolation |
+| Histogram unit | Host | Nice-step rounding, bin-count clamping, edge alignment, n = 0, IQR = 0 |
 | Repository | Host | In-memory drift database; cascade deletes; seq numbering |
 | Overlay and capture | Phone, manual | Checklist: permission flow, bubble drag, capture excludes bubble, auto-save toast, edit panel, projection stop on screen lock |
 
@@ -238,4 +259,5 @@ The same form as the overlay edit panel, opened from the run list.
 | Storage | drift | Actively maintained; typed queries |
 | Trigger | Bubble tap | Predictable; auto-detect costs battery and risks duplicates |
 | Grouping | Stage × slot | Simple and reliable given fixed teams per session |
+| Distribution chart | Histogram | Sessions hold 200–500 runs, enough for a stable shape |
 | Failed checks | Edit panel over the game | Fix while the result is still on screen |
