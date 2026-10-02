@@ -166,10 +166,16 @@ class _OverlayHomeState extends State<OverlayHome> {
     super.dispose();
   }
 
-  /// Clears the bubble from the screen before the frame is taken.
-  Future<void> _hideBubble() async {
+  /// Draws an empty window and waits for that frame, so a following
+  /// capture or resize never shows stale content.
+  Future<void> _blank() async {
     setState(() => _mode = _Mode.hidden);
     await WidgetsBinding.instance.endOfFrame;
+  }
+
+  /// Clears the bubble from the screen before the frame is taken.
+  Future<void> _hideBubble() async {
+    await _blank();
     await Future<void>.delayed(const Duration(milliseconds: 150));
   }
 
@@ -204,6 +210,7 @@ class _OverlayHomeState extends State<OverlayHome> {
   }
 
   Future<void> _openPanel(RunDraft draft, CaptureController controller) async {
+    await _blank();
     await FlutterOverlayWindow.resizeOverlay(
       OverlaySizes.resizeUnits(OverlaySizes.panelWidthDp),
       OverlaySizes.resizeUnits(OverlaySizes.panelHeightDp),
@@ -219,6 +226,7 @@ class _OverlayHomeState extends State<OverlayHome> {
   }
 
   Future<void> _closePanel() async {
+    if (mounted) await _blank();
     await _resetWindow();
     if (!mounted) return;
     setState(() {
