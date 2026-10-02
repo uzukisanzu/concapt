@@ -1,0 +1,560 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-02T00:00:00Z",
+  "title": "Design System: concapt",
+  "extensions": {
+    "colorMeta": {
+      "utility-red": {
+        "role": "primary",
+        "displayName": "Utility Red",
+        "canonical": "#E60012",
+        "oklch": "oklch(58.1% 0.238 27.9)",
+        "tonalRamp": [
+          "#240000",
+          "#580000",
+          "#930000",
+          "#C50000",
+          "#F01B1E",
+          "#FF5247",
+          "#FF8D7C",
+          "#FFCABA"
+        ]
+      },
+      "red-tint": {
+        "role": "primary",
+        "displayName": "Red Tint",
+        "canonical": "#FFE5E6",
+        "oklch": "oklch(94.3% 0.029 15.0)",
+        "tonalRamp": [
+          "#0F090A",
+          "#2D2222",
+          "#4F3D3E",
+          "#715B5C",
+          "#937C7D",
+          "#B69E9F",
+          "#D9C3C4",
+          "#FAEAEB"
+        ]
+      },
+      "red-deep": {
+        "role": "primary",
+        "displayName": "Red Deep",
+        "canonical": "#7A0009",
+        "oklch": "oklch(36.5% 0.148 26.8)",
+        "tonalRamp": [
+          "#1C0202",
+          "#480B0A",
+          "#791817",
+          "#A53530",
+          "#CC5950",
+          "#F47C72",
+          "#FFA89D",
+          "#FFD9D0"
+        ]
+      },
+      "ink": {
+        "role": "secondary",
+        "displayName": "Ink",
+        "canonical": "#111111",
+        "oklch": "oklch(17.8% 0.000 89.9)",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "white-ground": {
+        "role": "neutral",
+        "displayName": "White Ground",
+        "canonical": "#FFFFFF",
+        "oklch": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "band-gray": {
+        "role": "neutral",
+        "displayName": "Band Gray",
+        "canonical": "#F2F2F2",
+        "oklch": "oklch(96.1% 0.000 89.9)",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "hairline-gray": {
+        "role": "neutral",
+        "displayName": "Hairline Gray",
+        "canonical": "#E0E0E0",
+        "oklch": "oklch(90.7% 0.000 89.9)",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "stroke-gray": {
+        "role": "neutral",
+        "displayName": "Stroke Gray",
+        "canonical": "#D6D6D6",
+        "oklch": "oklch(87.6% 0.000 89.9)",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "secondary-gray": {
+        "role": "neutral",
+        "displayName": "Secondary Gray",
+        "canonical": "#6B6B6B",
+        "oklch": "oklch(52.8% 0.000 89.9)",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ],
+        "note": "Accessibility adaptation of the user-pinned #7A7A7A: 5.33:1 on white, 4.76:1 on band gray. User approved."
+      },
+      "alarm-red": {
+        "role": "error",
+        "displayName": "Alarm Red",
+        "canonical": "#C4000F",
+        "oklch": "oklch(51.6% 0.211 27.7)",
+        "tonalRamp": [
+          "#220000",
+          "#540000",
+          "#8B0000",
+          "#BC0002",
+          "#E53831",
+          "#FF6255",
+          "#FF9686",
+          "#FFCFC1"
+        ]
+      },
+      "alarm-tint": {
+        "role": "error",
+        "displayName": "Alarm Tint",
+        "canonical": "#FDECEC",
+        "oklch": "oklch(95.7% 0.018 17.5)",
+        "tonalRamp": [
+          "#120808",
+          "#2E2222",
+          "#4B3E3E",
+          "#6B5D5D",
+          "#8D7E7E",
+          "#B0A1A1",
+          "#D5C5C5",
+          "#FBEAEA"
+        ]
+      },
+      "alarm-deep": {
+        "role": "error",
+        "displayName": "Alarm Deep",
+        "canonical": "#8C000B",
+        "oklch": "oklch(40.3% 0.164 27.0)",
+        "tonalRamp": [
+          "#1E0101",
+          "#4B0406",
+          "#7D0D0F",
+          "#AB2C28",
+          "#D35249",
+          "#FB776B",
+          "#FFA497",
+          "#FFD6CC"
+        ]
+      },
+      "dark-lifted-red": {
+        "role": "primary",
+        "displayName": "Lifted Red (dark)",
+        "canonical": "#FF5A5F",
+        "oklch": "oklch(68.9% 0.200 22.4)",
+        "tonalRamp": [
+          "#210001",
+          "#520004",
+          "#88000C",
+          "#B80025",
+          "#E13D47",
+          "#FF6569",
+          "#FF9895",
+          "#FFCFCB"
+        ]
+      },
+      "dark-on-red": {
+        "role": "primary",
+        "displayName": "Dark On-Red",
+        "canonical": "#2B0003",
+        "oklch": "oklch(18.2% 0.074 22.9)",
+        "tonalRamp": [
+          "#150706",
+          "#381C1B",
+          "#603332",
+          "#86504D",
+          "#AA716E",
+          "#CF9390",
+          "#F0BAB6",
+          "#FFE4E1"
+        ]
+      },
+      "dark-ground": {
+        "role": "neutral",
+        "displayName": "Dark Ground",
+        "canonical": "#151413",
+        "oklch": "oklch(19.2% 0.003 67.7)",
+        "tonalRamp": [
+          "#0C0B0A",
+          "#262524",
+          "#434240",
+          "#626160",
+          "#838281",
+          "#A6A5A3",
+          "#CAC9C7",
+          "#F0EEED"
+        ]
+      },
+      "dark-ink": {
+        "role": "secondary",
+        "displayName": "Dark Ink",
+        "canonical": "#EDE8E3",
+        "oklch": "oklch(93.4% 0.009 67.7)",
+        "tonalRamp": [
+          "#0E0B07",
+          "#282421",
+          "#45413D",
+          "#65605C",
+          "#86817D",
+          "#A9A49F",
+          "#CDC8C3",
+          "#F2EDE8"
+        ]
+      },
+      "dark-band": {
+        "role": "neutral",
+        "displayName": "Dark Band",
+        "canonical": "#2A2826",
+        "oklch": "oklch(27.8% 0.005 67.6)",
+        "tonalRamp": [
+          "#0C0B09",
+          "#272523",
+          "#44423F",
+          "#63615E",
+          "#84827F",
+          "#A7A4A2",
+          "#CBC9C6",
+          "#F1EEEB"
+        ]
+      },
+      "dark-hairline": {
+        "role": "neutral",
+        "displayName": "Dark Hairline",
+        "canonical": "#33312F",
+        "oklch": "oklch(31.5% 0.005 67.7)",
+        "tonalRamp": [
+          "#0C0B09",
+          "#272523",
+          "#44423F",
+          "#63615E",
+          "#84827F",
+          "#A7A4A2",
+          "#CBC9C6",
+          "#F1EEEB"
+        ]
+      },
+      "dark-stroke": {
+        "role": "neutral",
+        "displayName": "Dark Stroke",
+        "canonical": "#4A4744",
+        "oklch": "oklch(40.0% 0.006 67.6)",
+        "tonalRamp": [
+          "#0D0B08",
+          "#272422",
+          "#44413E",
+          "#64615D",
+          "#85827E",
+          "#A8A4A1",
+          "#CCC8C5",
+          "#F1EEEA"
+        ]
+      },
+      "dark-secondary": {
+        "role": "neutral",
+        "displayName": "Dark Secondary",
+        "canonical": "#A39E99",
+        "oklch": "oklch(70.2% 0.009 67.7)",
+        "tonalRamp": [
+          "#0E0A07",
+          "#282420",
+          "#45413D",
+          "#65605C",
+          "#86817D",
+          "#A9A49F",
+          "#CDC8C3",
+          "#F3EDE8"
+        ]
+      },
+      "dark-alarm-tint": {
+        "role": "error",
+        "displayName": "Dark Alarm Tint",
+        "canonical": "#4A1210",
+        "oklch": "oklch(27.8% 0.085 26.3)",
+        "tonalRamp": [
+          "#160605",
+          "#3B1A17",
+          "#64312C",
+          "#8B4D47",
+          "#B06E67",
+          "#D59089",
+          "#F5B8B0",
+          "#FFE3DD"
+        ]
+      },
+      "dark-alarm-ink": {
+        "role": "error",
+        "displayName": "Dark Alarm Ink",
+        "canonical": "#FFDAD6",
+        "oklch": "oklch(91.8% 0.042 25.2)",
+        "tonalRamp": [
+          "#110908",
+          "#31201F",
+          "#543A38",
+          "#775855",
+          "#9A7976",
+          "#BE9B98",
+          "#E0C1BD",
+          "#FFE9E6"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "mean-numeral": {
+        "displayName": "Mean Numeral",
+        "purpose": "Material titleLarge. The mean row in stage modules and series detail; the largest number on screen."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Material titleSmall. Band titles and run numbers."
+      },
+      "title-medium": {
+        "displayName": "Title Medium",
+        "purpose": "Material titleMedium. Session names in the sessions list."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Material bodyMedium. Stat values, run scores, legend text."
+      },
+      "body-small": {
+        "displayName": "Body Small",
+        "purpose": "Material bodySmall. Stat labels and timestamps in secondary gray."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Material labelMedium. Slot headers, the edited tag, and (bold) the module tab."
+      },
+      "axis-label": {
+        "displayName": "Axis Label",
+        "purpose": "Material labelSmall. Histogram axis ticks only."
+      }
+    },
+    "fonts": [
+      {
+        "family": "Roboto",
+        "version": "3.016",
+        "weights": [
+          400,
+          700
+        ],
+        "source": "assets/fonts (OFL), bundled because OEM system fonts vary",
+        "fallback": [
+          "Noto Sans JP",
+          "system CJK"
+        ]
+      }
+    ],
+    "shadows": [
+      {
+        "name": "fab-lift",
+        "value": "Material elevation 2",
+        "purpose": "The extended capture FAB only. All content is flat."
+      }
+    ],
+    "motion": [
+      {
+        "name": "material-default",
+        "value": "Flutter Material 3 defaults",
+        "purpose": "No custom motion; ink ripples on tappable rows and columns."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone",
+        "value": "single column, full bleed"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Module Band and Tab",
+      "kind": "custom",
+      "refersTo": "module-band",
+      "description": "Signature move. Gray band under a hairline top rule; a red numbered tab hangs flush from the rule with the title on its baseline.",
+      "html": "<div class=\"ds-band\"><span class=\"ds-tab\">01</span><span class=\"ds-band-title\">Stage 1</span></div>",
+      "css": ".ds-band { font-family: Roboto, 'Noto Sans JP', sans-serif; font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 8px; padding: 0 12px 8px; background: #F2F2F2; border-top: 1px solid #E0E0E0; color: #111111; } .ds-tab { background: #E60012; color: #FFFFFF; font-size: 12px; font-weight: 700; line-height: 1.2; padding: 2px 6px; } .ds-band-title { font-size: 14px; font-weight: 700; line-height: 1.2; }"
+    },
+    {
+      "name": "Stats Table",
+      "kind": "card",
+      "refersTo": "stat-row-mean",
+      "description": "A stage module's ruled table: L/M/R columns split by hairlines, the mean row set as a bold 22sp price numeral.",
+      "html": "<table class=\"ds-stats\"><tr class=\"ds-head\"><td></td><td>L</td><td>M</td><td>R</td></tr><tr><th>n</th><td>240</td><td>240</td><td>240</td></tr><tr class=\"ds-mean\"><th>Mean</th><td>63,227</td><td>88,964</td><td>45,906</td></tr><tr><th>Median</th><td>57,777</td><td>85,369</td><td>44,201</td></tr></table>",
+      "css": ".ds-stats { font-family: Roboto, 'Noto Sans JP', sans-serif; font-variant-numeric: tabular-nums; width: 100%; border-collapse: collapse; background: #FFFFFF; color: #111111; } .ds-stats tr { border-bottom: 1px solid #E0E0E0; } .ds-stats tr:last-child { border-bottom: none; } .ds-stats th { text-align: left; font-weight: 400; font-size: 12px; color: #6B6B6B; padding: 2px 8px 2px 12px; } .ds-stats td { text-align: right; font-size: 14px; line-height: 1.3; padding: 2px 8px; border-left: 1px solid #E0E0E0; } .ds-stats td:first-child { border-left: none; } .ds-stats td:last-child { padding-right: 12px; } .ds-head td { font-size: 12px; color: #6B6B6B; padding: 4px 8px; } .ds-mean th { font-size: 14px; font-weight: 700; color: #111111; padding: 4px 8px 4px 12px; } .ds-mean td { font-size: 22px; font-weight: 700; line-height: 1.2; padding: 4px 8px; } .ds-stats td:hover { background: rgba(17,17,17,0.04); }"
+    },
+    {
+      "name": "Run Row",
+      "kind": "custom",
+      "refersTo": "run-row",
+      "description": "Dense ruled row: run number, time, and edited tag on the left; a 3x3 score block on the right.",
+      "html": "<div class=\"ds-run\"><div class=\"ds-run-meta\"><b>Run 240</b><span>09-30 18:58</span><span class=\"ds-edited\">Edited</span></div><div class=\"ds-run-scores\"><span>72,619</span><span>44,095</span><span>88,187</span><span>200,344</span><span>96,180</span><span>43,666</span><span>215,382</span><span>479,801</span><span>288,119</span></div></div>",
+      "css": ".ds-run { font-family: Roboto, 'Noto Sans JP', sans-serif; font-variant-numeric: tabular-nums; display: flex; padding: 8px 12px; background: #FFFFFF; color: #111111; border-bottom: 1px solid #E0E0E0; cursor: pointer; } .ds-run:hover { background: #FAFAFA; } .ds-run-meta { flex: 2; display: flex; flex-direction: column; align-items: flex-start; } .ds-run-meta b { font-size: 14px; font-weight: 700; line-height: 1.2; } .ds-run-meta span { font-size: 12px; color: #6B6B6B; line-height: 1.3; } .ds-run-scores { flex: 5; display: grid; grid-template-columns: repeat(3, 1fr); font-size: 14px; line-height: 1.3; text-align: right; } .ds-run-meta .ds-edited { margin-top: 4px; padding: 0 4px; border: 1px solid #E60012; color: #E60012; font-size: 12px; line-height: 1.2; }"
+    },
+    {
+      "name": "Capture FAB",
+      "kind": "button",
+      "refersTo": "fab-capture",
+      "description": "Extended red FAB that starts or stops capture; the only lifted element.",
+      "html": "<button class=\"ds-fab\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><circle cx=\"12\" cy=\"12\" r=\"3.2\"/><path d=\"M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z\"/></svg>Start capturing</button>",
+      "css": ".ds-fab { font-family: Roboto, 'Noto Sans JP', sans-serif; font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 12px; height: 56px; padding: 0 20px 0 16px; background: #E60012; color: #FFFFFF; border: none; border-radius: 4px; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 2px 6px 2px rgba(0,0,0,0.15); cursor: pointer; } .ds-fab:hover { background: #CC0010; } .ds-fab:focus-visible { outline: 2px solid #111111; outline-offset: 2px; }"
+    },
+    {
+      "name": "Filled Button",
+      "kind": "button",
+      "refersTo": "button-filled",
+      "description": "Confirming action in dialogs and the run form (save, delete, create).",
+      "html": "<button class=\"ds-btn-filled\">Save</button>",
+      "css": ".ds-btn-filled { font-family: Roboto, 'Noto Sans JP', sans-serif; font-variant-numeric: tabular-nums; height: 40px; padding: 0 24px; background: #E60012; color: #FFFFFF; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; } .ds-btn-filled:hover { background: #CC0010; } .ds-btn-filled:focus-visible { outline: 2px solid #111111; outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Button",
+      "kind": "button",
+      "refersTo": "button-text",
+      "description": "Dismissing action beside a filled button (cancel).",
+      "html": "<button class=\"ds-btn-text\">Cancel</button>",
+      "css": ".ds-btn-text { font-family: Roboto, 'Noto Sans JP', sans-serif; font-variant-numeric: tabular-nums; height: 40px; padding: 0 12px; background: transparent; color: #E60012; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; } .ds-btn-text:hover { background: rgba(230,0,18,0.08); } .ds-btn-text:focus-visible { outline: 2px solid #E60012; outline-offset: 2px; }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Dense filled score field with an outlined label; red 2px border on focus.",
+      "html": "<label class=\"ds-field\"><span>Left</span><input value=\"72619\" inputmode=\"numeric\"></label>",
+      "css": ".ds-field { font-family: Roboto, 'Noto Sans JP', sans-serif; font-variant-numeric: tabular-nums; position: relative; display: block; } .ds-field span { position: absolute; top: -7px; left: 8px; padding: 0 4px; background: #FFFFFF; font-size: 12px; color: #6B6B6B; } .ds-field input { font-family: Roboto, 'Noto Sans JP', sans-serif; font-variant-numeric: tabular-nums; width: 100%; padding: 10px; background: #F2F2F2; color: #111111; border: 1px solid #D6D6D6; border-radius: 2px; font-size: 16px; text-align: right; } .ds-field input:focus { outline: none; border: 2px solid #E60012; padding: 9px; }"
+    },
+    {
+      "name": "App Bar",
+      "kind": "nav",
+      "refersTo": "module-band",
+      "description": "Flat app bar on the white ground with an ink title and a hairline bottom rule.",
+      "html": "<header class=\"ds-appbar\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z\"/></svg><span>Week 3 · Team A</span></header>",
+      "css": ".ds-appbar { font-family: Roboto, 'Noto Sans JP', sans-serif; font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 32px; height: 64px; padding: 0 16px; background: #FFFFFF; color: #111111; border-bottom: 1px solid #E0E0E0; font-size: 22px; font-weight: 700; }"
+    },
+    {
+      "name": "Capture Bubble",
+      "kind": "button",
+      "refersTo": "capture-bubble",
+      "description": "The overlay's 56dp red circle that floats over the game.",
+      "html": "<button class=\"ds-bubble\" aria-label=\"Capture\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><circle cx=\"12\" cy=\"12\" r=\"3.2\"/><path d=\"M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z\"/></svg></button>",
+      "css": ".ds-bubble { width: 56px; height: 56px; border-radius: 50%; border: none; background: #E60012; color: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; } .ds-bubble:focus-visible { outline: 2px solid #111111; outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Printed Rate Table",
+    "overview": "concapt reads like a page from a Japanese high-density reference site. Each session sits on white paper as ruled tables, the way a fare chart or a price list does. Nine means read at a glance from three stage modules that butt edge to edge. There are no floating cards, KPI tiles, or decorative fills. Density comes from hairline rules and tight leading, while text never drops below a legible size.\n\nThe world lends type, palette, density, and one signature move: a small red numbered tab hanging from the top rule of each module. Layout and controls stay standard Material 3. One theme, `buildTheme(Brightness)` in `lib/ui/theme.dart`, serves both Flutter engines (the main app and the capture overlay) in light and dark. Both schemes are fixed. There is no Dynamic Color, so pass/fail colors, the edited tag, and histogram markers look the same on every phone. Dark mode is designed in its own right, with a near-black warm ground, warm off-white ink, and a lifted red. It is not an inversion of light.\n\nThe user ruled out idol fan-site styling, bare-spreadsheet Material cards, fitness or finance KPI tiles, and long scrolling. The wiki is a reference for craft, not a template, so the app avoids tiny type and badge clutter.",
+    "keyCharacteristics": [
+      "White ground, ink type, 1px hairline rules, gray header bands",
+      "One utility red for tabs, the FAB, the bubble, the mean marker, and the edited tag",
+      "Modules flush edge to edge, square corners, no shadows on content",
+      "Roboto with tabular figures everywhere; means set bold and large like price numerals",
+      "Fixed light and dark schemes shared by both engines"
+    ],
+    "rules": [
+      {
+        "name": "The One Red Rule",
+        "body": "Utility red marks only the things the player acts on or must find: tabs, the FAB, the bubble, the mean marker, and the edited tag. It never fills a surface or decorates.",
+        "section": "colors"
+      },
+      {
+        "name": "The Fixed Palette Rule",
+        "body": "Colors come from `colorScheme.*` only. No hard-coded colors, no Dynamic Color, and dark is its own designed scheme.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Figures Rule",
+        "body": "Every text style carries `tnum`, so score columns line up digit for digit.",
+        "section": "typography"
+      },
+      {
+        "name": "The Price Numeral Rule",
+        "body": "The mean is the only number set at 22sp bold. Every other value stays at body size, so the mean row reads first.",
+        "section": "typography"
+      },
+      {
+        "name": "The 12sp Floor Rule",
+        "body": "Table rows never go below 12sp. Only histogram axis ticks use 11sp.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Page Rule",
+        "body": "Content never casts a shadow. A new container gets a hairline or a band, not elevation.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** use `colorScheme.*` and `textTheme.*` for every color and text style.",
+      "**Do** open every new module with a `ModuleBand` and a red `ModuleTab`.",
+      "**Do** separate rows with 1px hairline-gray rules and keep modules flush edge to edge.",
+      "**Do** set the one number a screen is about in Mean Numeral and keep the rest at body size.",
+      "**Do** keep a 12dp gutter and the 2 / 4 / 8 / 12 / 16dp spacing steps.",
+      "**Do** design dark mode values deliberately when adding a role, never by inversion."
+    ],
+    "donts": [
+      "**Don't** use elevated cards, KPI tiles, or shadows on content.",
+      "**Don't** use utility red as a fill for surfaces or decoration.",
+      "**Don't** set table text below 12sp.",
+      "**Don't** round content containers; only controls get the 4dp corner.",
+      "**Don't** hard-code colors or font sizes, or put UI copy in Dart.",
+      "**Don't** add Dynamic Color or a third font weight."
+    ]
+  }
+}

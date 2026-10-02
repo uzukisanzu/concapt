@@ -108,11 +108,10 @@ An Android app that floats a capture bubble over Gakuen Idolmaster. A tap on a c
 
 ## Design system (keep it consistent)
 
-The visual identity is pending. It will be chosen with Impeccable, and `DESIGN.md` will replace this section. Until then:
+`DESIGN.md` is the source of truth ("The Printed Rate Table"), with tokens in `.impeccable/design.json`. In short:
 
-- One theme, `buildTheme(Brightness)` in `lib/ui/theme.dart`, serves both engines in light and dark.
-- The `Colors.indigo` seed is a placeholder. It stays fixed, with no Dynamic Color.
-- Every text style uses tabular figures, so score columns line up.
+- One theme, `buildTheme(Brightness)` in `lib/ui/theme.dart`, serves both engines in light and dark. The palette is fixed, with no Dynamic Color.
+- Roboto Regular and Bold are bundled in `assets/fonts/`, because the system font varies by phone. Every text style uses tabular figures, so score columns line up.
 - Use theme colors (`colorScheme.*`, `textTheme.*`); don't hard-code colors or font sizes.
 - Numbers display through `lib/ui/format.dart`.
 - UI copy lives in `lib/l10n/app_en.arb` and `app_ja.arb`, never in Dart.

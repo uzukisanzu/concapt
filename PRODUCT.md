@@ -49,7 +49,7 @@ The sum check sets concapt apart. Each stage's three member scores plus the crow
 
 - **Name:** concapt.
 - **Design system:** Material 3 in both the main app and the overlay. Theme colors and text styles only; no hard-coded colors or font sizes. Numbers display through `lib/ui/format.dart`.
-- **Visual identity:** undecided. The `Colors.indigo` seed in CLAUDE.md is a placeholder.
+- **Visual identity:** "The Printed Rate Table", recorded in `DESIGN.md`.
 
 ## Evidence on Hand
 
