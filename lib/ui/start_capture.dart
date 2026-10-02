@@ -57,10 +57,26 @@ Future<bool> startCapture(BuildContext context, int sessionId) async {
   );
 
   // The cached overlay engine returns to the bubble and re-reads the target.
+  await waitForOverlay();
   await FlutterOverlayWindow.shareData('reset');
 
   // Step aside so the game can be opened straight away.
   await ScreenCapture.moveToBack();
+  return true;
+}
+
+/// showOverlay returns once the overlay service is asked to start, before
+/// it registers the window channel the overlay engine calls on reset.
+/// The service reports active only after that channel exists.
+Future<bool> waitForOverlay({
+  Future<bool> Function() isActive = FlutterOverlayWindow.isActive,
+  Duration timeout = const Duration(seconds: 2),
+}) async {
+  final deadline = DateTime.now().add(timeout);
+  while (!await isActive()) {
+    if (DateTime.now().isAfter(deadline)) return false;
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+  }
   return true;
 }
 
