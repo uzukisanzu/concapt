@@ -10,6 +10,12 @@ void main() {
     expect(formatInt(120918.4), '120,918');
     expect(formatInt(2.5), '3');
     expect(formatInt(-1234), '-1,234');
+    expect(formatInt(-2.5), '-3');
+  });
+
+  test('formatInt shows a dash for values with no number', () {
+    expect(formatInt(double.nan), '—');
+    expect(formatInt(double.infinity), '—');
   });
 
   test('formatCompact shortens whole thousands', () {
@@ -17,6 +23,8 @@ void main() {
     expect(formatCompact(2500), '2,500');
     expect(formatCompact(500), '500');
     expect(formatCompact(0), '0');
+    expect(formatCompact(-3000), '-3k');
+    expect(formatCompact(-2500), '-2,500');
   });
 
   test('formatTime shows month, day, and minutes', () {

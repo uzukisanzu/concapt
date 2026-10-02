@@ -43,4 +43,16 @@ void main() {
     expect(lines[2], startsWith('2,2026-10-02T09:00:05,100000,'));
     expect(lines[3], '');
   });
+
+  test('runs sharing a number both export', () {
+    RunRecord run(int id) => RunRecord(
+          id: id,
+          seq: 1,
+          capturedAt: DateTime(2026, 10, 2),
+          edited: false,
+          scores: referenceScores(),
+        );
+    final rows = buildCsv([run(1), run(2)]).split('\n').where((l) => l.startsWith('1,'));
+    expect(rows, hasLength(2));
+  });
 }

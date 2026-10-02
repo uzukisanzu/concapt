@@ -31,7 +31,25 @@ void main() {
   test('all values equal gives a single bar', () {
     final h = buildHistogram(const [5, 5, 5]);
     expect(h.start, 5);
+    expect(h.step, 1);
+    expect(h.end, 6);
     expect(h.counts, [3]);
+  });
+
+  test('a range narrower than the minimum gives one bin per value', () {
+    final h = buildHistogram(const [10, 12, 12, 12, 13]);
+    expect(h.step, 1);
+    expect(h.counts, [1, 0, 3, 1]);
+    expect(h.lowerEdge(2), 12);
+  });
+
+  test('negative values align to the step', () {
+    final values = [for (var i = 0; i < 40; i++) -95 + i * 5];
+    final h = buildHistogram(values);
+    expect(h.start % h.step, 0);
+    expect(h.start, lessThanOrEqualTo(-95));
+    expect(h.end, greaterThan(100));
+    expect(h.counts.reduce((a, b) => a + b), values.length);
   });
 
   test('zero IQR with spread still bins', () {

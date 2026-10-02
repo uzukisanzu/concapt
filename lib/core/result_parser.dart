@@ -52,10 +52,11 @@ abstract final class ResultParser {
   /// A comma-grouped number with up to three trailing chars, like `1,014,622Pr`.
   static final _grouped = RegExp(r'^([\dOolI|Aó]{1,3}(?:[,.][\dOolI|Aó]{3})+)\D{0,3}$');
   static final _threeDigits = RegExp(r'\d{3}');
-  static final _endsNumeric = RegExp(r'[\d,.]$');
+  static final _endsNumeric = RegExp(r'\d[,.]?$');
   static final _startsDigit = RegExp(r'^\d');
   static final _anyDigit = RegExp(r'\d');
   static final _separators = RegExp(r'[,.]');
+  static final _bonusGap = RegExp(r'(?<=\+)\s+');
   static const _lookalikes = {
     'O': '0',
     'o': '0',
@@ -72,7 +73,7 @@ abstract final class ResultParser {
   static const _slots = 3;
 
   /// Totals print about twice the height of member scores; 総合力 about 1.3×.
-  static const _totalHeightRatio = 1.6;
+  static const _totalHeightRatio = 1.4;
 
   /// Parses [raw] as a number, tolerating separators and lookalike letters.
   static int? number(String raw) {
@@ -80,7 +81,7 @@ abstract final class ResultParser {
     if (!_digitLike.hasMatch(s) || !_anyDigit.hasMatch(s)) return null;
     final digits =
         s.split('').map((c) => _lookalikes[c] ?? c).join().replaceAll(_separators, '');
-    return digits.isEmpty ? null : int.parse(digits);
+    return int.tryParse(digits);
   }
 
   static ParseResult parse(List<TextPiece> pieces) {
@@ -224,8 +225,9 @@ abstract final class ResultParser {
   }
 
   /// Splits a piece containing spaces into words, sharing its width by length.
+  /// A lone `+` stays with the number after it.
   static Iterable<TextPiece> _splitWords(TextPiece piece) sync* {
-    final words = piece.text.trim().split(RegExp(r'\s+'));
+    final words = piece.text.trim().replaceAll(_bonusGap, '').split(RegExp(r'\s+'));
     if (words.length <= 1) {
       yield piece;
       return;
@@ -279,7 +281,7 @@ abstract final class ResultParser {
       for (var s = 0; s < _slots; s++) {
         slots[s] = row[s].value;
       }
-    } else if (anchors != null && row.length < _slots) {
+    } else if (anchors != null) {
       final claimed = <int>{};
       for (final t in row) {
         final slot = _nearest(anchors, t.centerX);

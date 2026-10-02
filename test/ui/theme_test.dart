@@ -11,16 +11,14 @@ void main() {
     expect(light.surface, const Color(0xFFFFFFFF));
     expect(light.onSurface, const Color(0xFF111111));
     expect(dark.brightness, Brightness.dark);
-    expect(
-      dark.primary,
-      isNot(ColorScheme.fromSeed(seedColor: Colors.indigo, brightness: Brightness.dark).primary),
-    );
-    expect(dark.primary, isNot(light.primary));
+    expect(dark.primary, const Color(0xFFFF5A5F));
+    expect(dark.surface, const Color(0xFF151413));
+    expect(dark.onSurface, const Color(0xFFEDE8E3));
+    expect(dark.onSurfaceVariant, const Color(0xFFA39E99));
   });
 
-  test('the light scheme is fixed, with no Dynamic Color', () {
+  test('the light scheme pins every neutral role', () {
     final light = buildTheme(Brightness.light).colorScheme;
-    expect(light, buildTheme(Brightness.light).colorScheme);
     expect(light.surfaceContainerHighest, const Color(0xFFF2F2F2));
     expect(light.outlineVariant, const Color(0xFFE0E0E0));
     expect(light.outline, const Color(0xFFD6D6D6));

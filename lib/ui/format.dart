@@ -1,6 +1,10 @@
+import '../core/digits.dart';
+
+export '../core/digits.dart';
+
 /// Rounds to a whole number with thousands separators; null shows as a dash.
 String formatInt(num? value) {
-  if (value == null) return '—';
+  if (value == null || !value.isFinite) return '—';
   final n = value.round();
   final digits = n.abs().toString();
   final b = StringBuffer();
@@ -17,6 +21,3 @@ String formatCompact(int value) =>
 
 String formatTime(DateTime t) =>
     '${twoDigits(t.month)}-${twoDigits(t.day)} ${twoDigits(t.hour)}:${twoDigits(t.minute)}';
-
-/// Zero-padded to two digits, as in times and the numbered stage tab.
-String twoDigits(int v) => v.toString().padLeft(2, '0');

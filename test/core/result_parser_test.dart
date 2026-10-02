@@ -35,6 +35,10 @@ void main() {
       expect(ResultParser.number('lOl'), isNull);
       expect(ResultParser.number('58929x'), isNull);
     });
+
+    test('rejects numbers too long for an int', () {
+      expect(ResultParser.number('12,345,678,901,234,567,890'), isNull);
+    });
   });
 
   test('reads the reference screen', () {
@@ -100,6 +104,42 @@ void main() {
     expect(draft.invalidStages, isEmpty);
   });
 
+  test('keeps the bonus marker when OCR spaces it off', () {
+    final pieces = [
+      for (final piece in screenPieces(referenceScores()))
+        piece.text == '+24183'
+            ? TextPiece('+ 24183', piece.left, piece.top, piece.right, piece.bottom)
+            : piece,
+    ];
+    final draft = parsedDraft(pieces);
+    expect(draft.stages[0].bonus, 24183);
+    expect(draft.toScores(), referenceScores());
+  });
+
+  test('does not join a number onto a total ending in Pt.', () {
+    final pieces = [
+      for (final piece in screenPieces(referenceScores()))
+        piece.text == '214,882Pt'
+            ? TextPiece('214,882Pt.', piece.left, piece.top, piece.right, piece.bottom)
+            : piece,
+      p('200', 305, 67, width: 30),
+    ];
+    expect(parsedDraft(pieces).stages[0].total, 214882);
+  });
+
+  test('6-digit members 0.9 heights apart stay separate', () {
+    final pieces = [
+      for (final piece in screenPieces(referenceScores()))
+        if (piece.text == '39,482')
+          p('39,482', 194.4, 98)
+        else if (piece.text == '30,299')
+          p('30,299', 268.8, 98)
+        else
+          piece,
+    ];
+    expect(parsedDraft(pieces).toScores(), referenceScores());
+  });
+
   test('drops badge-border junk after the bonus', () {
     final pieces = [
       for (final piece in screenPieces(referenceScores()))
@@ -136,6 +176,14 @@ void main() {
     expect(stage.middle, isNull);
     expect(stage.right, 38123);
     expect(stage.total, 206163);
+  });
+
+  test('an extra number in a member row keeps the slots it does not contest', () {
+    final pieces = screenPieces(referenceScores())..add(p('777', 330, 98, width: 30));
+    final stage = parsedDraft(pieces).stages[0];
+    expect(stage.left, 120918);
+    expect(stage.middle, 39482);
+    expect(stage.right, isNull);
   });
 
   test('missing member row leaves slots empty', () {

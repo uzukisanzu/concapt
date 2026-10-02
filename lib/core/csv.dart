@@ -1,3 +1,4 @@
+import 'digits.dart';
 import 'models.dart';
 
 const _fields = ['left', 'middle', 'right', 'bonus', 'total'];
@@ -23,7 +24,5 @@ String buildCsv(List<RunRecord> runs) {
 }
 
 String _timestamp(DateTime t) =>
-    '${t.year.toString().padLeft(4, '0')}-${_two(t.month)}-${_two(t.day)}'
-    'T${_two(t.hour)}:${_two(t.minute)}:${_two(t.second)}';
-
-String _two(int v) => v.toString().padLeft(2, '0');
+    '${t.year.toString().padLeft(4, '0')}-${twoDigits(t.month)}-${twoDigits(t.day)}'
+    'T${twoDigits(t.hour)}:${twoDigits(t.minute)}:${twoDigits(t.second)}';

@@ -39,7 +39,7 @@ Histogram buildHistogram(List<int> values) {
     step = smaller;
   }
 
-  final start = lo ~/ step * step;
+  final start = _floorDiv(lo, step) * step;
   final counts = List<int>.filled(_binCount(lo, hi, step), 0);
   for (final v in sorted) {
     counts[(v - start) ~/ step]++;
@@ -47,7 +47,10 @@ Histogram buildHistogram(List<int> values) {
   return Histogram(start: start, step: step, counts: counts);
 }
 
-int _binCount(int lo, int hi, int step) => hi ~/ step - lo ~/ step + 1;
+int _binCount(int lo, int hi, int step) => _floorDiv(hi, step) - _floorDiv(lo, step) + 1;
+
+/// Division rounding toward negative infinity, so bins below zero align too.
+int _floorDiv(int a, int b) => (a - a % b) ~/ b;
 
 /// Smallest 1, 2, or 5 × 10^k that is at least [raw], and at least 1.
 int niceStep(double raw) {

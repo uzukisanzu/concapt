@@ -6,6 +6,13 @@ import '../helpers/sample.dart';
 
 void main() {
   group('StageScores', () {
+    test('has value equality', () {
+      const a = StageScores(left: 1, middle: 2, right: 3, bonus: 4, total: 10);
+      expect(a, const StageScores(left: 1, middle: 2, right: 3, bonus: 4, total: 10));
+      expect(a == const StageScores(left: 1, middle: 2, right: 3, bonus: 4, total: 11), isFalse);
+      expect(a.members, [1, 2, 3]);
+    });
+
     test('sum check passes when members plus bonus equal total', () {
       expect(referenceScores().stages.every((s) => s.sumOk), isTrue);
     });
@@ -33,6 +40,16 @@ void main() {
   });
 
   group('RunDraft', () {
+    test('requires exactly three stages', () {
+      expect(() => RunDraft(const [StageDraft()]), throwsArgumentError);
+    });
+
+    test('fields run left, middle, right, bonus, total', () {
+      const stage = StageDraft(left: 1, middle: 2, right: 3, bonus: 4, total: 10);
+      expect(stage.fields, [1, 2, 3, 4, 10]);
+      expect(StageDraft.fromFields(stage.fields).toScores(), stage.toScores());
+    });
+
     test('round-trips complete scores', () {
       final draft = RunDraft.fromScores(referenceScores());
       expect(draft.toScores(), referenceScores());
