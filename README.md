@@ -1,17 +1,20 @@
 # concapt
 
-A new Flutter project.
+An Android app that floats a capture bubble over Gakuen Idolmaster. A tap on a contest rehearsal result screen reads the nine member scores with on-device OCR, checks each stage's sum, and adds the run to a session. Sessions show per-slot statistics, histograms, and CSV export.
 
-## Getting Started
+## Build
 
-This project is a starting point for a Flutter application.
+```sh
+flutter pub get
+flutter test
+flutter build apk --release
+```
 
-A few resources to get you started if this is your first Flutter project:
+Android only, `minSdk` 26.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Docs
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- `PRODUCT.md`: users, terminology, brand
+- `DESIGN.md`: the design system
+- `docs/superpowers/specs/`: the design spec
+- `docs/manual-test-checklist.md`: on-device checks

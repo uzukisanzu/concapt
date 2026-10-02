@@ -41,7 +41,7 @@ Fixed light scheme with no Dynamic Color. It replaces the indigo placeholder.
 | Light gray fill | `#F2F2F2` |
 | Line gray rule | `#E0E0E0` |
 | Mid gray | `#D6D6D6` |
-| Dark gray secondary text | `#7A7A7A` |
+| Dark gray secondary text | `#6B6B6B` |
 
 Dark mode gets its own designed scheme, never an inversion. Both engines use it.
 

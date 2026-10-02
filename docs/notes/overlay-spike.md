@@ -6,9 +6,9 @@
 
 | # | Check | Result | Notes |
 |---|---|---|---|
-| 1 | Bubble over game, transparent surround | pass | On first show the bubble is clipped, because `showOverlay` width/height are pixels (56 px is about 19 dp) and the 28 dp radius avatar is cropped. |
+| 1 | Bubble over game, transparent surround | pass | The clip on first show is expected (see check 3). On first show the bubble is clipped, because `showOverlay` width/height are pixels (56 px is about 19 dp) and the 28 dp radius avatar is cropped. |
 | 2 | Drag | pass | |
-| 3 | Size units | dp (resizeOverlay) | logical size shown: about 340 x 400, dpr: 3.0. `OverlayService.resizeOverlay` applies `dpToPx`; `showOverlay` passes width/height to `WindowManager.LayoutParams` unconverted. After Collapse (`resizeOverlay` 56x56) the bubble is full size. |
+| 3 | Size units | `showOverlay` px, `resizeOverlay` dp | logical size shown: about 340 x 400, dpr: 3.0. `OverlayService.resizeOverlay` applies `dpToPx`; `showOverlay` passes width/height to `WindowManager.LayoutParams` unconverted. After Collapse (`resizeOverlay` 56x56) the bubble is full size. |
 | 4 | Plugins + SharedPreferencesAsync in overlay engine | pass | Showed "written by main at ...". |
 | 5 | Keyboard in panel | pass | |
 | 6 | Collapse + drag | pass | |

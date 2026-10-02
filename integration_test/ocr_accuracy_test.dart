@@ -10,6 +10,17 @@ import 'package:path_provider/path_provider.dart';
 
 /// Reads every corpus image, records ML Kit's output as fixtures, and
 /// reports how many pass the sum check.
+///
+/// `flutter test` reinstalls the app and wipes the corpus in its data
+/// folder, so run this as an APK instead:
+///
+///     flutter build apk --debug -t integration_test/ocr_accuracy_test.dart
+///     adb install -r build/app/outputs/flutter-apk/app-debug.apk
+///     adb shell am start -n dev.concapt.app/.MainActivity
+///
+/// The result prints to `logcat -s flutter`. Fixtures and report.txt land in
+/// /sdcard/Android/data/dev.concapt.app/files/fixtures; the corpus goes in
+/// files/corpus beside it.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 

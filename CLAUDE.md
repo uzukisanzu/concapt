@@ -123,6 +123,7 @@ See `PRODUCT.md` for users, terminology, and brand commitments.
 - Never use the Android emulator. Ask the user to connect their phone, then check `adb devices`.
 - In Git Bash, prefix `adb` commands that take `/sdcard/...` paths with `MSYS_NO_PATHCONV=1`, or the path gets rewritten to a Windows path.
 - The app runs two Flutter engines. Native code both engines need must live in a plugin package; code in `MainActivity` is invisible to the overlay engine.
+- `flutter test integration_test/ocr_accuracy_test.dart` reinstalls the app and wipes the corpus on the phone. Run it as an APK instead; the test's doc comment has the steps.
 - Both engines open the same SQLite file. Drift streams don't cross engines, so screens re-query on resume.
 - The app id, Gradle `namespace`, and `MainActivity` package are all `dev.concapt.app`. The manifest's `.MainActivity` resolves against `namespace`, so changing one without the others crashes the app on launch.
 
