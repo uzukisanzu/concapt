@@ -368,6 +368,12 @@ abstract class AppLocalizations {
   /// **'Export CSV'**
   String get exportCsv;
 
+  /// No description provided for @capturing.
+  ///
+  /// In en, this message translates to:
+  /// **'Capturing'**
+  String get capturing;
+
   /// No description provided for @startCapturing.
   ///
   /// In en, this message translates to:

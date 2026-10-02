@@ -45,6 +45,7 @@
   "captureDeclined": "画面キャプチャが許可されませんでした。",
   "overlayNotification": "キャプチャ用バブルを表示中",
   "exportCsv": "CSVを書き出す",
+  "capturing": "キャプチャ中",
   "startCapturing": "キャプチャ開始",
   "stopCapturing": "キャプチャ停止",
   "runsHeading": "記録（{count}回）",

@@ -180,6 +180,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportCsv => 'Export CSV';
 
   @override
+  String get capturing => 'Capturing';
+
+  @override
   String get startCapturing => 'Start capturing';
 
   @override

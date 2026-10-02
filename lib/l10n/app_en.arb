@@ -55,6 +55,7 @@
   "captureDeclined": "Screen capture was declined.",
   "overlayNotification": "Capture bubble is active",
   "exportCsv": "Export CSV",
+  "capturing": "Capturing",
   "startCapturing": "Start capturing",
   "stopCapturing": "Stop capturing",
   "runsHeading": "Runs ({count})",

@@ -176,6 +176,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get exportCsv => 'CSVを書き出す';
 
   @override
+  String get capturing => 'キャプチャ中';
+
+  @override
   String get startCapturing => 'キャプチャ開始';
 
   @override

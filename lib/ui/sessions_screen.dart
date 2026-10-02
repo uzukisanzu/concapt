@@ -4,13 +4,19 @@ import '../data/repository.dart';
 import '../l10n/app_localizations.dart';
 import 'dialogs.dart';
 import 'format.dart';
+import 'module_header.dart';
 import 'session_detail_screen.dart';
 import 'start_capture.dart';
 
 class SessionsScreen extends StatefulWidget {
-  const SessionsScreen({super.key, required this.repository});
+  const SessionsScreen({
+    super.key,
+    required this.repository,
+    this.capturingSession = capturingSessionId,
+  });
 
   final Repository repository;
+  final Future<int?> Function() capturingSession;
 
   @override
   State<SessionsScreen> createState() => _SessionsScreenState();
@@ -18,6 +24,7 @@ class SessionsScreen extends StatefulWidget {
 
 class _SessionsScreenState extends State<SessionsScreen> with WidgetsBindingObserver {
   List<SessionSummary>? _sessions;
+  int? _capturing;
 
   @override
   void initState() {
@@ -39,7 +46,13 @@ class _SessionsScreenState extends State<SessionsScreen> with WidgetsBindingObse
 
   Future<void> _reload() async {
     final sessions = await widget.repository.listSessions();
-    if (mounted) setState(() => _sessions = sessions);
+    final capturing = await widget.capturingSession();
+    if (mounted) {
+      setState(() {
+        _sessions = sessions;
+        _capturing = capturing;
+      });
+    }
   }
 
   Future<void> _create() async {
@@ -111,6 +124,7 @@ class _SessionsScreenState extends State<SessionsScreen> with WidgetsBindingObse
                 _SessionRow(
                   key: ValueKey('session-${s.id}'),
                   session: s,
+                  capturing: s.id == _capturing,
                   onTap: () => _open(s.id),
                   onRename: () => _rename(s),
                   onDelete: () => _delete(s),
@@ -122,17 +136,20 @@ class _SessionsScreenState extends State<SessionsScreen> with WidgetsBindingObse
   }
 }
 
-/// A hairline-ruled row: name over run count and last capture time.
+/// A hairline-ruled row: name over run count and last capture time,
+/// with a red tab while the bubble saves into this session.
 class _SessionRow extends StatelessWidget {
   const _SessionRow({
     super.key,
     required this.session,
+    required this.capturing,
     required this.onTap,
     required this.onRename,
     required this.onDelete,
   });
 
   final SessionSummary session;
+  final bool capturing;
   final VoidCallback onTap;
   final VoidCallback onRename;
   final VoidCallback onDelete;
@@ -159,7 +176,15 @@ class _SessionRow extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(session.name, style: text.titleMedium),
+                      Row(
+                        children: [
+                          Flexible(child: Text(session.name, style: text.titleMedium)),
+                          if (capturing) ...[
+                            const SizedBox(width: 8),
+                            ModuleTab(l.capturing),
+                          ],
+                        ],
+                      ),
                       const SizedBox(height: 2),
                       Text(
                         l.sessionSubtitle(
