@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:concapt/data/database.dart';
 import 'package:concapt/data/repository.dart';
+import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -90,6 +91,9 @@ void main() {
   });
 
   test('two connections insert concurrently with unique seq', () async {
+    // Two connections to one file are the point of this test.
+    final warnedBefore = driftRuntimeOptions.dontWarnAboutMultipleDatabases;
+    driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
     final dir = await Directory.systemTemp.createTemp('concapt_db');
     final file = File('${dir.path}/shared.sqlite');
     final a = AppDatabase(NativeDatabase.createInBackground(file));
@@ -109,6 +113,7 @@ void main() {
       await a.close();
       await b.close();
       await dir.delete(recursive: true);
+      driftRuntimeOptions.dontWarnAboutMultipleDatabases = warnedBefore;
     }
   });
 }
