@@ -48,7 +48,8 @@ The sum check sets concapt apart. Each stage's three member scores plus the crow
 ## Brand Commitments
 
 - **Name:** concapt.
-- **Design system (binding, from CLAUDE.md):** Material 3 with `ColorScheme` seeded from `Colors.indigo`, in both the main app and the overlay. Theme colors and text styles only; no hard-coded colors or font sizes. Numbers display through `lib/ui/format.dart`.
+- **Design system:** Material 3 in both the main app and the overlay. Theme colors and text styles only; no hard-coded colors or font sizes. Numbers display through `lib/ui/format.dart`.
+- **Visual identity:** undecided. The `Colors.indigo` seed in CLAUDE.md is a placeholder.
 
 ## Evidence on Hand
 
