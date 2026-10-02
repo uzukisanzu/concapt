@@ -18,7 +18,7 @@ void main() {
     final corpus = Directory('${base.path}/corpus');
     final out = Directory('${base.path}/fixtures')..createSync(recursive: true);
     final images = corpus.existsSync()
-        ? (corpus.listSync().whereType<File>().where((f) => f.path.endsWith('.png')).toList()
+        ? (corpus.listSync().whereType<File>().where((f) => _image.hasMatch(f.path)).toList()
           ..sort((a, b) => a.path.compareTo(b.path)))
         : <File>[];
     expect(images, isNotEmpty, reason: 'Push the corpus to ${corpus.path} first');
@@ -27,7 +27,7 @@ void main() {
     var passed = 0;
     final failures = <String>[];
     for (final image in images) {
-      final name = image.uri.pathSegments.last.replaceAll('.png', '');
+      final name = image.uri.pathSegments.last.replaceFirst(_image, '');
       final pieces = await reader.read(image.path);
       final result = ResultParser.parse(pieces);
       final ok = result is ParsedRun && (result.draft.toScores()?.allSumsOk ?? false);
@@ -51,6 +51,8 @@ void main() {
     expect(rate, greaterThanOrEqualTo(0.9), reason: report);
   }, timeout: const Timeout(Duration(minutes: 10)));
 }
+
+final _image = RegExp(r'\.(png|jpe?g)$', caseSensitive: false);
 
 String _describe(ParseResult result) => switch (result) {
       NoResultScreen() => 'no totals',
