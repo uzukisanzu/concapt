@@ -372,6 +372,7 @@ class _OverlayHomeState extends State<OverlayHome> {
                       onSave: _save,
                       onCancel: _closePanel,
                       foldPassing: true,
+                      topInset: 0,
                       stagePreviews: _frame == null
                           ? null
                           : [
@@ -402,7 +403,8 @@ class _Bubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    // The game behind it looks the same in both themes, so the bubble does too.
+    final scheme = buildTheme(Brightness.light).colorScheme;
     return GestureDetector(
       onTap: busy ? null : onTap,
       child: Container(
@@ -438,7 +440,7 @@ class _DragHandle extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: SizedBox(
-          height: 24,
+          height: 36,
           child: Icon(
             Icons.open_with,
             size: 20,

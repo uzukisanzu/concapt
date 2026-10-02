@@ -33,6 +33,7 @@ class RunForm extends StatefulWidget {
     required this.onCancel,
     this.stagePreviews,
     this.foldPassing = false,
+    this.topInset = 12,
   });
 
   final RunDraft initial;
@@ -44,6 +45,9 @@ class RunForm extends StatefulWidget {
 
   /// Starts stages that add up folded, and lets every band fold its stage.
   final bool foldPassing;
+
+  /// Ground above the first stage; zero when a rule already sits there.
+  final double topInset;
 
   @override
   State<RunForm> createState() => _RunFormState();
@@ -120,10 +124,9 @@ class _RunFormState extends State<RunForm> {
       children: [
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.only(top: 12),
+            padding: EdgeInsets.only(top: widget.topInset),
             children: [
               for (var i = 0; i < _controllers.length; i++) ...[
-                if (i > 0) const SizedBox(height: 12),
                 _StageSection(
                   index: i,
                   stage: draft.stages[i],
