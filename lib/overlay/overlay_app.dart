@@ -228,7 +228,7 @@ class _OverlayHomeState extends State<OverlayHome> {
     if (outcome == null || !mounted || generation != _generation) return;
     switch (outcome) {
       case CaptureNeedsReview review:
-        await _openPanel(review, controller);
+        await _openPanel(review, controller, generation);
       case CaptureStopped():
         await ScreenCapture.toast(outcomeMessage(l, outcome));
         await _close();
@@ -238,10 +238,15 @@ class _OverlayHomeState extends State<OverlayHome> {
     }
   }
 
-  Future<void> _openPanel(CaptureNeedsReview review, CaptureController controller) async {
+  Future<void> _openPanel(
+    CaptureNeedsReview review,
+    CaptureController controller,
+    int generation,
+  ) async {
     // Decoded while the busy bubble still shows; null leaves the panel without strips.
     final frame = await decodeFrame(review.framePath);
-    if (!mounted) {
+    // A restart during the decode has torn down this capture's controller.
+    if (!mounted || generation != _generation) {
       frame?.dispose();
       return;
     }
@@ -254,8 +259,13 @@ class _OverlayHomeState extends State<OverlayHome> {
       false,
     );
     await FlutterOverlayWindow.updateFlag(OverlayFlag.focusPointer);
-    if (!mounted) {
+    if (!mounted || generation != _generation) {
       frame?.dispose();
+      if (mounted) {
+        // Undo the blank and resize; a restart still starting sets its own mode.
+        await _resetWindow();
+        if (mounted && _controller != null) setState(() => _mode = _Mode.bubble);
+      }
       return;
     }
     setState(() {
