@@ -50,8 +50,8 @@ OverlayHome._openPanel
 | Unit | Change |
 |---|---|
 | `lib/core/pixel_rect.dart` (new) | `PixelRect(left, top, right, bottom)`, doubles, frame pixels. Pure Dart |
-| `ParsedRun` | Adds `List<PixelRect?> stageBounds`, one per stage |
-| `CaptureNeedsReview` | Adds `String framePath`, `List<PixelRect?> stageBounds` |
+| `ParsedRun` | Adds `List<PixelRect> stageBounds`, one per stage |
+| `CaptureNeedsReview` | Adds `String framePath`, `List<PixelRect> stageBounds` |
 | `lib/overlay/capture_strip.dart` (new) | `CaptureStrip(image, rect)`: paints `rect` of `image` at full width; tap to collapse |
 | `RunForm` | Adds optional `List<Widget?>? stagePreviews` and `bool foldPassing = false` |
 
@@ -69,7 +69,6 @@ OverlayHome._openPanel
 | Case | Result |
 |---|---|
 | Frame fails to decode | No strips; the panel works as today |
-| A stage has null bounds | That stage has no strip |
 
 ## Strings
 

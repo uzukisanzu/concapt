@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'models.dart';
+import 'pixel_rect.dart';
 import 'text_piece.dart';
 
 sealed class ParseResult {
@@ -20,9 +21,12 @@ class IncompleteScreen extends ParseResult {
 }
 
 class ParsedRun extends ParseResult {
-  const ParsedRun(this.draft);
+  const ParsedRun(this.draft, this.stageBounds);
 
   final RunDraft draft;
+
+  /// Each stage's total, members, and bonus in frame pixels, top to bottom.
+  final List<PixelRect> stageBounds;
 }
 
 enum _Kind { total, bonus, number }
@@ -119,10 +123,27 @@ abstract final class ResultParser {
     }
 
     final anchors = _slotAnchors(memberRows);
-    return ParsedRun(RunDraft([
-      for (var i = 0; i < totals.length; i++)
-        _stage(memberRows[i], anchors, bonuses[i]?.value, totals[i].value),
-    ]));
+    return ParsedRun(
+      RunDraft([
+        for (var i = 0; i < totals.length; i++)
+          _stage(memberRows[i], anchors, bonuses[i]?.value, totals[i].value),
+      ]),
+      [
+        for (var i = 0; i < totals.length; i++)
+          _bounds(totals[i], [...memberRows[i], ?bonuses[i]], tolerance),
+      ],
+    );
+  }
+
+  /// From the total's top down through [below], widened by [margin].
+  static PixelRect _bounds(_Token total, List<_Token> below, double margin) {
+    final pieces = [total.piece, for (final t in below) t.piece];
+    return PixelRect(
+      pieces.map((p) => p.left).reduce(math.min) - margin,
+      total.piece.top - margin,
+      pieces.map((p) => p.right).reduce(math.max) + margin,
+      pieces.map((p) => p.bottom).reduce(math.max) + margin,
+    );
   }
 
   static List<_Token> _classify(List<TextPiece> pieces) {

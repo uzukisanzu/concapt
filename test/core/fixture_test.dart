@@ -49,4 +49,20 @@ void main() {
     }
     expect(regressions, isEmpty);
   });
+
+  test('stage bounds stack top to bottom without overlapping', () {
+    for (final f in files) {
+      final json = _load(f);
+      if (json['passed'] != true) continue;
+      final bounds = (ResultParser.parse(_pieces(json)) as ParsedRun).stageBounds;
+      final name = f.uri.pathSegments.last;
+      for (var i = 0; i < bounds.length; i++) {
+        expect(bounds[i].width, greaterThan(0), reason: name);
+        expect(bounds[i].height, greaterThan(0), reason: name);
+        if (i + 1 < bounds.length) {
+          expect(bounds[i].bottom, lessThanOrEqualTo(bounds[i + 1].top), reason: name);
+        }
+      }
+    }
+  });
 }

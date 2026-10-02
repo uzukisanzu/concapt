@@ -198,4 +198,30 @@ void main() {
     expect(ResultParser.parse([p('Hello', 10, 10), p('12345', 10, 40)]), isA<NoResultScreen>());
     expect(ResultParser.parse(const []), isA<NoResultScreen>());
   });
+
+  group('stage bounds', () {
+    test('cover the total, members, and bonus of each stage', () {
+      final result = ResultParser.parse(screenPieces(referenceScores())) as ParsedRun;
+      expect(result.stageBounds, hasLength(3));
+      for (var i = 0; i < 3; i++) {
+        final y = stageTops[i];
+        final b = result.stageBounds[i];
+        expect(b.top, lessThanOrEqualTo(y));
+        expect(b.left, lessThanOrEqualTo(120));
+        expect(b.right, greaterThanOrEqualTo(340));
+        expect(b.bottom, greaterThanOrEqualTo(y + 74));
+        expect(b.bottom, lessThan(y + 110));
+      }
+    });
+
+    test('without a bonus, the members set the bottom', () {
+      final y = stageTops[0];
+      final pieces = screenPieces(referenceScores())
+          .where((p) => !(p.text.startsWith('+') && p.top == y + 58))
+          .toList();
+      final b = (ResultParser.parse(pieces) as ParsedRun).stageBounds[0];
+      expect(b.bottom, greaterThanOrEqualTo(y + 54));
+      expect(b.bottom, lessThan(y + 110));
+    });
+  });
 }
