@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'theme.dart';
 
 /// The gray band that opens a ruled module, under a hairline top rule.
-/// The [tab] hangs flush from the rule; [child] sits beside it.
+/// The [tab] hangs flush from the rule; [child] sits beside it on the
+/// tab's baseline.
 class ModuleBand extends StatelessWidget {
   const ModuleBand({super.key, required this.tab, this.child, this.color});
 
@@ -24,13 +25,14 @@ class ModuleBand extends StatelessWidget {
         border: Border(top: BorderSide(color: scheme.outlineVariant)),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
         children: [
           tab,
           if (child != null) ...[
             const SizedBox(width: 8),
             Expanded(
-              child: Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: child),
+              child: Padding(padding: const EdgeInsets.only(bottom: 8), child: child),
             ),
           ],
         ],
