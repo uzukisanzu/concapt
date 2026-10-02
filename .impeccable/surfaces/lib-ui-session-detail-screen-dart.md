@@ -81,6 +81,15 @@ Each stage is a hairline-ruled module under a small red numbered tab ("01 Stage 
 - Don't imitate the wiki itself. That means no tiny type and no badge clutter.
 - Keep the plan's behavior, strings, widget keys, and tests. Copy stays in the ARB files; numbers go through `lib/ui/format.dart`.
 
+## Direction contract
+
+- **THESIS:** The session is a printed rate table, not a dashboard. Nine means read at a glance from three ruled stage modules; it refuses the category default of stacked elevated stat cards, KPI tiles, and long scroll.
+- **OWN-WORLD:** White ground, ink #111111 type, 1px #E0E0E0 hairline rules, #F2F2F2 header bands, one utility red #E60012 for tabs, the FAB, the mean marker, and the outlined "edited" tag. Small red numbered tabs ("01") sit on the top rule of each module. Modules butt edge to edge with no shadows or radii. Roboto tabular figures; means bold and large like price numerals. Dark mode is designed: near-black ground, warm off-white ink, a red lifted for contrast.
+- **STORY:** The player sees which slot scores what, trusts it (n is in the table), taps a column for the spread, scrolls to runs to fix or remove one, and starts or stops capture from the FAB.
+- **FIRST VIEWPORT:** App bar with the session name and an Export CSV action. Below it, three stage modules fill about one screen, each with an L/M/R header row, a dominant bold mean row, and six compact rows (≥12sp). The Runs tab and its count peek at the bottom edge. The red extended FAB (Start/Stop capturing) sits bottom-right.
+- **FORM:** Japanese high-density web table (`japanese-high-density-web`, the dealt challenger chosen over the canon), seed key `264b7ebc`, operate mode, code-led.
+- **FINISH:** unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+
 ## Still to do
 
-- The builder writes `## Direction contract` here before code (new-work §5), then runs the finish review. The documenter writes `DESIGN.md` and `.impeccable/design.json`.
+- Build Tasks 11–15 against this contract, then run the finish review. The documenter writes `DESIGN.md` and `.impeccable/design.json`.
