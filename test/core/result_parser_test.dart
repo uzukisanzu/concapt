@@ -48,18 +48,18 @@ void main() {
   });
 
   test('reads Pt as a separate piece', () {
-    final pieces = screenPieces(referenceScores())
-        .where((piece) => piece.text != '214,882Pt')
-        .toList()
-      ..addAll([p('214,882', 170, 60, width: 100, height: 24), p('Pt', 272, 64, width: 20)]);
+    final pieces =
+        screenPieces(referenceScores()).where((piece) => piece.text != '214,882Pt').toList()
+          ..addAll([p('214,882', 170, 60, width: 100, height: 24), p('Pt', 272, 64, width: 20)]);
     expect(parsedDraft(pieces).toScores(), referenceScores());
   });
 
   test('splits a piece holding several numbers', () {
-    final pieces = screenPieces(referenceScores())
-        .where((piece) => !['120,918', '39,482', '30,299'].contains(piece.text))
-        .toList()
-      ..add(p('120,918 39,482 30,299', 120, 98, width: 220));
+    final pieces =
+        screenPieces(
+            referenceScores(),
+          ).where((piece) => !['120,918', '39,482', '30,299'].contains(piece.text)).toList()
+          ..add(p('120,918 39,482 30,299', 120, 98, width: 220));
     expect(parsedDraft(pieces).toScores(), referenceScores());
   });
 
@@ -67,8 +67,13 @@ void main() {
     final misread = {'214,882Pt': '214,882r', '206,163Pt': '206,163Pr', '181,221Pt': '181.221'};
     final pieces = [
       for (final piece in screenPieces(referenceScores()))
-        TextPiece(misread[piece.text] ?? piece.text, piece.left, piece.top, piece.right,
-            piece.bottom),
+        TextPiece(
+          misread[piece.text] ?? piece.text,
+          piece.left,
+          piece.top,
+          piece.right,
+          piece.bottom,
+        ),
     ];
     expect(parsedDraft(pieces).toScores(), referenceScores());
   });
@@ -80,15 +85,15 @@ void main() {
   });
 
   test('joins a number OCR split in two', () {
-    final pieces = screenPieces(referenceScores())
-        .where((piece) => !['+24183', '181,221Pt'].contains(piece.text))
-        .toList()
-      ..addAll([
-        p('+241', 120, 118, width: 42),
-        p('83', 166, 118, width: 28),
-        p('181,22', 170, 540, width: 105, height: 30),
-        p('1Pt', 282, 540, width: 48, height: 30),
-      ]);
+    final pieces =
+        screenPieces(
+          referenceScores(),
+        ).where((piece) => !['+24183', '181,221Pt'].contains(piece.text)).toList()..addAll([
+          p('+241', 120, 118, width: 42),
+          p('83', 166, 118, width: 28),
+          p('181,22', 170, 540, width: 105, height: 30),
+          p('1Pt', 282, 540, width: 48, height: 30),
+        ]);
     expect(parsedDraft(pieces).toScores(), referenceScores());
   });
 
@@ -169,8 +174,9 @@ void main() {
   });
 
   test('a missing number fills the other slots by position', () {
-    final pieces =
-        screenPieces(referenceScores()).where((piece) => piece.text != '39,562').toList();
+    final pieces = screenPieces(
+      referenceScores(),
+    ).where((piece) => piece.text != '39,562').toList();
     final stage = parsedDraft(pieces).stages[1];
     expect(stage.left, 107065);
     expect(stage.middle, isNull);
@@ -187,9 +193,9 @@ void main() {
   });
 
   test('missing member row leaves slots empty', () {
-    final pieces = screenPieces(referenceScores())
-        .where((piece) => !['120,918', '39,482', '30,299'].contains(piece.text))
-        .toList();
+    final pieces = screenPieces(
+      referenceScores(),
+    ).where((piece) => !['120,918', '39,482', '30,299'].contains(piece.text)).toList();
     final draft = parsedDraft(pieces);
     expect(draft.stages[0].left, isNull);
     expect(draft.stages[0].middle, isNull);
@@ -198,10 +204,9 @@ void main() {
   });
 
   test('missing member row and bonus leaves slots empty', () {
-    final pieces = screenPieces(referenceScores())
-        .where((piece) =>
-            !['120,918', '39,482', '30,299', '+24183'].contains(piece.text))
-        .toList();
+    final pieces = screenPieces(
+      referenceScores(),
+    ).where((piece) => !['120,918', '39,482', '30,299', '+24183'].contains(piece.text)).toList();
     final stage = parsedDraft(pieces).stages[0];
     expect(stage.left, isNull);
     expect(stage.middle, isNull);
@@ -235,8 +240,9 @@ void main() {
   });
 
   test('two totals is an incomplete screen', () {
-    final pieces =
-        screenPieces(referenceScores()).where((piece) => piece.text != '181,221Pt').toList();
+    final pieces = screenPieces(
+      referenceScores(),
+    ).where((piece) => piece.text != '181,221Pt').toList();
     final result = ResultParser.parse(pieces);
     expect(result, isA<IncompleteScreen>());
     expect((result as IncompleteScreen).totalsFound, 2);
@@ -264,9 +270,9 @@ void main() {
 
     test('a stage missing a member still spans the member columns', () {
       final y = stageTops[0];
-      final pieces = screenPieces(referenceScores())
-          .where((p) => !(p.left == 280 && p.top == y + 38))
-          .toList();
+      final pieces = screenPieces(
+        referenceScores(),
+      ).where((p) => !(p.left == 280 && p.top == y + 38)).toList();
       final b = (ResultParser.parse(pieces) as ParsedRun).stageBounds[0];
       expect(b.left, lessThanOrEqualTo(120));
       expect(b.right, greaterThanOrEqualTo(340));
@@ -274,9 +280,9 @@ void main() {
 
     test('without a bonus, the members set the bottom', () {
       final y = stageTops[0];
-      final pieces = screenPieces(referenceScores())
-          .where((p) => !(p.text.startsWith('+') && p.top == y + 58))
-          .toList();
+      final pieces = screenPieces(
+        referenceScores(),
+      ).where((p) => !(p.text.startsWith('+') && p.top == y + 58)).toList();
       final b = (ResultParser.parse(pieces) as ParsedRun).stageBounds[0];
       expect(b.bottom, greaterThanOrEqualTo(y + 54));
       expect(b.bottom, lessThan(y + 110));

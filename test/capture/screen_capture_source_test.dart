@@ -7,12 +7,15 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const channel = MethodChannel('concapt/screen_capture');
 
-  void answer(Object? Function(MethodCall call) handler) =>
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(channel, (call) async => handler(call));
+  void answer(Object? Function(MethodCall call) handler) => TestDefaultBinaryMessengerBinding
+      .instance
+      .defaultBinaryMessenger
+      .setMockMethodCallHandler(channel, (call) async => handler(call));
 
-  tearDown(() => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-      .setMockMethodCallHandler(channel, null));
+  tearDown(
+    () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null),
+  );
 
   test('returns the frame path', () async {
     answer((call) => call.method == 'capture' ? '/cache/capture.png' : null);

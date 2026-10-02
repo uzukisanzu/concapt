@@ -11,9 +11,13 @@ Future<List<RunScores>> pumpForm(WidgetTester tester, RunDraft draft) async {
   tester.view.devicePixelRatio = 2;
   addTearDown(tester.view.reset);
   final saved = <RunScores>[];
-  await tester.pumpWidget(localizedApp(
-    Scaffold(body: RunForm(initial: draft, onSave: saved.add, onCancel: () {})),
-  ));
+  await tester.pumpWidget(
+    localizedApp(
+      Scaffold(
+        body: RunForm(initial: draft, onSave: saved.add, onCancel: () {}),
+      ),
+    ),
+  );
   return saved;
 }
 
@@ -21,17 +25,19 @@ Future<void> pumpReview(WidgetTester tester, RunDraft draft) async {
   tester.view.physicalSize = const Size(1200, 2800);
   tester.view.devicePixelRatio = 2;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(localizedApp(
-    Scaffold(
-      body: RunForm(
-        initial: draft,
-        onSave: (_) {},
-        onCancel: () {},
-        foldPassing: true,
-        stagePreviews: [for (var i = 0; i < 3; i++) SizedBox(key: Key('preview-$i'), height: 40)],
+  await tester.pumpWidget(
+    localizedApp(
+      Scaffold(
+        body: RunForm(
+          initial: draft,
+          onSave: (_) {},
+          onCancel: () {},
+          foldPassing: true,
+          stagePreviews: [for (var i = 0; i < 3; i++) SizedBox(key: Key('preview-$i'), height: 40)],
+        ),
       ),
     ),
-  ));
+  );
 }
 
 RunDraft draftWithStage3Total(int total) {
@@ -47,9 +53,18 @@ RunDraft draftWithStage3Total(int total) {
 void main() {
   test('stageStatus', () {
     final l = en();
-    expect(stageStatus(l, const StageDraft(left: 1, middle: 2, right: 3, bonus: 4, total: 10)), 'Adds up');
-    expect(stageStatus(l, const StageDraft(left: 1, middle: 2, right: 3, bonus: 4, total: 9)), 'Off by +1');
-    expect(stageStatus(l, const StageDraft(left: 1, middle: 2, right: 3, bonus: 4, total: 1010)), 'Off by −1,000');
+    expect(
+      stageStatus(l, const StageDraft(left: 1, middle: 2, right: 3, bonus: 4, total: 10)),
+      'Adds up',
+    );
+    expect(
+      stageStatus(l, const StageDraft(left: 1, middle: 2, right: 3, bonus: 4, total: 9)),
+      'Off by +1',
+    );
+    expect(
+      stageStatus(l, const StageDraft(left: 1, middle: 2, right: 3, bonus: 4, total: 1010)),
+      'Off by −1,000',
+    );
     expect(stageStatus(l, const StageDraft(left: 1)), 'Missing values');
   });
 

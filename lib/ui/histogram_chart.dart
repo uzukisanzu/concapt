@@ -127,16 +127,16 @@ class HistogramPainter extends CustomPainter {
   static const _dashGap = 3.0;
 
   TextPainter _label(int value) => TextPainter(
-        text: TextSpan(text: formatCompact(value), style: labelStyle),
-        textDirection: TextDirection.ltr,
-        textScaler: textScaler,
-      )..layout();
+    text: TextSpan(text: formatCompact(value), style: labelStyle),
+    textDirection: TextDirection.ltr,
+    textScaler: textScaler,
+  )..layout();
 
   /// Labels on every [every]th bin edge.
   List<(int, TextPainter)> _labels(int every) => [
-        for (var i = 0; i <= histogram.counts.length; i += every)
-          (histogram.lowerEdge(i), _label(histogram.lowerEdge(i))),
-      ];
+    for (var i = 0; i <= histogram.counts.length; i += every)
+      (histogram.lowerEdge(i), _label(histogram.lowerEdge(i))),
+  ];
 
   @override
   void paint(Canvas canvas, Size size) {

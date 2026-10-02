@@ -8,16 +8,18 @@ import '../helpers/app.dart';
 void main() {
   testWidgets('a strip spans the width at its crop ratio and collapses on tap', (tester) async {
     final image = (await tester.runAsync(() => createTestImage(width: 1000, height: 2000)))!;
-    await tester.pumpWidget(localizedApp(
-      Scaffold(
-        body: Center(
-          child: SizedBox(
-            width: 400,
-            child: CaptureStrip(image: image, rect: const PixelRect(100, 200, 600, 300)),
+    await tester.pumpWidget(
+      localizedApp(
+        Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 400,
+              child: CaptureStrip(image: image, rect: const PixelRect(100, 200, 600, 300)),
+            ),
           ),
         ),
       ),
-    ));
+    );
 
     final size = tester.getSize(find.byKey(const Key('strip')));
     expect(size.width, 400);
@@ -35,27 +37,31 @@ void main() {
 
   testWidgets('a strip past the frame edge is clamped to it', (tester) async {
     final image = (await tester.runAsync(() => createTestImage(width: 1000, height: 2000)))!;
-    await tester.pumpWidget(localizedApp(
-      Scaffold(
-        body: Center(
-          child: SizedBox(
-            width: 400,
-            child: CaptureStrip(image: image, rect: const PixelRect(-50, 1900, 1100, 2100)),
+    await tester.pumpWidget(
+      localizedApp(
+        Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 400,
+              child: CaptureStrip(image: image, rect: const PixelRect(-50, 1900, 1100, 2100)),
+            ),
           ),
         ),
       ),
-    ));
+    );
     // Clamped to 1000 × 100, so 40 tall at 400 wide.
     expect(tester.getSize(find.byKey(const Key('strip'))).height, closeTo(40, 0.5));
   });
 
   testWidgets('a collapsed strip starts as the show row', (tester) async {
     final image = (await tester.runAsync(() => createTestImage(width: 10, height: 10)))!;
-    await tester.pumpWidget(localizedApp(
-      Scaffold(
-        body: CaptureStrip(image: image, rect: const PixelRect(0, 0, 10, 10), collapsed: true),
+    await tester.pumpWidget(
+      localizedApp(
+        Scaffold(
+          body: CaptureStrip(image: image, rect: const PixelRect(0, 0, 10, 10), collapsed: true),
+        ),
       ),
-    ));
+    );
     expect(find.byKey(const Key('strip')), findsNothing);
     expect(find.text('Show capture'), findsOneWidget);
   });

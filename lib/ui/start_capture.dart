@@ -99,7 +99,7 @@ Future<void> stopCapture() async {
 /// The session the bubble saves into, or null while capture is off.
 Future<int?> capturingSessionId() async =>
     await ScreenCapture.isRunning() && await FlutterOverlayWindow.isActive()
-        ? await CaptureTarget.read()
-        : null;
+    ? await CaptureTarget.read()
+    : null;
 
 Future<bool> isCapturingInto(int sessionId) async => await capturingSessionId() == sessionId;

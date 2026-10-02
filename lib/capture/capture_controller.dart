@@ -119,6 +119,5 @@ class CaptureController {
   }
 
   /// Saves a run the user corrected in the edit panel.
-  Future<int> saveReviewed(RunScores scores) =>
-      repository.addRun(sessionId, scores, edited: true);
+  Future<int> saveReviewed(RunScores scores) => repository.addRun(sessionId, scores, edited: true);
 }

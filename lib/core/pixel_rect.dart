@@ -12,11 +12,11 @@ class PixelRect {
 
   /// This rect, cut to an image of [width] × [height].
   PixelRect clamp(double width, double height) => PixelRect(
-        left.clamp(0, width).toDouble(),
-        top.clamp(0, height).toDouble(),
-        right.clamp(0, width).toDouble(),
-        bottom.clamp(0, height).toDouble(),
-      );
+    left.clamp(0, width).toDouble(),
+    top.clamp(0, height).toDouble(),
+    right.clamp(0, width).toDouble(),
+    bottom.clamp(0, height).toDouble(),
+  );
 
   @override
   bool operator ==(Object other) =>

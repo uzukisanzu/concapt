@@ -30,7 +30,12 @@ void main() {
   test('sessions list newest first with counts', () async {
     final older = await repo.createSession('older', createdAt: DateTime(2026, 9, 1));
     await repo.createSession('newer', createdAt: DateTime(2026, 10, 1));
-    await repo.addRun(older, referenceScores(), edited: false, capturedAt: DateTime(2026, 9, 2, 10));
+    await repo.addRun(
+      older,
+      referenceScores(),
+      edited: false,
+      capturedAt: DateTime(2026, 9, 2, 10),
+    );
     final sessions = await repo.listSessions();
     expect(sessions.map((s) => s.name), ['newer', 'older']);
     expect(sessions[1].runCount, 1);

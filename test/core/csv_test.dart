@@ -4,7 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/sample.dart';
 
-const header = 'run,captured_at,'
+const header =
+    'run,captured_at,'
     's1_left,s1_middle,s1_right,s1_bonus,s1_total,'
     's2_left,s2_middle,s2_right,s2_bonus,s2_total,'
     's3_left,s3_middle,s3_right,s3_bonus,s3_total';
@@ -46,12 +47,12 @@ void main() {
 
   test('runs sharing a number both export', () {
     RunRecord run(int id) => RunRecord(
-          id: id,
-          seq: 1,
-          capturedAt: DateTime(2026, 10, 2),
-          edited: false,
-          scores: referenceScores(),
-        );
+      id: id,
+      seq: 1,
+      capturedAt: DateTime(2026, 10, 2),
+      edited: false,
+      scores: referenceScores(),
+    );
     final rows = buildCsv([run(1), run(2)]).split('\n').where((l) => l.startsWith('1,'));
     expect(rows, hasLength(2));
   });

@@ -30,7 +30,7 @@ void main() {
     final out = Directory('${base.path}/fixtures')..createSync(recursive: true);
     final images = corpus.existsSync()
         ? (corpus.listSync().whereType<File>().where((f) => _image.hasMatch(f.path)).toList()
-          ..sort((a, b) => a.path.compareTo(b.path)))
+            ..sort((a, b) => a.path.compareTo(b.path)))
         : <File>[];
     expect(images, isNotEmpty, reason: 'Push the corpus to ${corpus.path} first');
 
@@ -48,17 +48,20 @@ void main() {
         } else {
           failures.add('$name: ${_describe(result)}');
         }
-        File('${out.path}/$name.json').writeAsStringSync(jsonEncode({
-          'passed': ok,
-          'pieces': [for (final piece in pieces) piece.toJson()],
-        }));
+        File('${out.path}/$name.json').writeAsStringSync(
+          jsonEncode({
+            'passed': ok,
+            'pieces': [for (final piece in pieces) piece.toJson()],
+          }),
+        );
       }
     } finally {
       await reader.close();
     }
 
     final rate = passed / images.length;
-    final report = 'Passed $passed/${images.length} (${(rate * 100).toStringAsFixed(1)}%)\n'
+    final report =
+        'Passed $passed/${images.length} (${(rate * 100).toStringAsFixed(1)}%)\n'
         '${failures.join('\n')}\n';
     File('${out.path}/report.txt').writeAsStringSync(report);
     debugPrint(report);
@@ -69,9 +72,9 @@ void main() {
 final _image = RegExp(r'\.(png|jpe?g)$', caseSensitive: false);
 
 String _describe(ParseResult result) => switch (result) {
-      NoResultScreen() => 'no totals',
-      IncompleteScreen(:final totalsFound) => '$totalsFound totals',
-      ParsedRun(:final draft) =>
-        'stages ${draft.invalidStages.map((i) => i + 1).join(',')} invalid: '
-            '${[for (final s in draft.stages) s.fields].join(' | ')}',
-    };
+  NoResultScreen() => 'no totals',
+  IncompleteScreen(:final totalsFound) => '$totalsFound totals',
+  ParsedRun(:final draft) =>
+    'stages ${draft.invalidStages.map((i) => i + 1).join(',')} invalid: '
+        '${[for (final s in draft.stages) s.fields].join(' | ')}',
+};

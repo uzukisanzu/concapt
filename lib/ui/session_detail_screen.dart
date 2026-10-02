@@ -99,20 +99,22 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> with WidgetsB
   void _openSeries(int stage, int slot) {
     final l = AppLocalizations.of(context);
     final values = seriesValues(_runs!, stage, slot);
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => SeriesDetailScreen(
-        title: l.seriesTitle(stage + 1, slotName(l, slot)),
-        values: values,
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            SeriesDetailScreen(title: l.seriesTitle(stage + 1, slotName(l, slot)), values: values),
       ),
-    ));
+    );
   }
 
   Future<void> _edit(RunRecord run) async {
     final l = AppLocalizations.of(context);
-    final scores = await Navigator.of(context).push<RunScores>(MaterialPageRoute(
-      builder: (_) =>
-          RunEditorScreen(title: l.runTitle(run.seq), initial: RunDraft.fromScores(run.scores)),
-    ));
+    final scores = await Navigator.of(context).push<RunScores>(
+      MaterialPageRoute(
+        builder: (_) =>
+            RunEditorScreen(title: l.runTitle(run.seq), initial: RunDraft.fromScores(run.scores)),
+      ),
+    );
     // Saving untouched scores keeps the run's OCR provenance.
     if (scores == null || scores == run.scores) return;
     await widget.repository.updateRun(run.id, scores);
@@ -139,10 +141,12 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> with WidgetsB
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/${csvFileName(session.name)}');
       await file.writeAsString(buildCsv(_runs!));
-      await SharePlus.instance.share(ShareParams(
-        files: [XFile(file.path, mimeType: 'text/csv')],
-        subject: session.name,
-      ));
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path, mimeType: 'text/csv')],
+          subject: session.name,
+        ),
+      );
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.exportFailed)));
@@ -156,7 +160,10 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> with WidgetsB
     final session = _session;
     final runs = _runs;
     if (session == null || runs == null) {
-      return Scaffold(appBar: AppBar(), body: const Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        appBar: AppBar(),
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
     return Scaffold(
       appBar: AppBar(
@@ -198,8 +205,8 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> with WidgetsB
               child: Text(
                 l.noRunsYet,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             );
           }

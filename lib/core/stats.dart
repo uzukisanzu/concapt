@@ -1,15 +1,7 @@
 import 'models.dart';
 
 class Summary {
-  const Summary({
-    required this.n,
-    this.mean,
-    this.median,
-    this.min,
-    this.max,
-    this.p25,
-    this.p75,
-  });
+  const Summary({required this.n, this.mean, this.median, this.min, this.max, this.p25, this.p75});
 
   final int n;
   final double? mean;
@@ -45,5 +37,6 @@ double percentile(List<int> sorted, double p) {
 }
 
 /// One member's scores across runs: [stage] 0–2, [slot] 0 left, 1 middle, 2 right.
-List<int> seriesValues(List<RunRecord> runs, int stage, int slot) =>
-    [for (final run in runs) run.scores.member(stage, slot)];
+List<int> seriesValues(List<RunRecord> runs, int stage, int slot) => [
+  for (final run in runs) run.scores.member(stage, slot),
+];

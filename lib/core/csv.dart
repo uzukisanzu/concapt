@@ -14,11 +14,13 @@ String buildCsv(List<RunRecord> runs) {
   final ordered = [...runs]..sort((a, b) => a.seq.compareTo(b.seq));
   final b = StringBuffer()..writeln(header.join(','));
   for (final run in ordered) {
-    b.writeln([
-      run.seq,
-      _timestamp(run.capturedAt),
-      for (final s in run.scores.stages) ...[s.left, s.middle, s.right, s.bonus, s.total],
-    ].join(','));
+    b.writeln(
+      [
+        run.seq,
+        _timestamp(run.capturedAt),
+        for (final s in run.scores.stages) ...[s.left, s.middle, s.right, s.bonus, s.total],
+      ].join(','),
+    );
   }
   return b.toString();
 }

@@ -101,11 +101,19 @@ void main() {
   test('a failed sum asks for review and saves nothing', () async {
     final reference = referenceScores();
     final s3 = reference.stages[2];
-    reader.pieces = screenPieces(RunScores([
-      reference.stages[0],
-      reference.stages[1],
-      StageScores(left: s3.left, middle: s3.middle, right: s3.right, bonus: s3.bonus, total: s3.total + 1),
-    ]));
+    reader.pieces = screenPieces(
+      RunScores([
+        reference.stages[0],
+        reference.stages[1],
+        StageScores(
+          left: s3.left,
+          middle: s3.middle,
+          right: s3.right,
+          bonus: s3.bonus,
+          total: s3.total + 1,
+        ),
+      ]),
+    );
     final outcome = await controller.trigger();
     expect(outcome, isA<CaptureNeedsReview>());
     final review = outcome as CaptureNeedsReview;

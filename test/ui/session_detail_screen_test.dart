@@ -28,13 +28,15 @@ void main() {
       await repo.addRun(sessionId, referenceScores(), edited: false);
     });
 
-    await tester.pumpWidget(localizedApp(
-      SessionDetailScreen(
-        repository: repo,
-        sessionId: sessionId,
-        capturingSession: () async => null,
+    await tester.pumpWidget(
+      localizedApp(
+        SessionDetailScreen(
+          repository: repo,
+          sessionId: sessionId,
+          capturingSession: () async => null,
+        ),
       ),
-    ));
+    );
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
     await tester.pump();
 

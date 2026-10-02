@@ -9,9 +9,6 @@ void main() {
   });
 
   test('clamp keeps a rect inside the image', () {
-    expect(
-      const PixelRect(-8, -8, 1230, 900).clamp(1220, 2712),
-      const PixelRect(0, 0, 1220, 900),
-    );
+    expect(const PixelRect(-8, -8, 1230, 900).clamp(1220, 2712), const PixelRect(0, 0, 1220, 900));
   });
 }

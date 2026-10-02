@@ -77,15 +77,22 @@ class _SessionsScreenState extends State<SessionsScreen> with WidgetsBindingObse
   }
 
   Future<void> _open(int id) async {
-    await Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => SessionDetailScreen(repository: widget.repository, sessionId: id),
-    ));
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SessionDetailScreen(repository: widget.repository, sessionId: id),
+      ),
+    );
     await _reload();
   }
 
   Future<void> _rename(SessionSummary s) async {
     final l = AppLocalizations.of(context);
-    final name = await promptText(context, title: l.renameSession, initial: s.name, action: l.rename);
+    final name = await promptText(
+      context,
+      title: l.renameSession,
+      initial: s.name,
+      action: l.rename,
+    );
     if (name == null) return;
     await widget.repository.renameSession(s.id, name);
     await _reload();
@@ -119,25 +126,25 @@ class _SessionsScreenState extends State<SessionsScreen> with WidgetsBindingObse
       body: switch (sessions) {
         null => const Center(child: CircularProgressIndicator()),
         [] => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Text(l.sessionsEmpty, textAlign: TextAlign.center),
-            ),
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Text(l.sessionsEmpty, textAlign: TextAlign.center),
           ),
+        ),
         final list => ListView(
-            padding: const EdgeInsets.only(bottom: 88),
-            children: [
-              for (final s in list)
-                _SessionRow(
-                  key: ValueKey('session-${s.id}'),
-                  session: s,
-                  capturing: s.id == _capturing,
-                  onTap: () => _open(s.id),
-                  onRename: () => _rename(s),
-                  onDelete: () => _delete(s),
-                ),
-            ],
-          ),
+          padding: const EdgeInsets.only(bottom: 88),
+          children: [
+            for (final s in list)
+              _SessionRow(
+                key: ValueKey('session-${s.id}'),
+                session: s,
+                capturing: s.id == _capturing,
+                onTap: () => _open(s.id),
+                onRename: () => _rename(s),
+                onDelete: () => _delete(s),
+              ),
+          ],
+        ),
       },
     );
   }
@@ -185,10 +192,7 @@ class _SessionRow extends StatelessWidget {
                       Row(
                         children: [
                           Flexible(child: Text(session.name, style: text.titleMedium)),
-                          if (capturing) ...[
-                            const SizedBox(width: 8),
-                            ModuleTab(l.capturing),
-                          ],
+                          if (capturing) ...[const SizedBox(width: 8), ModuleTab(l.capturing)],
                         ],
                       ),
                       const SizedBox(height: 2),

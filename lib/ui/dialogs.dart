@@ -42,7 +42,12 @@ Future<String?> promptText(
 }
 
 class _PromptDialog extends StatefulWidget {
-  const _PromptDialog({required this.title, required this.initial, this.hint, required this.action});
+  const _PromptDialog({
+    required this.title,
+    required this.initial,
+    this.hint,
+    required this.action,
+  });
 
   final String title;
   final String initial;

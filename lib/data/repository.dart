@@ -31,9 +31,9 @@ class Repository {
   Future<Session> session(int id) =>
       (_db.select(_db.sessions)..where((s) => s.id.equals(id))).getSingle();
 
-  Future<void> renameSession(int id, String name) =>
-      (_db.update(_db.sessions)..where((s) => s.id.equals(id)))
-          .write(SessionsCompanion(name: Value(name)));
+  Future<void> renameSession(int id, String name) => (_db.update(
+    _db.sessions,
+  )..where((s) => s.id.equals(id))).write(SessionsCompanion(name: Value(name)));
 
   Future<void> deleteSession(int id) =>
       (_db.delete(_db.sessions)..where((s) => s.id.equals(id))).go();
@@ -41,15 +41,16 @@ class Repository {
   Future<List<SessionSummary>> listSessions() async {
     final runCount = _db.runs.id.count();
     final lastCaptured = _db.runs.capturedAt.max();
-    final query = _db.select(_db.sessions).join([
-      leftOuterJoin(_db.runs, _db.runs.sessionId.equalsExp(_db.sessions.id)),
-    ])
-      ..addColumns([runCount, lastCaptured])
-      ..groupBy([_db.sessions.id])
-      ..orderBy([
-        OrderingTerm.desc(_db.sessions.createdAt),
-        OrderingTerm.desc(_db.sessions.id),
-      ]);
+    final query =
+        _db.select(_db.sessions).join([
+            leftOuterJoin(_db.runs, _db.runs.sessionId.equalsExp(_db.sessions.id)),
+          ])
+          ..addColumns([runCount, lastCaptured])
+          ..groupBy([_db.sessions.id])
+          ..orderBy([
+            OrderingTerm.desc(_db.sessions.createdAt),
+            OrderingTerm.desc(_db.sessions.id),
+          ]);
     final rows = await query.get();
     return [
       for (final row in rows)
@@ -58,12 +59,12 @@ class Repository {
   }
 
   SessionSummary _summary(Session s, int runCount, DateTime? lastCaptured) => SessionSummary(
-        id: s.id,
-        name: s.name,
-        createdAt: s.createdAt,
-        runCount: runCount,
-        lastCapturedAt: lastCaptured,
-      );
+    id: s.id,
+    name: s.name,
+    createdAt: s.createdAt,
+    runCount: runCount,
+    lastCapturedAt: lastCaptured,
+  );
 
   /// Saves a run and returns its number within the session.
   ///
@@ -94,53 +95,56 @@ class Repository {
   }
 
   Future<List<RunRecord>> runs(int sessionId) async {
-    final rows = await (_db.select(_db.runs)
-          ..where((r) => r.sessionId.equals(sessionId))
-          ..orderBy([(r) => OrderingTerm.desc(r.seq)]))
-        .get();
+    final rows =
+        await (_db.select(_db.runs)
+              ..where((r) => r.sessionId.equals(sessionId))
+              ..orderBy([(r) => OrderingTerm.desc(r.seq)]))
+            .get();
     return _withScores(rows);
   }
 
   Future<RunRecord?> lastRun(int sessionId) async {
-    final rows = await (_db.select(_db.runs)
-          ..where((r) => r.sessionId.equals(sessionId))
-          ..orderBy([(r) => OrderingTerm.desc(r.seq)])
-          ..limit(1))
-        .get();
+    final rows =
+        await (_db.select(_db.runs)
+              ..where((r) => r.sessionId.equals(sessionId))
+              ..orderBy([(r) => OrderingTerm.desc(r.seq)])
+              ..limit(1))
+            .get();
     final records = await _withScores(rows);
     return records.isEmpty ? null : records.first;
   }
 
   Future<void> updateRun(int runId, RunScores scores) => _db.transaction(() async {
-        await (_db.delete(_db.stageResults)..where((s) => s.runId.equals(runId))).go();
-        await _insertStages(runId, scores);
-        await (_db.update(_db.runs)..where((r) => r.id.equals(runId)))
-            .write(const RunsCompanion(edited: Value(true)));
-      });
+    await (_db.delete(_db.stageResults)..where((s) => s.runId.equals(runId))).go();
+    await _insertStages(runId, scores);
+    await (_db.update(
+      _db.runs,
+    )..where((r) => r.id.equals(runId))).write(const RunsCompanion(edited: Value(true)));
+  });
 
   Future<void> deleteRun(int runId) =>
       (_db.delete(_db.runs)..where((r) => r.id.equals(runId))).go();
 
   Future<void> _insertStages(int runId, RunScores scores) => _db.batch((b) {
-        b.insertAll(_db.stageResults, [
-          for (var i = 0; i < scores.stages.length; i++)
-            StageResultsCompanion.insert(
-              runId: runId,
-              stage: i + 1,
-              leftScore: scores.stages[i].left,
-              middleScore: scores.stages[i].middle,
-              rightScore: scores.stages[i].right,
-              bonus: scores.stages[i].bonus,
-              total: scores.stages[i].total,
-            ),
-        ]);
-      });
+    b.insertAll(_db.stageResults, [
+      for (var i = 0; i < scores.stages.length; i++)
+        StageResultsCompanion.insert(
+          runId: runId,
+          stage: i + 1,
+          leftScore: scores.stages[i].left,
+          middleScore: scores.stages[i].middle,
+          rightScore: scores.stages[i].right,
+          bonus: scores.stages[i].bonus,
+          total: scores.stages[i].total,
+        ),
+    ]);
+  });
 
   Future<List<RunRecord>> _withScores(List<Run> rows) async {
     if (rows.isEmpty) return const [];
-    final stageRows = await (_db.select(_db.stageResults)
-          ..where((s) => s.runId.isIn(rows.map((r) => r.id))))
-        .get();
+    final stageRows = await (_db.select(
+      _db.stageResults,
+    )..where((s) => s.runId.isIn(rows.map((r) => r.id)))).get();
     final byRun = <int, List<StageResult>>{};
     for (final s in stageRows) {
       (byRun[s.runId] ??= []).add(s);

@@ -19,8 +19,7 @@ abstract final class ScreenCapture {
   static Future<bool> requestNotifications() async =>
       await _methods.invokeMethod<bool>('requestNotifications') ?? false;
 
-  static Future<bool> isRunning() async =>
-      await _methods.invokeMethod<bool>('isRunning') ?? false;
+  static Future<bool> isRunning() async => await _methods.invokeMethod<bool>('isRunning') ?? false;
 
   /// Writes the newest screen frame to a PNG file and returns its path.
   /// Throws [PlatformException] with code `not_running` when capture stopped.

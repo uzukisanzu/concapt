@@ -73,13 +73,13 @@ TextStyle? bold(TextStyle? style) => style?.copyWith(fontWeight: FontWeight.w700
 /// fixed on phones whose system font isn't Roboto. Sizes stay on the
 /// Material scale.
 TextStyle _style(double height, [FontWeight? weight]) => TextStyle(
-      fontFamily: 'Roboto',
-      fontFamilyFallback: const ['Noto Sans JP'],
-      fontFeatures: _tabular,
-      fontWeight: weight,
-      height: height,
-      leadingDistribution: TextLeadingDistribution.even,
-    );
+  fontFamily: 'Roboto',
+  fontFamilyFallback: const ['Noto Sans JP'],
+  fontFeatures: _tabular,
+  fontWeight: weight,
+  height: height,
+  leadingDistribution: TextLeadingDistribution.even,
+);
 
 final _textTheme = TextTheme(
   displayLarge: _style(1.1, FontWeight.w700),
@@ -106,9 +106,9 @@ ThemeData buildTheme(Brightness brightness) {
   final scheme = brightness == Brightness.light ? _light : _dark;
   final rule = BorderSide(color: scheme.outlineVariant);
   OutlineInputBorder box(Color color, [double width = 1]) => OutlineInputBorder(
-        borderRadius: const BorderRadius.all(Radius.circular(2)),
-        borderSide: BorderSide(color: color, width: width),
-      );
+    borderRadius: const BorderRadius.all(Radius.circular(2)),
+    borderSide: BorderSide(color: color, width: width),
+  );
   return ThemeData(
     colorScheme: scheme,
     textTheme: _textTheme,

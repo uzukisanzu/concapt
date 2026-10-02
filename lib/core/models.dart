@@ -71,13 +71,8 @@ class StageDraft {
   factory StageDraft.fromFields(List<int?> f) =>
       StageDraft(left: f[0], middle: f[1], right: f[2], bonus: f[3], total: f[4]);
 
-  factory StageDraft.fromScores(StageScores s) => StageDraft(
-        left: s.left,
-        middle: s.middle,
-        right: s.right,
-        bonus: s.bonus,
-        total: s.total,
-      );
+  factory StageDraft.fromScores(StageScores s) =>
+      StageDraft(left: s.left, middle: s.middle, right: s.right, bonus: s.bonus, total: s.total);
 
   final int? left;
   final int? middle;
@@ -129,8 +124,10 @@ class RunDraft {
   final List<StageDraft> stages;
 
   /// Indices of stages that are incomplete or fail the sum check.
-  Set<int> get invalidStages =>
-      {for (var i = 0; i < stages.length; i++) if (!stages[i].isValid) i};
+  Set<int> get invalidStages => {
+    for (var i = 0; i < stages.length; i++)
+      if (!stages[i].isValid) i,
+  };
 
   /// Null while any field is missing; sums are not checked.
   RunScores? toScores() {

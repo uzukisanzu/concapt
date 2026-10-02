@@ -8,8 +8,13 @@ import 'module_header.dart';
 import 'theme.dart';
 
 /// Labels in [StageDraft.fields] order.
-List<String> fieldLabels(AppLocalizations l) =>
-    [l.slotLeft, l.slotMiddle, l.slotRight, l.fieldBonus, l.fieldTotal];
+List<String> fieldLabels(AppLocalizations l) => [
+  l.slotLeft,
+  l.slotMiddle,
+  l.slotRight,
+  l.fieldBonus,
+  l.fieldTotal,
+];
 
 String stageStatus(AppLocalizations l, StageDraft stage) {
   final scores = stage.toScores();
@@ -82,11 +87,11 @@ class _RunFormState extends State<RunForm> {
   }
 
   RunDraft get _draft => RunDraft([
-        for (final row in _controllers)
-          StageDraft.fromFields([
-            for (final c in row) int.tryParse(c.text.replaceAll(RegExp(r'[,\s]'), '')),
-          ]),
-      ]);
+    for (final row in _controllers)
+      StageDraft.fromFields([
+        for (final c in row) int.tryParse(c.text.replaceAll(RegExp(r'[,\s]'), '')),
+      ]),
+  ]);
 
   Future<void> _save() async {
     final l = AppLocalizations.of(context);
@@ -127,8 +132,9 @@ class _RunFormState extends State<RunForm> {
                   onFix: (field, value) => _fill(i, field, value),
                   preview: widget.stagePreviews?.elementAtOrNull(i),
                   folded: _folded[i],
-                  onToggleFold:
-                      widget.foldPassing ? () => setState(() => _folded[i] = !_folded[i]) : null,
+                  onToggleFold: widget.foldPassing
+                      ? () => setState(() => _folded[i] = !_folded[i])
+                      : null,
                 ),
               ],
               const Divider(),
@@ -190,15 +196,15 @@ class _StageSection extends StatelessWidget {
     final ok = stage.isValid;
 
     Widget field(int f) => Expanded(
-          child: TextField(
-            key: Key('field-$index-$f'),
-            controller: controllers[f],
-            focusNode: focusNodes[f],
-            keyboardType: TextInputType.number,
-            textAlign: TextAlign.end,
-            decoration: InputDecoration(labelText: labels[f]),
-          ),
-        );
+      child: TextField(
+        key: Key('field-$index-$f'),
+        controller: controllers[f],
+        focusNode: focusNodes[f],
+        keyboardType: TextInputType.number,
+        textAlign: TextAlign.end,
+        decoration: InputDecoration(labelText: labels[f]),
+      ),
+    );
 
     const gap = SizedBox(width: 8);
 
@@ -211,10 +217,7 @@ class _StageSection extends StatelessWidget {
       tab: ExcludeSemantics(child: ModuleTab(twoDigits(index + 1))),
       child: Row(
         children: [
-          Semantics(
-            header: true,
-            child: Text(l.stageLabel(index + 1), style: text.titleSmall),
-          ),
+          Semantics(header: true, child: Text(l.stageLabel(index + 1), style: text.titleSmall)),
           const Spacer(),
           if (fix != null)
             // Inside the fields' tap region, so tapping it keeps their focus.

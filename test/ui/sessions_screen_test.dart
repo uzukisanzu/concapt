@@ -18,9 +18,9 @@ void main() {
       capturing = await repo.createSession('B');
     });
 
-    await tester.pumpWidget(localizedApp(
-      SessionsScreen(repository: repo, capturingSession: () async => capturing),
-    ));
+    await tester.pumpWidget(
+      localizedApp(SessionsScreen(repository: repo, capturingSession: () async => capturing)),
+    );
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
     await tester.pump();
 

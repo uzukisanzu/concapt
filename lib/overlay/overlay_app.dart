@@ -78,6 +78,7 @@ class _OverlayHomeState extends State<OverlayHome> {
     _frame = null;
     _stageBounds = const [];
   }
+
   StreamSubscription<String>? _stopped;
   StreamSubscription<dynamic>? _messages;
 
@@ -346,48 +347,48 @@ class _OverlayHomeState extends State<OverlayHome> {
         _Mode.bubble => _Bubble(onTap: _onTap),
         _Mode.busy => const _Bubble(busy: true),
         _Mode.panel => Listener(
-            onPointerDown: (e) {
-              if (_moving) _movePointer = e.pointer;
-            },
-            onPointerUp: (e) => _endMove(e.pointer),
-            onPointerCancel: (e) => _endMove(e.pointer),
-            child: Material(
-              color: scheme.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
-                side: BorderSide(color: scheme.outline),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _DragHandle(active: _moving, onTap: () => _setMoving(!_moving)),
-                  Expanded(
-                    // While a move is armed, the drag belongs to the window.
-                    child: IgnorePointer(
-                      ignoring: _moving,
-                      child: RunForm(
-                        initial: _draft!,
-                        onSave: _save,
-                        onCancel: _closePanel,
-                        foldPassing: true,
-                        stagePreviews: _frame == null
-                            ? null
-                            : [
-                                for (var i = 0; i < _stageBounds.length; i++)
-                                  CaptureStrip(
-                                    image: _frame!,
-                                    rect: _stageBounds[i],
-                                    collapsed: _draft!.stages[i].isValid,
-                                  ),
-                              ],
-                      ),
+          onPointerDown: (e) {
+            if (_moving) _movePointer = e.pointer;
+          },
+          onPointerUp: (e) => _endMove(e.pointer),
+          onPointerCancel: (e) => _endMove(e.pointer),
+          child: Material(
+            color: scheme.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(4),
+              side: BorderSide(color: scheme.outline),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _DragHandle(active: _moving, onTap: () => _setMoving(!_moving)),
+                Expanded(
+                  // While a move is armed, the drag belongs to the window.
+                  child: IgnorePointer(
+                    ignoring: _moving,
+                    child: RunForm(
+                      initial: _draft!,
+                      onSave: _save,
+                      onCancel: _closePanel,
+                      foldPassing: true,
+                      stagePreviews: _frame == null
+                          ? null
+                          : [
+                              for (var i = 0; i < _stageBounds.length; i++)
+                                CaptureStrip(
+                                  image: _frame!,
+                                  rect: _stageBounds[i],
+                                  collapsed: _draft!.stages[i].isValid,
+                                ),
+                            ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
+        ),
       },
     );
   }

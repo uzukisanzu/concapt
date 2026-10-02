@@ -11,12 +11,17 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('captures the screen after consent and stops cleanly', (tester) async {
-    await tester.pumpWidget(const MaterialApp(
-      home: Scaffold(body: Center(child: Text('Tap "Start now" on the phone'))),
-    ));
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: Center(child: Text('Tap "Start now" on the phone'))),
+      ),
+    );
 
-    expect(await ScreenCapture.requestConsent(), isTrue,
-        reason: 'Choose "Entire screen" and tap Start on the consent dialog');
+    expect(
+      await ScreenCapture.requestConsent(),
+      isTrue,
+      reason: 'Choose "Entire screen" and tap Start on the consent dialog',
+    );
     expect(await ScreenCapture.isRunning(), isTrue);
     final stopped = ScreenCapture.events.first;
 

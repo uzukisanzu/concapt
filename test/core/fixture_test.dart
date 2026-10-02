@@ -7,13 +7,12 @@ import 'package:concapt/core/text_piece.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 List<TextPiece> _pieces(Map<String, dynamic> json) => [
-      for (final p in json['pieces'] as List) TextPiece.fromJson(p as Map<String, dynamic>),
-    ];
+  for (final p in json['pieces'] as List) TextPiece.fromJson(p as Map<String, dynamic>),
+];
 
 Map<String, dynamic> _load(File f) => jsonDecode(f.readAsStringSync()) as Map<String, dynamic>;
 
-const _reference =
-    'Screenshot_2026-10-02-12-29-20-517_com.bandainamcoent.idolmaster_gakuen';
+const _reference = 'Screenshot_2026-10-02-12-29-20-517_com.bandainamcoent.idolmaster_gakuen';
 
 /// The run in `ref-script/result-2026-10/$_reference.jpg`.
 final _referenceScores = RunScores(const [
@@ -24,11 +23,9 @@ final _referenceScores = RunScores(const [
 
 /// Real ML Kit output recorded from the corpus by integration_test/ocr_accuracy_test.dart.
 void main() {
-  final files = Directory('test/fixtures/ocr')
-      .listSync()
-      .whereType<File>()
-      .where((f) => f.path.endsWith('.json'))
-      .toList();
+  final files = Directory(
+    'test/fixtures/ocr',
+  ).listSync().whereType<File>().where((f) => f.path.endsWith('.json')).toList();
 
   test('fixtures are present', () => expect(files, isNotEmpty));
 

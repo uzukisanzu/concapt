@@ -29,11 +29,21 @@ void main() {
     for (final brightness in Brightness.values) {
       final t = buildTheme(brightness).textTheme;
       final styles = [
-        t.displayLarge, t.displayMedium, t.displaySmall,
-        t.headlineLarge, t.headlineMedium, t.headlineSmall,
-        t.titleLarge, t.titleMedium, t.titleSmall,
-        t.bodyLarge, t.bodyMedium, t.bodySmall,
-        t.labelLarge, t.labelMedium, t.labelSmall,
+        t.displayLarge,
+        t.displayMedium,
+        t.displaySmall,
+        t.headlineLarge,
+        t.headlineMedium,
+        t.headlineSmall,
+        t.titleLarge,
+        t.titleMedium,
+        t.titleSmall,
+        t.bodyLarge,
+        t.bodyMedium,
+        t.bodySmall,
+        t.labelLarge,
+        t.labelMedium,
+        t.labelSmall,
       ];
       for (final style in styles) {
         expect(style!.fontFeatures, contains(const FontFeature.tabularFigures()));
@@ -43,7 +53,13 @@ void main() {
 
   test('bold styles use the bundled Roboto at w700', () {
     final t = buildTheme(Brightness.light).textTheme;
-    final weighted = [t.displayLarge, t.headlineSmall, t.titleLarge, t.titleSmall, bold(t.labelLarge)];
+    final weighted = [
+      t.displayLarge,
+      t.headlineSmall,
+      t.titleLarge,
+      t.titleSmall,
+      bold(t.labelLarge),
+    ];
     for (final style in weighted) {
       expect(style!.fontWeight, FontWeight.w700);
       expect(style.fontFamily, 'Roboto');

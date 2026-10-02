@@ -57,15 +57,7 @@ abstract final class ResultParser {
   static final _anyDigit = RegExp(r'\d');
   static final _separators = RegExp(r'[,.]');
   static final _bonusGap = RegExp(r'(?<=\+)\s+');
-  static const _lookalikes = {
-    'O': '0',
-    'o': '0',
-    'l': '1',
-    'I': '1',
-    '|': '1',
-    'A': '4',
-    'ó': '6',
-  };
+  static const _lookalikes = {'O': '0', 'o': '0', 'l': '1', 'I': '1', '|': '1', 'A': '4', 'ó': '6'};
 
   /// Smallest plain number kept; below this are badges and stage labels.
   static const _minPlainNumber = 100;
@@ -79,8 +71,7 @@ abstract final class ResultParser {
   static int? number(String raw) {
     final s = raw.trim();
     if (!_digitLike.hasMatch(s) || !_anyDigit.hasMatch(s)) return null;
-    final digits =
-        s.split('').map((c) => _lookalikes[c] ?? c).join().replaceAll(_separators, '');
+    final digits = s.split('').map((c) => _lookalikes[c] ?? c).join().replaceAll(_separators, '');
     return int.tryParse(digits);
   }
 
@@ -96,8 +87,7 @@ abstract final class ResultParser {
     final bonuses = <_Token?>[];
     for (var i = 0; i < totals.length; i++) {
       final top = totals[i].centerY + tolerance;
-      final bottom =
-          i + 1 < totals.length ? totals[i + 1].centerY - tolerance : double.infinity;
+      final bottom = i + 1 < totals.length ? totals[i + 1].centerY - tolerance : double.infinity;
       final band = tokens.where((t) => t.centerY > top && t.centerY < bottom).toList();
       bands.add(band);
       bonuses.add(_topmost(band.where((t) => t.kind == _Kind.bonus)));
@@ -113,8 +103,8 @@ abstract final class ResultParser {
       final limit = bonus != null
           ? bonus.centerY - tolerance
           : bonusOffset > 0
-              ? totals[i].centerY + bonusOffset - tolerance
-              : double.infinity;
+          ? totals[i].centerY + bonusOffset - tolerance
+          : double.infinity;
       final band = bands[i];
       final rows = _groupRows(
         band.where((t) => t.kind == _Kind.number && t.centerY < limit),
@@ -208,8 +198,13 @@ abstract final class ResultParser {
         joined.add(w);
       } else {
         final j = joined[i];
-        joined[i] = TextPiece('${j.text.trim()}${w.text.trim()}', j.left,
-            math.min(j.top, w.top), w.right, math.max(j.bottom, w.bottom));
+        joined[i] = TextPiece(
+          '${j.text.trim()}${w.text.trim()}',
+          j.left,
+          math.min(j.top, w.top),
+          w.right,
+          math.max(j.bottom, w.bottom),
+        );
       }
     }
     return joined;
