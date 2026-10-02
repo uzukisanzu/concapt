@@ -18,8 +18,8 @@ void main() {
   test('both locales load and differ', () {
     final en = lookupAppLocalizations(const Locale('en'));
     final ja = lookupAppLocalizations(const Locale('ja'));
-    expect(en.runSaved(7), 'Run 7 saved');
-    expect(ja.runSaved(7), isNot(en.runSaved(7)));
+    expect(en.runSaved(7, '1 / 2 / 3'), 'Run 7 saved\n1 / 2 / 3');
+    expect(ja.runSaved(7, '1 / 2 / 3'), isNot(en.runSaved(7, '1 / 2 / 3')));
     expect(en.runCount(1), '1 run');
     expect(en.runCount(3), '3 runs');
   });

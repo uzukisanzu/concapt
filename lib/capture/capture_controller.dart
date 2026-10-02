@@ -10,9 +10,10 @@ sealed class CaptureOutcome {
 }
 
 class CaptureSaved extends CaptureOutcome {
-  const CaptureSaved(this.seq);
+  const CaptureSaved(this.seq, this.scores);
 
   final int seq;
+  final RunScores scores;
 }
 
 class CaptureDuplicate extends CaptureOutcome {
@@ -103,7 +104,7 @@ class CaptureController {
           if (scores == null || !scores.allSumsOk) return CaptureNeedsReview(draft);
           final last = await repository.lastRun(sessionId);
           if (last != null && last.scores == scores) return CaptureDuplicate(last.seq);
-          return CaptureSaved(await repository.addRun(sessionId, scores, edited: false));
+          return CaptureSaved(await repository.addRun(sessionId, scores, edited: false), scores);
       }
     } finally {
       _busy = false;

@@ -1,8 +1,11 @@
 package dev.concapt.screen_capture
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.media.projection.MediaProjectionManager
 import android.widget.Toast
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -18,10 +21,12 @@ class ScreenCapturePlugin :
     MethodChannel.MethodCallHandler,
     EventChannel.StreamHandler,
     ActivityAware,
-    PluginRegistry.ActivityResultListener {
+    PluginRegistry.ActivityResultListener,
+    PluginRegistry.RequestPermissionsResultListener {
 
     companion object {
         private const val REQUEST_CONSENT = 4107
+        private const val REQUEST_NOTIFICATIONS = 4108
     }
 
     private lateinit var context: Context
@@ -29,6 +34,7 @@ class ScreenCapturePlugin :
     private lateinit var events: EventChannel
     private var activityBinding: ActivityPluginBinding? = null
     private var pendingConsent: MethodChannel.Result? = null
+    private var pendingNotifications: MethodChannel.Result? = null
     private var stopListener: (() -> Unit)? = null
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -49,6 +55,7 @@ class ScreenCapturePlugin :
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "requestConsent" -> requestConsent(result)
+            "requestNotifications" -> requestNotifications(result)
             "isRunning" -> result.success(CaptureSession.isRunning)
             "capture" -> CaptureSession.capture(context) { outcome ->
                 outcome.fold(
@@ -90,6 +97,33 @@ class ScreenCapturePlugin :
         activity.startActivityForResult(manager.createScreenCaptureIntent(), REQUEST_CONSENT)
     }
 
+    private fun requestNotifications(result: MethodChannel.Result) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        ) {
+            result.success(true)
+            return
+        }
+        val activity = activityBinding?.activity
+        if (activity == null) {
+            result.success(false)
+            return
+        }
+        pendingNotifications = result
+        activity.requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATIONS)
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ): Boolean {
+        if (requestCode != REQUEST_NOTIFICATIONS) return false
+        pendingNotifications?.success(grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED)
+        pendingNotifications = null
+        return true
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
         if (requestCode != REQUEST_CONSENT) return false
         val pending = pendingConsent ?: return true
@@ -120,6 +154,7 @@ class ScreenCapturePlugin :
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activityBinding = binding
         binding.addActivityResultListener(this)
+        binding.addRequestPermissionsResultListener(this)
     }
 
     override fun onDetachedFromActivityForConfigChanges() = onDetachedFromActivity()
@@ -129,6 +164,7 @@ class ScreenCapturePlugin :
 
     override fun onDetachedFromActivity() {
         activityBinding?.removeActivityResultListener(this)
+        activityBinding?.removeRequestPermissionsResultListener(this)
         activityBinding = null
     }
 }

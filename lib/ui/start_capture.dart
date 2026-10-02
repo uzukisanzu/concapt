@@ -7,10 +7,13 @@ import '../l10n/app_localizations.dart';
 import '../overlay/overlay_sizes.dart';
 import 'dialogs.dart';
 
-/// Overlay permission → capture consent → bubble bound to [sessionId].
+/// Notifications → overlay permission → capture consent → bubble bound to [sessionId].
 Future<bool> startCapture(BuildContext context, int sessionId) async {
   final l = AppLocalizations.of(context);
   final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
+
+  // Capture works without it, but toasts stay silent.
+  await ScreenCapture.requestNotifications();
 
   if (!await FlutterOverlayWindow.isPermissionGranted()) {
     if (!context.mounted) return false;

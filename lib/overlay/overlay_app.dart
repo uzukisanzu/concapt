@@ -228,7 +228,7 @@ class _OverlayHomeState extends State<OverlayHome> {
     final l = AppLocalizations.of(context);
     final generation = _generation;
     final seq = await _draftController!.saveReviewed(scores);
-    await ScreenCapture.toast(l.runSaved(seq));
+    await ScreenCapture.toast(savedMessage(l, seq, scores));
     if (generation == _generation) await _closePanel();
   }
 

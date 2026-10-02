@@ -1,8 +1,10 @@
 import '../capture/capture_controller.dart';
+import '../core/models.dart';
 import '../l10n/app_localizations.dart';
+import '../ui/format.dart';
 
 String outcomeMessage(AppLocalizations l, CaptureOutcome outcome) => switch (outcome) {
-      CaptureSaved(:final seq) => l.runSaved(seq),
+      CaptureSaved(:final seq, :final scores) => savedMessage(l, seq, scores),
       CaptureDuplicate(:final seq) => l.runDuplicate(seq),
       CaptureNoResult() => l.noResultScreen,
       CaptureIncomplete() => l.incompleteScreen,
@@ -10,3 +12,7 @@ String outcomeMessage(AppLocalizations l, CaptureOutcome outcome) => switch (out
       CaptureStopped() => l.captureStopped,
       CaptureNeedsReview() => l.checkHighlightedStage,
     };
+
+/// The run number with its three stage totals, to check against the game screen.
+String savedMessage(AppLocalizations l, int seq, RunScores scores) =>
+    l.runSaved(seq, scores.stages.map((s) => formatInt(s.total)).join(' / '));

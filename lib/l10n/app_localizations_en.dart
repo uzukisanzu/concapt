@@ -75,8 +75,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveAnywayAction => 'Save anyway';
 
   @override
-  String runSaved(int seq) {
-    return 'Run $seq saved';
+  String runSaved(int seq, String totals) {
+    return 'Run $seq saved\n$totals';
   }
 
   @override

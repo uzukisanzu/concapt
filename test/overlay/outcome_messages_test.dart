@@ -1,4 +1,5 @@
 import 'package:concapt/capture/capture_controller.dart';
+import 'package:concapt/core/models.dart';
 import 'package:concapt/l10n/app_localizations.dart';
 import 'package:concapt/overlay/outcome_messages.dart';
 import 'package:flutter/widgets.dart';
@@ -7,8 +8,11 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   final en = lookupAppLocalizations(const Locale('en'));
   final ja = lookupAppLocalizations(const Locale('ja'));
-  const toasts = <CaptureOutcome>[
-    CaptureSaved(7),
+  StageScores stage(int total) =>
+      StageScores(left: 0, middle: 0, right: 0, bonus: total, total: total);
+  final scores = RunScores([stage(312450), stage(298100), stage(1014622)]);
+  final toasts = <CaptureOutcome>[
+    CaptureSaved(7, scores),
     CaptureDuplicate(6),
     CaptureNoResult(),
     CaptureIncomplete(),
@@ -18,7 +22,7 @@ void main() {
 
   test('English messages match the spec copy', () {
     expect(toasts.map((o) => outcomeMessage(en, o)), [
-      'Run 7 saved',
+      'Run 7 saved\n312,450 / 298,100 / 1,014,622',
       'Same as run 6, skipped',
       'No result screen detected',
       "Couldn't read all three stages, try again",

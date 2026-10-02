@@ -221,8 +221,8 @@ abstract class AppLocalizations {
   /// No description provided for @runSaved.
   ///
   /// In en, this message translates to:
-  /// **'Run {seq} saved'**
-  String runSaved(int seq);
+  /// **'Run {seq} saved\n{totals}'**
+  String runSaved(int seq, String totals);
 
   /// No description provided for @runDuplicate.
   ///

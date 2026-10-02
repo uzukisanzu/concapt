@@ -75,8 +75,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get saveAnywayAction => '保存する';
 
   @override
-  String runSaved(int seq) {
-    return '$seq回目を保存しました';
+  String runSaved(int seq, String totals) {
+    return '$seq回目を保存しました\n$totals';
   }
 
   @override

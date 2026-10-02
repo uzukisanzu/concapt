@@ -13,6 +13,11 @@ abstract final class ScreenCapture {
   static Future<bool> requestConsent() async =>
       await _methods.invokeMethod<bool>('requestConsent') ?? false;
 
+  /// Asks for notification permission, which Android also requires for toasts
+  /// while the app is in the background. True when granted or not needed.
+  static Future<bool> requestNotifications() async =>
+      await _methods.invokeMethod<bool>('requestNotifications') ?? false;
+
   static Future<bool> isRunning() async =>
       await _methods.invokeMethod<bool>('isRunning') ?? false;
 

@@ -20,7 +20,7 @@
   "saveAnywayTitle": "このまま保存しますか？",
   "saveAnywayMessage": "{stages}の合計が一致しません。",
   "saveAnywayAction": "保存する",
-  "runSaved": "{seq}回目を保存しました",
+  "runSaved": "{seq}回目を保存しました\n{totals}",
   "runDuplicate": "{seq}回目と同じため、スキップしました",
   "noResultScreen": "リザルト画面が見つかりません",
   "incompleteScreen": "3ステージ分を読み取れませんでした。もう一度お試しください",
