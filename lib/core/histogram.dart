@@ -17,6 +17,19 @@ class Histogram {
 
   int lowerEdge(int bin) => start + bin * step;
   int get end => lowerEdge(counts.length);
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! Histogram || other.start != start || other.step != step) return false;
+    if (other.counts.length != counts.length) return false;
+    for (var i = 0; i < counts.length; i++) {
+      if (other.counts[i] != counts[i]) return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode => Object.hash(start, step, Object.hashAll(counts));
 }
 
 /// Freedman–Diaconis width, rounded up to a nice step, clamped to 8–40 bins.

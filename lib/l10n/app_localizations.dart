@@ -284,6 +284,18 @@ abstract class AppLocalizations {
   /// **'Couldn\'t save the run. Try again.'**
   String get saveFailed;
 
+  /// No description provided for @exportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t export the CSV.'**
+  String get exportFailed;
+
+  /// No description provided for @loadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load sessions.'**
+  String get loadFailed;
+
   /// No description provided for @captureStopped.
   ///
   /// In en, this message translates to:
@@ -349,6 +361,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{runs} · last {last}'**
   String sessionSubtitle(String runs, String last);
+
+  /// No description provided for @histogramLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Histogram of {runs}'**
+  String histogramLabel(String runs);
 
   /// No description provided for @allowBubbleTitle.
   ///

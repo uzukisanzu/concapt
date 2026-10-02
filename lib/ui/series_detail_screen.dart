@@ -16,8 +16,6 @@ class SeriesDetailScreen extends StatelessWidget {
   final String title;
   final List<int> values;
 
-  static const _meanRow = 1;
-
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
@@ -44,19 +42,19 @@ class SeriesDetailScreen extends StatelessWidget {
                 border: Border(top: rule, bottom: r == rows.length - 1 ? rule : BorderSide.none),
               ),
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: r == _meanRow ? 6 : 4),
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: r == meanRow ? 6 : 4),
                 child: Row(
                   children: [
                     Text(
                       rows[r].$1,
-                      style: r == _meanRow
+                      style: r == meanRow
                           ? bold(text.labelLarge)
                           : text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
                     ),
                     const Spacer(),
                     Text(
                       formatInt(rows[r].$2),
-                      style: r == _meanRow ? text.titleLarge : text.bodyMedium,
+                      style: r == meanRow ? text.titleLarge : text.bodyMedium,
                     ),
                   ],
                 ),

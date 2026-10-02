@@ -24,6 +24,11 @@ void main() {
     });
   });
 
+  test('histograms with the same bins are equal', () {
+    expect(buildHistogram(const [1, 5, 9]), buildHistogram(const [1, 5, 9]));
+    expect(buildHistogram(const [1, 5, 9]) == buildHistogram(const [1, 5, 10]), isFalse);
+  });
+
   test('empty input gives no bins', () {
     expect(buildHistogram(const []).counts, isEmpty);
   });

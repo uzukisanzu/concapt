@@ -44,21 +44,30 @@ Future<bool> startCapture(BuildContext context, int sessionId) async {
     return false;
   }
 
-  await CaptureTarget.write(sessionId);
-  if (await FlutterOverlayWindow.isActive()) await FlutterOverlayWindow.closeOverlay();
-  final bubble = OverlaySizes.showUnits(OverlaySizes.bubbleDp, devicePixelRatio);
-  await FlutterOverlayWindow.showOverlay(
-    width: bubble,
-    height: bubble,
-    enableDrag: true,
-    alignment: OverlayAlignment.centerRight,
-    overlayTitle: l.appTitle,
-    overlayContent: l.overlayNotification,
-  );
+  try {
+    await CaptureTarget.write(sessionId);
+    if (await FlutterOverlayWindow.isActive()) await FlutterOverlayWindow.closeOverlay();
+    final bubble = OverlaySizes.showUnits(OverlaySizes.bubbleDp, devicePixelRatio);
+    await FlutterOverlayWindow.showOverlay(
+      width: bubble,
+      height: bubble,
+      enableDrag: true,
+      alignment: OverlayAlignment.centerRight,
+      overlayTitle: l.appTitle,
+      overlayContent: l.overlayNotification,
+    );
 
-  // The cached overlay engine returns to the bubble and re-reads the target.
-  await waitForOverlay();
-  await FlutterOverlayWindow.shareData('reset');
+    // The cached overlay engine returns to the bubble and re-reads the target.
+    await waitForOverlay();
+    await FlutterOverlayWindow.shareData('reset');
+  } catch (_) {
+    // Without a bubble the projection has no use.
+    await ScreenCapture.stop();
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.bubbleFailed)));
+    }
+    return false;
+  }
 
   // Step aside so the game can be opened straight away.
   await ScreenCapture.moveToBack();

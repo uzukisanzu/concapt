@@ -19,6 +19,9 @@ List<(String, num?)> summaryRows(AppLocalizations l, Summary s) => [
       (l.statP75, s.p75),
     ];
 
+/// The mean's index in [summaryRows]; tables set that row large.
+const meanRow = 1;
+
 /// One stage's statistics as a ruled module: rows are stats, columns are
 /// the three slots, and the mean row is set large. Each slot column is one
 /// tap target that opens that slot.
@@ -33,8 +36,6 @@ class StatsCard extends StatelessWidget {
   final int stage;
   final List<Summary> summaries;
   final ValueChanged<int> onSlotTap;
-
-  static const _meanRow = 1;
 
   @override
   Widget build(BuildContext context) {
@@ -77,9 +78,9 @@ class StatsCard extends StatelessWidget {
         );
     final labelStyle = text.bodySmall?.copyWith(color: scheme.onSurfaceVariant);
     final meanLabelStyle = bold(text.labelLarge);
-    TextStyle? labelStyleOf(int r) => r == _meanRow ? meanLabelStyle : labelStyle;
-    TextStyle? valueStyle(int r) => r == _meanRow ? text.titleLarge : text.bodyMedium;
-    double pad(int r) => r == _meanRow ? 4 : 2;
+    TextStyle? labelStyleOf(int r) => r == meanRow ? meanLabelStyle : labelStyle;
+    TextStyle? valueStyle(int r) => r == meanRow ? text.titleLarge : text.bodyMedium;
+    double pad(int r) => r == meanRow ? 4 : 2;
 
     final table = Table(
       columnWidths: const {0: IntrinsicColumnWidth()},

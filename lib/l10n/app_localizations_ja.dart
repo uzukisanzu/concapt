@@ -114,6 +114,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get saveFailed => '保存できませんでした。もう一度お試しください。';
 
   @override
+  String get exportFailed => 'CSVを書き出せませんでした。';
+
+  @override
+  String get loadFailed => 'セッションを読み込めませんでした。';
+
+  @override
   String get captureStopped => 'キャプチャが停止しました。アプリから再開してください。';
 
   @override
@@ -162,6 +168,11 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String sessionSubtitle(String runs, String last) {
     return '$runs · 最新 $last';
+  }
+
+  @override
+  String histogramLabel(String runs) {
+    return '$runsのヒストグラム';
   }
 
   @override

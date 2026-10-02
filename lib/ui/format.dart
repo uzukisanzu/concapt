@@ -19,5 +19,7 @@ String formatInt(num? value) {
 String formatCompact(int value) =>
     value != 0 && value % 1000 == 0 ? '${value ~/ 1000}k' : formatInt(value);
 
-String formatTime(DateTime t) =>
-    '${twoDigits(t.month)}-${twoDigits(t.day)} ${twoDigits(t.hour)}:${twoDigits(t.minute)}';
+/// Month, day, and minutes; null shows as a dash.
+String formatTime(DateTime? t) => t == null
+    ? '—'
+    : '${twoDigits(t.month)}-${twoDigits(t.day)} ${twoDigits(t.hour)}:${twoDigits(t.minute)}';

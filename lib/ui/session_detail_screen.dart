@@ -18,11 +18,23 @@ import 'series_detail_screen.dart';
 import 'start_capture.dart';
 import 'stats_card.dart';
 
+/// [session] as a file name: characters a file name can't hold become `_`.
+String csvFileName(String session) {
+  final safe = session.replaceAll(RegExp(r'[\\/:*?"<>|\x00-\x1F]'), '_').trim();
+  return '${safe.isEmpty ? 'session' : safe}.csv';
+}
+
 class SessionDetailScreen extends StatefulWidget {
-  const SessionDetailScreen({super.key, required this.repository, required this.sessionId});
+  const SessionDetailScreen({
+    super.key,
+    required this.repository,
+    required this.sessionId,
+    this.capturingSession = capturingSessionId,
+  });
 
   final Repository repository;
   final int sessionId;
+  final Future<int?> Function() capturingSession;
 
   @override
   State<SessionDetailScreen> createState() => _SessionDetailScreenState();
@@ -35,6 +47,9 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> with WidgetsB
   Session? _session;
   List<RunRecord>? _runs;
   bool _capturing = false;
+
+  // Starting walks through permission prompts; a second tap must not open more.
+  bool _toggling = false;
 
   @override
   void initState() {
@@ -58,7 +73,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> with WidgetsB
   Future<void> _reload() async {
     final session = await widget.repository.session(widget.sessionId);
     final runs = await widget.repository.runs(widget.sessionId);
-    final capturing = await isCapturingInto(widget.sessionId);
+    final capturing = await widget.capturingSession() == widget.sessionId;
     if (!mounted) return;
     setState(() {
       _session = session;
@@ -68,12 +83,17 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> with WidgetsB
   }
 
   Future<void> _toggleCapture() async {
-    if (_capturing) {
-      await stopCapture();
-    } else {
-      await startCapture(context, widget.sessionId);
+    setState(() => _toggling = true);
+    try {
+      if (_capturing) {
+        await stopCapture();
+      } else {
+        await startCapture(context, widget.sessionId);
+      }
+      await _reload();
+    } finally {
+      if (mounted) setState(() => _toggling = false);
     }
-    await _reload();
   }
 
   void _openSeries(int stage, int slot) {
@@ -113,15 +133,21 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> with WidgetsB
   }
 
   Future<void> _export() async {
+    final l = AppLocalizations.of(context);
     final session = _session!;
-    final dir = await getTemporaryDirectory();
-    final safeName = session.name.replaceAll(RegExp(r'[^\w\- ]'), '_');
-    final file = File('${dir.path}/$safeName.csv');
-    await file.writeAsString(buildCsv(_runs!));
-    await SharePlus.instance.share(ShareParams(
-      files: [XFile(file.path, mimeType: 'text/csv')],
-      subject: session.name,
-    ));
+    try {
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/${csvFileName(session.name)}');
+      await file.writeAsString(buildCsv(_runs!));
+      await SharePlus.instance.share(ShareParams(
+        files: [XFile(file.path, mimeType: 'text/csv')],
+        subject: session.name,
+      ));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.exportFailed)));
+      }
+    }
   }
 
   @override
@@ -144,7 +170,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> with WidgetsB
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _toggleCapture,
+        onPressed: _toggling ? null : _toggleCapture,
         icon: Icon(_capturing ? Icons.stop : Icons.camera_alt),
         label: Text(_capturing ? l.stopCapturing : l.startCapturing),
       ),

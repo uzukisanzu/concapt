@@ -115,6 +115,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveFailed => 'Couldn\'t save the run. Try again.';
 
   @override
+  String get exportFailed => 'Couldn\'t export the CSV.';
+
+  @override
+  String get loadFailed => 'Couldn\'t load sessions.';
+
+  @override
   String get captureStopped => 'Capture stopped. Start again from the app.';
 
   @override
@@ -167,6 +173,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String sessionSubtitle(String runs, String last) {
     return '$runs · last $last';
+  }
+
+  @override
+  String histogramLabel(String runs) {
+    return 'Histogram of $runs';
   }
 
   @override

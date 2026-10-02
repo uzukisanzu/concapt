@@ -34,20 +34,24 @@ class HistogramChart extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AspectRatio(
-          aspectRatio: 1.4,
-          child: CustomPaint(
-            painter: HistogramPainter(
-              histogram: histogram,
-              mean: mean,
-              median: median,
-              barColor: scheme.outline,
-              meanColor: scheme.primary,
-              medianColor: scheme.onSurface,
-              axisColor: scheme.onSurfaceVariant,
-              haloColor: scheme.surface,
-              labelStyle: text.labelSmall!.copyWith(color: scheme.onSurfaceVariant),
-              textScaler: MediaQuery.textScalerOf(context),
+        Semantics(
+          image: true,
+          label: l.histogramLabel(l.runCount(histogram.counts.fold(0, (a, c) => a + c))),
+          child: AspectRatio(
+            aspectRatio: 1.4,
+            child: CustomPaint(
+              painter: HistogramPainter(
+                histogram: histogram,
+                mean: mean,
+                median: median,
+                barColor: scheme.outline,
+                meanColor: scheme.primary,
+                medianColor: scheme.onSurface,
+                axisColor: scheme.onSurfaceVariant,
+                haloColor: scheme.surface,
+                labelStyle: text.labelSmall!.copyWith(color: scheme.onSurfaceVariant),
+                textScaler: MediaQuery.textScalerOf(context),
+              ),
             ),
           ),
         ),
@@ -128,18 +132,35 @@ class HistogramPainter extends CustomPainter {
         textScaler: textScaler,
       )..layout();
 
+  /// Labels on every [every]th bin edge.
+  List<(int, TextPainter)> _labels(int every) => [
+        for (var i = 0; i <= histogram.counts.length; i += every)
+          (histogram.lowerEdge(i), _label(histogram.lowerEdge(i))),
+      ];
+
   @override
   void paint(Canvas canvas, Size size) {
-    final labels = [
-      for (var i = 0, every = (histogram.counts.length / (_maxLabels - 1)).ceil();
-          i <= histogram.counts.length;
-          i += every)
-        (histogram.lowerEdge(i), _label(histogram.lowerEdge(i))),
-    ];
+    final bins = histogram.counts.length;
+    if (bins == 0) return;
+
+    // Large text thins the labels until the widest fits between neighbours.
+    var every = math.max(1, (bins / (_maxLabels - 1)).ceil());
+    var labels = _labels(every);
+    double widest() => labels.map((l) => l.$2.width).reduce(math.max);
+    while (every < bins && widest() + _labelGap > size.width / bins * every) {
+      for (final (_, label) in labels) {
+        label.dispose();
+      }
+      labels = _labels(++every);
+    }
+
     final chartHeight = size.height - labels.first.$2.height - _labelGap;
     final lo = histogram.start.toDouble();
     final hi = histogram.end.toDouble();
     double xOf(num value) => (value - lo) / (hi - lo) * size.width;
+
+    // With one value per bin, a value marks its bar's center.
+    final markerShift = histogram.step == 1 ? 0.5 : 0.0;
 
     final maxCount = histogram.counts.reduce(math.max);
     final bar = Paint()..color = barColor;
@@ -159,7 +180,7 @@ class HistogramPainter extends CustomPainter {
     );
 
     for (final (value, label) in labels) {
-      final x = (xOf(value) - label.width / 2).clamp(0.0, size.width - label.width);
+      final x = math.max(0.0, math.min(xOf(value) - label.width / 2, size.width - label.width));
       label
         ..paint(canvas, Offset(x, chartHeight + _labelGap))
         ..dispose();
@@ -167,7 +188,7 @@ class HistogramPainter extends CustomPainter {
 
     void marker(double? value, Color color, {bool dashed = false}) {
       if (value == null) return;
-      final x = xOf(value);
+      final x = xOf(value + markerShift);
       final halo = Paint()
         ..color = haloColor
         ..strokeWidth = 4;

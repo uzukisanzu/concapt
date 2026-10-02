@@ -29,5 +29,6 @@ void main() {
 
   test('formatTime shows month, day, and minutes', () {
     expect(formatTime(DateTime(2026, 1, 28, 8, 4, 17)), '01-28 08:04');
+    expect(formatTime(null), '—');
   });
 }

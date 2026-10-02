@@ -45,13 +45,20 @@ class _SessionsScreenState extends State<SessionsScreen> with WidgetsBindingObse
   }
 
   Future<void> _reload() async {
-    final sessions = await widget.repository.listSessions();
-    final capturing = await widget.capturingSession();
-    if (mounted) {
-      setState(() {
-        _sessions = sessions;
-        _capturing = capturing;
-      });
+    try {
+      final sessions = await widget.repository.listSessions();
+      final capturing = await widget.capturingSession();
+      if (mounted) {
+        setState(() {
+          _sessions = sessions;
+          _capturing = capturing;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        final l = AppLocalizations.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.loadFailed)));
+      }
     }
   }
 
@@ -159,7 +166,6 @@ class _SessionRow extends StatelessWidget {
     final l = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
-    final last = session.lastCapturedAt;
     return DecoratedBox(
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
@@ -189,7 +195,7 @@ class _SessionRow extends StatelessWidget {
                       Text(
                         l.sessionSubtitle(
                           l.runCount(session.runCount),
-                          last == null ? '—' : formatTime(last),
+                          formatTime(session.lastCapturedAt),
                         ),
                         style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
                       ),
