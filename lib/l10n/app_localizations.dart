@@ -218,6 +218,18 @@ abstract class AppLocalizations {
   /// **'{field} → {value}'**
   String quickFix(String field, String value);
 
+  /// No description provided for @showCapture.
+  ///
+  /// In en, this message translates to:
+  /// **'Show capture'**
+  String get showCapture;
+
+  /// No description provided for @hideCapture.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide capture'**
+  String get hideCapture;
+
   /// No description provided for @saveAnywayAction.
   ///
   /// In en, this message translates to:

@@ -77,6 +77,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get showCapture => 'Show capture';
+
+  @override
+  String get hideCapture => 'Hide capture';
+
+  @override
   String get saveAnywayAction => 'Save anyway';
 
   @override

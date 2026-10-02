@@ -77,6 +77,12 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get showCapture => 'キャプチャを表示';
+
+  @override
+  String get hideCapture => 'キャプチャを隠す';
+
+  @override
   String get saveAnywayAction => '保存する';
 
   @override
