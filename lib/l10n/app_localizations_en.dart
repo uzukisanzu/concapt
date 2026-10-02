@@ -83,6 +83,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hideCapture => 'Hide capture';
 
   @override
+  String get movePanel => 'Move panel';
+
+  @override
   String get saveAnywayAction => 'Save anyway';
 
   @override

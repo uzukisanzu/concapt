@@ -32,3 +32,7 @@ Run on the user's phone (never the emulator) after any change to capture, overla
 | 26 | Quick fix | Open the edit panel on a stage that doesn't add up, tap the wrong field | The band offers "#N → value" without changing height; tapping it fills the field and the stage adds up |
 | 27 | Capture mark | Start capturing into a session, return to the sessions list | Only that session shows the red "Capturing" tab; it disappears after Stop capturing |
 | 28 | Column cue | Open a session with runs | Each slot header shows a chart icon; tapping the column opens its histogram |
+| 29 | Capture strip | Open the edit panel from `concapt-row9.png` | Stage 1 opens with a strip of its own numbers from the capture above its fields; stages 2 and 3 are folded to their bands |
+| 30 | Strip toggle | Tap stage 1's strip, then "Show capture" | The strip folds to a one-line row and comes back |
+| 31 | Stage fold | Tap stage 2's band, then tap it again | Stage 2 unfolds with its fields and a folded "Show capture" row, then folds again |
+| 32 | Panel handle | Open the panel, unfold every stage, scroll; then tap the grip at the panel top and drag the panel | The list scrolls; after tapping the grip (it turns red), the next drag moves the panel and lifting the finger returns to scrolling |

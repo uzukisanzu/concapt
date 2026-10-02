@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
@@ -9,11 +10,13 @@ import '../capture/capture_target.dart';
 import '../capture/mlkit_text_reader.dart';
 import '../capture/screen_capture_source.dart';
 import '../core/models.dart';
+import '../core/pixel_rect.dart';
 import '../data/database.dart';
 import '../data/repository.dart';
 import '../l10n/app_localizations.dart';
 import '../ui/run_form.dart';
 import '../ui/theme.dart';
+import 'capture_strip.dart';
 import 'outcome_messages.dart';
 import 'overlay_sizes.dart';
 
@@ -49,6 +52,30 @@ class _OverlayHomeState extends State<OverlayHome> {
   MlKitTextReader? _reader;
   RunDraft? _draft;
   CaptureController? _draftController;
+
+  // The reviewed capture, held while the panel is open.
+  ui.Image? _frame;
+  List<PixelRect> _stageBounds = const [];
+
+  // Tapping the panel's handle hands the next drag to the plugin, which
+  // moves the window by raw screen coordinates; lifting that finger ends it.
+  bool _moving = false;
+  int? _movePointer;
+
+  Future<void> _setMoving(bool moving) async {
+    await FlutterOverlayWindow.resizeOverlay(
+      OverlaySizes.resizeUnits(OverlaySizes.panelWidthDp),
+      OverlaySizes.resizeUnits(OverlaySizes.panelHeightDp),
+      moving,
+    );
+    if (mounted) setState(() => _moving = moving);
+  }
+
+  void _dropFrame() {
+    _frame?.dispose();
+    _frame = null;
+    _stageBounds = const [];
+  }
   StreamSubscription<String>? _stopped;
   StreamSubscription<dynamic>? _messages;
 
@@ -99,6 +126,7 @@ class _OverlayHomeState extends State<OverlayHome> {
         _draftController = null;
         _mode = _Mode.starting;
       });
+      _dropFrame();
       final l = AppLocalizations.of(context);
       final sessionId = await CaptureTarget.read();
       if (sessionId == null) {
@@ -163,6 +191,7 @@ class _OverlayHomeState extends State<OverlayHome> {
     _stopped?.cancel();
     _messages?.cancel();
     _teardown();
+    _dropFrame();
     super.dispose();
   }
 
@@ -198,8 +227,8 @@ class _OverlayHomeState extends State<OverlayHome> {
     }
     if (outcome == null || !mounted || generation != _generation) return;
     switch (outcome) {
-      case CaptureNeedsReview(:final draft):
-        await _openPanel(draft, controller);
+      case CaptureNeedsReview review:
+        await _openPanel(review, controller);
       case CaptureStopped():
         await ScreenCapture.toast(outcomeMessage(l, outcome));
         await _close();
@@ -209,18 +238,32 @@ class _OverlayHomeState extends State<OverlayHome> {
     }
   }
 
-  Future<void> _openPanel(RunDraft draft, CaptureController controller) async {
+  Future<void> _openPanel(CaptureNeedsReview review, CaptureController controller) async {
+    // Decoded while the busy bubble still shows; null leaves the panel without strips.
+    final frame = await decodeFrame(review.framePath);
+    if (!mounted) {
+      frame?.dispose();
+      return;
+    }
     await _blank();
     await FlutterOverlayWindow.resizeOverlay(
       OverlaySizes.resizeUnits(OverlaySizes.panelWidthDp),
       OverlaySizes.resizeUnits(OverlaySizes.panelHeightDp),
-      true,
+      // The plugin's drag moves the window on any touch, which would stop
+      // the panel scrolling; the handle turns it on for one drag instead.
+      false,
     );
     await FlutterOverlayWindow.updateFlag(OverlayFlag.focusPointer);
-    if (!mounted) return;
+    if (!mounted) {
+      frame?.dispose();
+      return;
+    }
     setState(() {
-      _draft = draft;
+      _draft = review.draft;
       _draftController = controller;
+      _frame = frame;
+      _stageBounds = review.stageBounds;
+      _moving = false;
       _mode = _Mode.panel;
     });
   }
@@ -234,6 +277,13 @@ class _OverlayHomeState extends State<OverlayHome> {
       _draftController = null;
       _mode = _Mode.bubble;
     });
+    _dropFrame();
+  }
+
+  void _endMove(int pointer) {
+    if (pointer != _movePointer) return;
+    _movePointer = null;
+    _setMoving(false);
   }
 
   Future<void> _save(RunScores scores) async {
@@ -253,14 +303,48 @@ class _OverlayHomeState extends State<OverlayHome> {
         _Mode.starting || _Mode.hidden => const SizedBox.shrink(),
         _Mode.bubble => _Bubble(onTap: _onTap),
         _Mode.busy => const _Bubble(busy: true),
-        _Mode.panel => Material(
-            color: scheme.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
-              side: BorderSide(color: scheme.outline),
+        _Mode.panel => Listener(
+            onPointerDown: (e) {
+              if (_moving) _movePointer = e.pointer;
+            },
+            onPointerUp: (e) => _endMove(e.pointer),
+            onPointerCancel: (e) => _endMove(e.pointer),
+            child: Material(
+              color: scheme.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+                side: BorderSide(color: scheme.outline),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _DragHandle(active: _moving, onTap: () => _setMoving(!_moving)),
+                  Expanded(
+                    // While a move is armed, the drag belongs to the window.
+                    child: IgnorePointer(
+                      ignoring: _moving,
+                      child: RunForm(
+                        initial: _draft!,
+                        onSave: _save,
+                        onCancel: _closePanel,
+                        foldPassing: true,
+                        stagePreviews: _frame == null
+                            ? null
+                            : [
+                                for (var i = 0; i < _stageBounds.length; i++)
+                                  CaptureStrip(
+                                    image: _frame!,
+                                    rect: _stageBounds[i],
+                                    collapsed: _draft!.stages[i].isValid,
+                                  ),
+                              ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            clipBehavior: Clip.antiAlias,
-            child: RunForm(initial: _draft!, onSave: _save, onCancel: _closePanel),
           ),
       },
     );
@@ -288,6 +372,36 @@ class _Bubble extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2.5, color: scheme.onPrimary),
               )
             : Icon(Icons.camera_alt, color: scheme.onPrimary),
+      ),
+    );
+  }
+}
+
+/// A grip along the panel's top. Tapping it lets the next drag move the
+/// panel; it shows in the primary color while that drag is armed.
+class _DragHandle extends StatelessWidget {
+  const _DragHandle({required this.active, required this.onTap});
+
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      button: true,
+      label: AppLocalizations.of(context).movePanel,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          height: 24,
+          child: Icon(
+            Icons.open_with,
+            size: 20,
+            color: active ? scheme.primary : scheme.onSurfaceVariant,
+          ),
+        ),
       ),
     );
   }

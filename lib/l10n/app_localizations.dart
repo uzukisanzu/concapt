@@ -230,6 +230,12 @@ abstract class AppLocalizations {
   /// **'Hide capture'**
   String get hideCapture;
 
+  /// No description provided for @movePanel.
+  ///
+  /// In en, this message translates to:
+  /// **'Move panel'**
+  String get movePanel;
+
   /// No description provided for @saveAnywayAction.
   ///
   /// In en, this message translates to:

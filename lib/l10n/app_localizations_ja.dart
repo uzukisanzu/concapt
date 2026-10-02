@@ -83,6 +83,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get hideCapture => 'キャプチャを隠す';
 
   @override
+  String get movePanel => 'パネルを移動';
+
+  @override
   String get saveAnywayAction => '保存する';
 
   @override

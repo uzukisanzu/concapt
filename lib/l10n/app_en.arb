@@ -26,6 +26,7 @@
   "@quickFix": {"placeholders": {"field": {"type": "String"}, "value": {"type": "String"}}},
   "showCapture": "Show capture",
   "hideCapture": "Hide capture",
+  "movePanel": "Move panel",
   "saveAnywayAction": "Save anyway",
   "runSaved": "Run {seq} saved\n{totals}",
   "@runSaved": {"placeholders": {"seq": {"type": "int"}, "totals": {"type": "String"}}},

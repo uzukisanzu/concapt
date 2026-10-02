@@ -22,6 +22,7 @@
   "quickFix": "{field} → {value}",
   "showCapture": "キャプチャを表示",
   "hideCapture": "キャプチャを隠す",
+  "movePanel": "パネルを移動",
   "saveAnywayAction": "保存する",
   "runSaved": "{seq}回目を保存しました\n{totals}",
   "runDuplicate": "{seq}回目と同じため、スキップしました",
