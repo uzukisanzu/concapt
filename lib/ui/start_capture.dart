@@ -64,9 +64,11 @@ Future<bool> startCapture(BuildContext context, int sessionId) async {
   return true;
 }
 
+/// Closes the bubble before the projection, so the overlay stays quiet
+/// about a stop the user asked for.
 Future<void> stopCapture() async {
-  await ScreenCapture.stop();
   if (await FlutterOverlayWindow.isActive()) await FlutterOverlayWindow.closeOverlay();
+  await ScreenCapture.stop();
 }
 
 Future<bool> isCapturingInto(int sessionId) async =>

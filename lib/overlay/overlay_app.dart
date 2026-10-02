@@ -63,8 +63,12 @@ class _OverlayHomeState extends State<OverlayHome> {
   @override
   void initState() {
     super.initState();
-    _stopped = ScreenCapture.events.listen((event) {
-      if (event == 'stopped') _close();
+    // Stop capturing in the app closes the bubble first, so a stop that
+    // finds the bubble showing came from outside (lock, status bar).
+    _stopped = ScreenCapture.events.listen((event) async {
+      if (event != 'stopped' || !await FlutterOverlayWindow.isActive() || !mounted) return;
+      await ScreenCapture.toast(AppLocalizations.of(context).captureStopped);
+      await _close();
     });
     // The cached engine outlives closeOverlay, so the main app sends
     // 'reset' on every show.
