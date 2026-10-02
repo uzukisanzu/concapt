@@ -26,6 +26,7 @@ void main() {
     expect(find.text('110,000'), findsWidgets); // mean and median of left
     expect(find.text('40,000'), findsWidgets);
     expect(find.text('—'), findsNWidgets(6)); // right slot, every stat but n
+    expect(find.byIcon(Icons.bar_chart), findsNWidgets(3)); // each column opens a chart
     await tester.tap(find.byKey(const Key('slot-0-1')));
     expect(tapped, [1]);
   });

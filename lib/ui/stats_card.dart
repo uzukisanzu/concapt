@@ -62,6 +62,19 @@ class StatsCard extends StatelessWidget {
         );
 
     final slotStyle = text.labelMedium?.copyWith(color: scheme.onSurfaceVariant);
+
+    // The chart icon says the column opens its histogram.
+    Widget header(int slot) => Padding(
+          padding: EdgeInsets.fromLTRB(8, 4, slot == last ? 12 : 8, 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Icon(Icons.bar_chart, size: 14, color: scheme.onSurfaceVariant),
+              const SizedBox(width: 4),
+              Text(slotName(l, slot), style: slotStyle),
+            ],
+          ),
+        );
     final labelStyle = text.bodySmall?.copyWith(color: scheme.onSurfaceVariant);
     final meanLabelStyle = bold(text.labelLarge);
     TextStyle? labelStyleOf(int r) => r == _meanRow ? meanLabelStyle : labelStyle;
@@ -76,7 +89,7 @@ class StatsCard extends StatelessWidget {
           decoration: rule,
           children: [
             const SizedBox.shrink(),
-            for (var slot = 0; slot <= last; slot++) cell(slot, slotName(l, slot), slotStyle, 4),
+            for (var slot = 0; slot <= last; slot++) header(slot),
           ],
         ),
         for (var r = 0; r < labels.length; r++)
