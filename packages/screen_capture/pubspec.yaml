@@ -1,0 +1,19 @@
+name: screen_capture
+description: MediaProjection screen capture for concapt.
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: ^3.11.0
+  flutter: ">=3.41.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: dev.concapt.screen_capture
+        pluginClass: ScreenCapturePlugin

@@ -1,0 +1,5 @@
+<resources>
+    <string name="capture_channel_name">画面キャプチャ</string>
+    <string name="capture_notification_title">concaptでキャプチャ中</string>
+    <string name="capture_notification_text">リザルト画面でバブルをタップしてください</string>
+</resources>
