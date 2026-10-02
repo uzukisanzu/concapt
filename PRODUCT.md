@@ -32,13 +32,13 @@ The sum check sets concapt apart. Each stage's three member scores plus the crow
 ## Operating Context
 
 - Capture happens mid-game. The bubble must stay out of the way, never appear in its own capture, and give feedback without leaving the game (toasts, an edit panel over the game).
-- Analysis happens later, in the main app: sessions list, session detail with three stage cards (L/M/R), series detail with a histogram.
+- Analysis happens later, in the main app: sessions list, session detail with three stage cards (slots #1–#3), series detail with a histogram.
 - One session = one fixed team. Each slot holds the same character for every run; a character change means a new session.
 - Sessions typically hold 200–500 runs.
 
 ## Capabilities and Constraints
 
-- **Terminology:** session, run, stage (1–3), slot (left / middle / right), series (stage × slot, 9 per session), stage total (`Pt`), crown bonus (`+`), sum check, edited run.
+- **Terminology:** session, run, stage (1–3), slot (#1–#3, left to right), series (stage × slot, 9 per session), stage total (`Pt`), crown bonus (`+`), sum check, edited run.
 - **Stats per series:** n, mean (whole number), median, min, max, P25, P75 (Excel `PERCENTILE.INC`). Empty series shows "—".
 - **Capture outcomes:** auto-save on pass; edit panel on a failed sum or missing field; toasts for no result screen, partial reads, and duplicates of the last run.
 - **Out of scope:** auto-tapping, auto-detecting the result screen, sync, recognizing characters by portrait.

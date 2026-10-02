@@ -155,19 +155,19 @@ abstract class AppLocalizations {
   /// No description provided for @slotLeft.
   ///
   /// In en, this message translates to:
-  /// **'Left'**
+  /// **'#1'**
   String get slotLeft;
 
   /// No description provided for @slotMiddle.
   ///
   /// In en, this message translates to:
-  /// **'Middle'**
+  /// **'#2'**
   String get slotMiddle;
 
   /// No description provided for @slotRight.
   ///
   /// In en, this message translates to:
-  /// **'Right'**
+  /// **'#3'**
   String get slotRight;
 
   /// No description provided for @fieldBonus.

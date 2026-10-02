@@ -38,13 +38,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get slotLeft => 'Left';
+  String get slotLeft => '#1';
 
   @override
-  String get slotMiddle => 'Middle';
+  String get slotMiddle => '#2';
 
   @override
-  String get slotRight => 'Right';
+  String get slotRight => '#3';
 
   @override
   String get fieldBonus => 'Bonus';

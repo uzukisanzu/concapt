@@ -50,7 +50,7 @@ void main() {
     expect(
       tester.getSemantics(find.byKey(const Key('slot-0-0'))),
       matchesSemantics(
-        label: 'ステージ1 左, 平均 63,227, n 1',
+        label: 'ステージ1 #1, 平均 63,227, n 1',
         isButton: true,
         hasTapAction: true,
       ),

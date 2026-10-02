@@ -38,13 +38,13 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get slotLeft => '左';
+  String get slotLeft => '#1';
 
   @override
-  String get slotMiddle => '中央';
+  String get slotMiddle => '#2';
 
   @override
-  String get slotRight => '右';
+  String get slotRight => '#3';
 
   @override
   String get fieldBonus => 'ボーナス';
