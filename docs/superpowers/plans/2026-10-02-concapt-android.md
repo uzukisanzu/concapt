@@ -6,7 +6,9 @@
 
 **Architecture:** Two Flutter engines share one SQLite file. The main engine runs the session screens. The overlay engine (`flutter_overlay_window`) runs the bubble and the whole capture pipeline. A local plugin package (`packages/screen_capture`) holds the Kotlin MediaProjection foreground service, so both engines can reach it. Parsing, sum checks, stats, histogram binning, and CSV are pure Dart with host-side tests.
 
-**Tech Stack:** Flutter 3.41.4 / Dart 3.11.1, Kotlin, `flutter_overlay_window`, `google_mlkit_text_recognition` (Latin), `drift` + `drift_flutter`, `shared_preferences` (`SharedPreferencesAsync`), `path_provider`, `share_plus`, `integration_test`.
+**Tech Stack:** Flutter 3.41.4 / Dart 3.11.1, Kotlin, `flutter_overlay_window`, `google_mlkit_text_recognition` (Latin), `drift` + `drift_flutter`, `shared_preferences` (`SharedPreferencesAsync`), `path_provider`, `share_plus`, `flutter_localizations` + `intl` (English and Japanese), `integration_test`.
+
+**Product context:** `PRODUCT.md` (users, terminology, brand commitments).
 
 **Spec:** `docs/superpowers/specs/2026-10-02-concapt-design.md`
 
@@ -14,7 +16,7 @@
 
 - Shell: Git Bash on Windows. Prefix any `adb` command that has a `/sdcard/...` argument with `MSYS_NO_PATHCONV=1`.
 - **Never use the Android emulator.** Steps marked **[device]** start by asking the user to connect their phone (Android 14+), then confirming it with `adb devices`.
-- App id `dev.concapt.concapt`; Dart package `concapt`; `minSdk = 26`.
+- App id, Gradle `namespace`, and `MainActivity` package are all `dev.concapt.app`; Dart package `concapt`; `minSdk = 26`.
 - Plugin package `screen_capture`, Kotlin package `dev.concapt.screen_capture`, method channel `concapt/screen_capture`, event channel `concapt/screen_capture/events`.
 - Sum check per stage: `left + middle + right + bonus == total`.
 - Series: 3 stages × 3 slots, slot order left (0), middle (1), right (2). Stage index 0–2 in Dart, stored as 1–3.
@@ -22,7 +24,13 @@
 - Histogram: Freedman–Diaconis width `2 × IQR / n^(1/3)`, rounded up to a 1/2/5 × 10^k step, 8–40 bins, edges aligned to multiples of the step.
 - Plain numbers under 100 are ignored by the parser.
 - CSV header: `run,captured_at,s1_left,s1_middle,s1_right,s1_bonus,s1_total,s2_left,s2_middle,s2_right,s2_bonus,s2_total,s3_left,s3_middle,s3_right,s3_bonus,s3_total`
-- User-facing copy (exact):
+- Theme: one `buildTheme(Brightness)` in `lib/ui/theme.dart`, used by both engines.
+  - Fixed `Colors.indigo` seed as a placeholder until `DESIGN.md` exists; no Dynamic Color, so pass/fail, "edited", and histogram markers look the same on every phone.
+  - Light and dark schemes are both first-class; every `MaterialApp` sets `theme` and `darkTheme`.
+  - Tabular figures in every text style, so score columns line up.
+- Localization: English and Japanese from Task 11 on. No hard-coded UI strings in Dart; all copy lives in `lib/l10n/app_en.arb` and `lib/l10n/app_ja.arb`. Native strings live in Android `res/values` and `res/values-ja`.
+- Gate: Tasks 1–10 run as written. Before Task 11, the user shapes the visual direction with Impeccable in a separate session (see the note above Task 11).
+- English copy for capture outcomes (exact):
   - `Run N saved`
   - `Same as run N, skipped`
   - `No result screen detected`
@@ -47,8 +55,10 @@
 pubspec.yaml
 android/app/build.gradle.kts            minSdk 26
 android/app/src/main/AndroidManifest.xml  overlay permissions + OverlayService
+l10n.yaml                               gen-l10n config
 lib/
   main.dart                             main() and overlayMain() entry points
+  l10n/                                 app_en.arb, app_ja.arb, generated AppLocalizations
   core/                                 pure Dart, no Flutter imports
     text_piece.dart                     OCR word + box
     models.dart                         StageScores, RunScores, StageDraft, RunDraft, RunRecord
@@ -68,8 +78,10 @@ lib/
     capture_controller.dart             tap → outcome pipeline
   overlay/
     overlay_sizes.dart                  bubble/panel window sizes
+    outcome_messages.dart               localized toast text per capture outcome
     overlay_app.dart                    bubble, busy state, edit panel
   ui/
+    theme.dart                          buildTheme (shared by both engines)
     format.dart                         formatInt, formatCompact, formatTime
     dialogs.dart                        confirm, promptText
     run_form.dart                       15-field editor with live sum check
@@ -108,6 +120,7 @@ The overlay plugin is the riskiest dependency (spec §10). This task proves it b
 **Files:**
 - Create: Flutter project in the repo root (`flutter create`)
 - Modify: `android/app/build.gradle.kts`, `android/app/src/main/AndroidManifest.xml`
+- Move: `android/app/src/main/kotlin/dev/concapt/concapt/MainActivity.kt` → `android/app/src/main/kotlin/dev/concapt/app/MainActivity.kt`
 - Replace: `lib/main.dart`
 - Delete: `test/widget_test.dart`
 - Create: `docs/notes/overlay-spike.md`
@@ -127,13 +140,32 @@ flutter pub add flutter_overlay_window shared_preferences
 
 Expected: `All done!` and both packages added to `pubspec.yaml`.
 
-- [ ] **Step 2: Set minSdk**
+- [ ] **Step 2: Set the app id, namespace, and minSdk**
 
-In `android/app/build.gradle.kts`, inside `defaultConfig`, replace the line `minSdk = flutter.minSdkVersion` with:
+In `android/app/build.gradle.kts`, replace the generated `namespace = "dev.concapt.concapt"` line with:
 
 ```kotlin
+    namespace = "dev.concapt.app"
+```
+
+Inside `defaultConfig`, replace the generated `applicationId = "dev.concapt.concapt"` and `minSdk = flutter.minSdkVersion` lines with:
+
+```kotlin
+        applicationId = "dev.concapt.app"
         minSdk = 26
 ```
+
+The manifest names the activity `.MainActivity`, which resolves against `namespace`. Move the activity into the matching package, or the app crashes on launch with `ClassNotFoundException`:
+
+```bash
+mkdir -p android/app/src/main/kotlin/dev/concapt/app
+mv android/app/src/main/kotlin/dev/concapt/concapt/MainActivity.kt android/app/src/main/kotlin/dev/concapt/app/
+rmdir android/app/src/main/kotlin/dev/concapt/concapt
+sed -i 's/^package dev\.concapt\.concapt\b/package dev.concapt.app/' android/app/src/main/kotlin/dev/concapt/app/MainActivity.kt
+head -1 android/app/src/main/kotlin/dev/concapt/app/MainActivity.kt
+```
+
+Expected: `package dev.concapt.app`.
 
 - [ ] **Step 3: Declare the overlay permissions and service**
 
@@ -2067,6 +2099,7 @@ git commit -m "feat: add drift database and repository" -m "Co-Authored-By: Clau
   - Replace: `packages/screen_capture/pubspec.yaml`, `packages/screen_capture/lib/screen_capture.dart`, `packages/screen_capture/android/src/main/AndroidManifest.xml`
   - Replace: `packages/screen_capture/android/src/main/kotlin/dev/concapt/screen_capture/ScreenCapturePlugin.kt`
   - Create: `.../CaptureSession.kt`, `.../CaptureService.kt`
+  - Create: `packages/screen_capture/android/src/main/res/values/strings.xml`, `.../res/values-ja/strings.xml`
   - Delete: generated `example/`, `test/`, `android/src/test/`, `lib/screen_capture_platform_interface.dart`, `lib/screen_capture_method_channel.dart`
 - Modify: root `pubspec.yaml`
 - Test: `integration_test/capture_test.dart`
@@ -2405,11 +2438,11 @@ class CaptureService : Service() {
     private fun startInForeground() {
         val manager = getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(
-            NotificationChannel(CHANNEL_ID, "Screen capture", NotificationManager.IMPORTANCE_LOW),
+            NotificationChannel(CHANNEL_ID, getString(R.string.capture_channel_name), NotificationManager.IMPORTANCE_LOW),
         )
         val notification = Notification.Builder(this, CHANNEL_ID)
-            .setContentTitle("concapt is capturing")
-            .setContentText("Tap the bubble on a result screen")
+            .setContentTitle(getString(R.string.capture_notification_title))
+            .setContentText(getString(R.string.capture_notification_text))
             .setSmallIcon(android.R.drawable.ic_menu_camera)
             .setOngoing(true)
             .build()
@@ -2420,6 +2453,28 @@ class CaptureService : Service() {
         }
     }
 }
+```
+
+The notification text comes from Android string resources, in English and Japanese like the rest of the UI.
+
+`packages/screen_capture/android/src/main/res/values/strings.xml`:
+
+```xml
+<resources>
+    <string name="capture_channel_name">Screen capture</string>
+    <string name="capture_notification_title">concapt is capturing</string>
+    <string name="capture_notification_text">Tap the bubble on a result screen</string>
+</resources>
+```
+
+`packages/screen_capture/android/src/main/res/values-ja/strings.xml`:
+
+```xml
+<resources>
+    <string name="capture_channel_name">画面キャプチャ</string>
+    <string name="capture_notification_title">concaptでキャプチャ中</string>
+    <string name="capture_notification_text">リザルト画面でバブルをタップしてください</string>
+</resources>
 ```
 
 - [ ] **Step 7: Write `ScreenCapturePlugin.kt`**
@@ -2787,9 +2842,9 @@ Ask the user to connect their phone if it isn't already, and confirm with `adb d
 ```bash
 flutter build apk --debug
 adb install -r build/app/outputs/flutter-apk/app-debug.apk
-MSYS_NO_PATHCONV=1 adb shell mkdir -p /sdcard/Android/data/dev.concapt.concapt/files/corpus
-MSYS_NO_PATHCONV=1 adb push ref-script/result/. /sdcard/Android/data/dev.concapt.concapt/files/corpus/
-MSYS_NO_PATHCONV=1 adb shell ls /sdcard/Android/data/dev.concapt.concapt/files/corpus | wc -l
+MSYS_NO_PATHCONV=1 adb shell mkdir -p /sdcard/Android/data/dev.concapt.app/files/corpus
+MSYS_NO_PATHCONV=1 adb push ref-script/result/. /sdcard/Android/data/dev.concapt.app/files/corpus/
+MSYS_NO_PATHCONV=1 adb shell ls /sdcard/Android/data/dev.concapt.app/files/corpus | wc -l
 ```
 
 Expected: the last command prints `206`.
@@ -2835,7 +2890,7 @@ Rerun Step 5 until the rate is at least 90%. If it stays below after one round o
 ```bash
 rm -rf test/fixtures/ocr test/fixtures/fixtures
 mkdir -p test/fixtures
-MSYS_NO_PATHCONV=1 adb pull /sdcard/Android/data/dev.concapt.concapt/files/fixtures test/fixtures/
+MSYS_NO_PATHCONV=1 adb pull /sdcard/Android/data/dev.concapt.app/files/fixtures test/fixtures/
 mv test/fixtures/fixtures test/fixtures/ocr
 ls test/fixtures/ocr | wc -l
 ```
@@ -2920,7 +2975,7 @@ git commit -m "feat: add ML Kit text reader with corpus accuracy test" -m "Co-Au
   - `CaptureTarget.write(int sessionId)`, `CaptureTarget.read() → Future<int?>`
   - `sealed class CaptureOutcome`: `CaptureSaved(int seq)`, `CaptureDuplicate(int seq)`, `CaptureNoResult()`, `CaptureIncomplete()`, `CaptureReadFailed()`, `CaptureStopped()`, `CaptureNeedsReview(RunDraft draft)`
   - `CaptureController({source, reader, repository, sessionId, hideBubble, showBubble, readTimeout})` with `trigger() → Future<CaptureOutcome?>` (null when ignored) and `saveReviewed(RunScores) → Future<int>`
-  - `outcomeMessage(CaptureOutcome) → String`
+  - User-facing messages for outcomes live in the overlay (Task 12), where localizations are available
 
 - [ ] **Step 1: Write the source, source implementation, and target**
 
@@ -3130,15 +3185,6 @@ void main() {
     expect(await controller.saveReviewed(referenceScores()), 1);
     expect((await repo.lastRun(sessionId))!.edited, isTrue);
   });
-
-  test('outcome messages', () {
-    expect(outcomeMessage(const CaptureSaved(7)), 'Run 7 saved');
-    expect(outcomeMessage(const CaptureDuplicate(6)), 'Same as run 6, skipped');
-    expect(outcomeMessage(const CaptureNoResult()), 'No result screen detected');
-    expect(outcomeMessage(const CaptureIncomplete()), "Couldn't read all three stages, try again");
-    expect(outcomeMessage(const CaptureReadFailed()), "Couldn't read screen, try again");
-    expect(outcomeMessage(const CaptureStopped()), 'Capture stopped. Start again from the app.');
-  });
 }
 ```
 
@@ -3194,16 +3240,6 @@ class CaptureNeedsReview extends CaptureOutcome {
 
   final RunDraft draft;
 }
-
-String outcomeMessage(CaptureOutcome outcome) => switch (outcome) {
-      CaptureSaved(:final seq) => 'Run $seq saved',
-      CaptureDuplicate(:final seq) => 'Same as run $seq, skipped',
-      CaptureNoResult() => 'No result screen detected',
-      CaptureIncomplete() => "Couldn't read all three stages, try again",
-      CaptureReadFailed() => "Couldn't read screen, try again",
-      CaptureStopped() => 'Capture stopped. Start again from the app.',
-      CaptureNeedsReview() => 'Check the highlighted stage',
-    };
 
 /// Turns one bubble tap into a saved run or a reason it wasn't saved.
 class CaptureController {
@@ -3292,21 +3328,355 @@ git commit -m "feat: add capture controller pipeline" -m "Co-Authored-By: Claude
 
 ---
 
-### Task 11: Dialogs and the run form
+> **Gate before Tasks 11–15:** stop after Task 10. The user runs `/impeccable shape session detail` in a separate session to choose the visual direction. Tasks 11–15 then build with Impeccable, and its documenter writes `DESIGN.md`. The code below fixes behavior, strings, widget keys, and tests. Visual styling may change to follow the shaped direction, but the theme rules in Global Constraints still hold.
+
+### Task 11: Theme, localization, dialogs, and the run form
 
 **Files:**
-- Create: `lib/ui/dialogs.dart`, `lib/ui/run_form.dart`
-- Test: `test/ui/run_form_test.dart`
+- Modify: `pubspec.yaml`
+- Create: `l10n.yaml`, `lib/l10n/app_en.arb`, `lib/l10n/app_ja.arb`, `lib/l10n/app_localizations*.dart` (generated)
+- Create: `lib/ui/theme.dart`, `lib/ui/dialogs.dart`, `lib/ui/run_form.dart`
+- Create: `test/helpers/app.dart`
+- Test: `test/ui/theme_test.dart`, `test/ui/l10n_test.dart`, `test/ui/run_form_test.dart`
 
 **Interfaces:**
 - Consumes: `RunDraft`, `StageDraft`, `RunScores` (Task 2), `formatInt` (Task 4)
 - Produces:
+  - `AppLocalizations` (generated, `package:concapt/l10n/app_localizations.dart`), `AppLocalizations.of(context)` non-null, `lookupAppLocalizations(Locale)`
+  - `buildTheme(Brightness) → ThemeData`
   - `confirm(BuildContext, {required String title, required String message, required String action}) → Future<bool>`
   - `promptText(BuildContext, {required String title, String initial = '', String? hint, required String action}) → Future<String?>` (trimmed; null when cancelled or empty)
   - `RunForm({required RunDraft initial, required ValueChanged<RunScores> onSave, required VoidCallback onCancel})`; keys `field-<stage>-<field>`, `status-<stage>`, `stage-<stage>`, `save`
-  - `stageStatus(StageDraft) → String`
+  - `stageStatus(AppLocalizations, StageDraft) → String`, `fieldLabels(AppLocalizations) → List<String>`
+  - Test helpers `localizedApp(Widget home, {Locale locale})`, `en()`
 
-- [ ] **Step 1: Write the failing tests**
+- [ ] **Step 1: Add localization dependencies**
+
+```bash
+flutter pub add flutter_localizations --sdk=flutter
+flutter pub add intl:any
+```
+
+In `pubspec.yaml`, under the top-level `flutter:` key, add:
+
+```yaml
+  generate: true
+```
+
+Create `l10n.yaml` in the repo root:
+
+```yaml
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+nullable-getter: false
+```
+
+- [ ] **Step 2: Write the English strings**
+
+Create `lib/l10n/app_en.arb`:
+
+```json
+{
+  "@@locale": "en",
+  "appTitle": "concapt",
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "rename": "Rename",
+  "create": "Create",
+  "continueAction": "Continue",
+  "listSeparator": ", ",
+  "stageLabel": "Stage {stage}",
+  "@stageLabel": {"placeholders": {"stage": {"type": "int"}}},
+  "slotLeft": "Left",
+  "slotMiddle": "Middle",
+  "slotRight": "Right",
+  "fieldBonus": "Bonus",
+  "fieldTotal": "Total",
+  "statusAddsUp": "Adds up",
+  "statusMissing": "Missing values",
+  "statusOffBy": "Off by {diff}",
+  "@statusOffBy": {"placeholders": {"diff": {"type": "String"}}},
+  "saveAnywayTitle": "Save anyway?",
+  "saveAnywayMessage": "{stages} doesn't add up.",
+  "@saveAnywayMessage": {"placeholders": {"stages": {"type": "String"}}},
+  "saveAnywayAction": "Save anyway",
+  "runSaved": "Run {seq} saved",
+  "@runSaved": {"placeholders": {"seq": {"type": "int"}}},
+  "runDuplicate": "Same as run {seq}, skipped",
+  "@runDuplicate": {"placeholders": {"seq": {"type": "int"}}},
+  "noResultScreen": "No result screen detected",
+  "incompleteScreen": "Couldn't read all three stages, try again",
+  "readFailed": "Couldn't read screen, try again",
+  "captureStopped": "Capture stopped. Start again from the app.",
+  "checkHighlightedStage": "Check the highlighted stage",
+  "noSessionSelected": "No session selected. Start capturing from the app.",
+  "sessionsEmpty": "No sessions yet. Make one for each team you rehearse.",
+  "newSession": "New session",
+  "newSessionHint": "e.g. Contest week 3 · team A",
+  "renameSession": "Rename session",
+  "deleteSessionTitle": "Delete \"{name}\"?",
+  "@deleteSessionTitle": {"placeholders": {"name": {"type": "String"}}},
+  "deleteSessionMessage": "This deletes its {count, plural, =1{1 run} other{{count} runs}}.",
+  "@deleteSessionMessage": {"placeholders": {"count": {"type": "int"}}},
+  "runCount": "{count, plural, =1{1 run} other{{count} runs}}",
+  "@runCount": {"placeholders": {"count": {"type": "int"}}},
+  "sessionSubtitle": "{runs} · last {last}",
+  "@sessionSubtitle": {"placeholders": {"runs": {"type": "String"}, "last": {"type": "String"}}},
+  "allowBubbleTitle": "Allow the bubble",
+  "allowBubbleMessage": "concapt needs \"Display over other apps\" to show its capture bubble over the game.",
+  "openSettings": "Open settings",
+  "shareScreenTitle": "Share your screen",
+  "shareScreenMessage": "On the next screen, choose \"Entire screen\", or pick the game if Android asks for a single app.",
+  "captureDeclined": "Screen capture was declined.",
+  "overlayNotification": "Capture bubble is active",
+  "exportCsv": "Export CSV",
+  "startCapturing": "Start capturing",
+  "stopCapturing": "Stop capturing",
+  "runsHeading": "Runs ({count})",
+  "@runsHeading": {"placeholders": {"count": {"type": "int"}}},
+  "runTitle": "Run {seq}",
+  "@runTitle": {"placeholders": {"seq": {"type": "int"}}},
+  "edited": "edited",
+  "deleteRunTitle": "Delete run {seq}?",
+  "@deleteRunTitle": {"placeholders": {"seq": {"type": "int"}}},
+  "deleteRunMessage": "Its scores leave the statistics.",
+  "statN": "n",
+  "statMean": "Mean",
+  "statMedian": "Median",
+  "statMin": "Min",
+  "statMax": "Max",
+  "statP25": "P25",
+  "statP75": "P75",
+  "seriesTitle": "Stage {stage} · {slot}",
+  "@seriesTitle": {"placeholders": {"stage": {"type": "int"}, "slot": {"type": "String"}}},
+  "noRunsYet": "No runs yet",
+  "legendMean": "Mean {value}",
+  "@legendMean": {"placeholders": {"value": {"type": "String"}}},
+  "legendMedian": "Median {value}",
+  "@legendMedian": {"placeholders": {"value": {"type": "String"}}}
+}
+```
+
+- [ ] **Step 3: Write the Japanese strings**
+
+Create `lib/l10n/app_ja.arb`. These are first-draft translations; ask the user to review them before Task 16.
+
+```json
+{
+  "@@locale": "ja",
+  "appTitle": "concapt",
+  "cancel": "キャンセル",
+  "save": "保存",
+  "delete": "削除",
+  "rename": "名前を変更",
+  "create": "作成",
+  "continueAction": "続ける",
+  "listSeparator": "、",
+  "stageLabel": "ステージ{stage}",
+  "slotLeft": "左",
+  "slotMiddle": "中央",
+  "slotRight": "右",
+  "fieldBonus": "ボーナス",
+  "fieldTotal": "合計",
+  "statusAddsUp": "一致",
+  "statusMissing": "未入力あり",
+  "statusOffBy": "{diff} ずれ",
+  "saveAnywayTitle": "このまま保存しますか？",
+  "saveAnywayMessage": "{stages}の合計が一致しません。",
+  "saveAnywayAction": "保存する",
+  "runSaved": "{seq}回目を保存しました",
+  "runDuplicate": "{seq}回目と同じため、スキップしました",
+  "noResultScreen": "リザルト画面が見つかりません",
+  "incompleteScreen": "3ステージ分を読み取れませんでした。もう一度お試しください",
+  "readFailed": "画面を読み取れませんでした。もう一度お試しください",
+  "captureStopped": "キャプチャが停止しました。アプリから再開してください。",
+  "checkHighlightedStage": "ハイライトされたステージを確認してください",
+  "noSessionSelected": "セッションが選択されていません。アプリからキャプチャを開始してください。",
+  "sessionsEmpty": "まだセッションがありません。リハーサルするチームごとに作成してください。",
+  "newSession": "新規セッション",
+  "newSessionHint": "例: コンテスト第3週・チームA",
+  "renameSession": "セッション名を変更",
+  "deleteSessionTitle": "「{name}」を削除しますか？",
+  "deleteSessionMessage": "{count, plural, other{{count}回分の記録も削除されます。}}",
+  "runCount": "{count, plural, other{{count}回}}",
+  "sessionSubtitle": "{runs} · 最終 {last}",
+  "allowBubbleTitle": "バブルの表示を許可",
+  "allowBubbleMessage": "ゲームの上にキャプチャ用のバブルを表示するため、「他のアプリの上に重ねて表示」の許可が必要です。",
+  "openSettings": "設定を開く",
+  "shareScreenTitle": "画面の共有",
+  "shareScreenMessage": "次の画面で「画面全体」を選んでください。アプリ単位の共有を求められた場合は、ゲームを選んでください。",
+  "captureDeclined": "画面キャプチャが許可されませんでした。",
+  "overlayNotification": "キャプチャ用バブルを表示中",
+  "exportCsv": "CSVを書き出す",
+  "startCapturing": "キャプチャ開始",
+  "stopCapturing": "キャプチャ停止",
+  "runsHeading": "記録（{count}回）",
+  "runTitle": "{seq}回目",
+  "edited": "修正済み",
+  "deleteRunTitle": "{seq}回目を削除しますか？",
+  "deleteRunMessage": "この回のスコアは統計から外れます。",
+  "statN": "n",
+  "statMean": "平均",
+  "statMedian": "中央値",
+  "statMin": "最小",
+  "statMax": "最大",
+  "statP25": "P25",
+  "statP75": "P75",
+  "seriesTitle": "ステージ{stage}・{slot}",
+  "noRunsYet": "まだ記録がありません",
+  "legendMean": "平均 {value}",
+  "legendMedian": "中央値 {value}"
+}
+```
+
+- [ ] **Step 4: Generate the localizations**
+
+Run: `flutter gen-l10n`
+Expected: `lib/l10n/app_localizations.dart`, `app_localizations_en.dart`, and `app_localizations_ja.dart` created, with no untranslated-message warnings.
+
+- [ ] **Step 5: Write the failing theme and localization tests**
+
+Create `test/helpers/app.dart`:
+
+```dart
+import 'package:concapt/l10n/app_localizations.dart';
+import 'package:concapt/ui/theme.dart';
+import 'package:flutter/material.dart';
+
+/// A MaterialApp with the app's theme and localizations around [home].
+Widget localizedApp(Widget home, {Locale locale = const Locale('en')}) => MaterialApp(
+      locale: locale,
+      theme: buildTheme(Brightness.light),
+      darkTheme: buildTheme(Brightness.dark),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: home,
+    );
+
+AppLocalizations en() => lookupAppLocalizations(const Locale('en'));
+```
+
+Create `test/ui/theme_test.dart`:
+
+```dart
+import 'package:concapt/ui/theme.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  test('light and dark schemes come from the same fixed seed', () {
+    final light = buildTheme(Brightness.light).colorScheme;
+    final dark = buildTheme(Brightness.dark).colorScheme;
+    expect(light.brightness, Brightness.light);
+    expect(dark.brightness, Brightness.dark);
+    expect(light.primary, ColorScheme.fromSeed(seedColor: Colors.indigo).primary);
+    expect(
+      dark.primary,
+      ColorScheme.fromSeed(seedColor: Colors.indigo, brightness: Brightness.dark).primary,
+    );
+  });
+
+  test('every text style uses tabular figures', () {
+    for (final brightness in Brightness.values) {
+      final t = buildTheme(brightness).textTheme;
+      final styles = [
+        t.displayLarge, t.displayMedium, t.displaySmall,
+        t.headlineLarge, t.headlineMedium, t.headlineSmall,
+        t.titleLarge, t.titleMedium, t.titleSmall,
+        t.bodyLarge, t.bodyMedium, t.bodySmall,
+        t.labelLarge, t.labelMedium, t.labelSmall,
+      ];
+      for (final style in styles) {
+        expect(style!.fontFeatures, contains(const FontFeature.tabularFigures()));
+      }
+    }
+  });
+}
+```
+
+Create `test/ui/l10n_test.dart`:
+
+```dart
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:concapt/l10n/app_localizations.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+Set<String> _messageKeys(String locale) {
+  final arb = jsonDecode(File('lib/l10n/app_$locale.arb').readAsStringSync()) as Map<String, dynamic>;
+  return arb.keys.where((k) => !k.startsWith('@')).toSet();
+}
+
+void main() {
+  test('Japanese has exactly the English messages', () {
+    expect(_messageKeys('ja'), _messageKeys('en'));
+  });
+
+  test('both locales load and differ', () {
+    final en = lookupAppLocalizations(const Locale('en'));
+    final ja = lookupAppLocalizations(const Locale('ja'));
+    expect(en.runSaved(7), 'Run 7 saved');
+    expect(ja.runSaved(7), isNot(en.runSaved(7)));
+    expect(en.runCount(1), '1 run');
+    expect(en.runCount(3), '3 runs');
+  });
+}
+```
+
+- [ ] **Step 6: Run the tests to verify they fail**
+
+Run: `flutter test test/ui/theme_test.dart test/ui/l10n_test.dart`
+Expected: `theme_test.dart` fails to compile (`theme.dart` not found); `l10n_test.dart` passes.
+
+- [ ] **Step 7: Write `lib/ui/theme.dart`**
+
+```dart
+import 'package:flutter/material.dart';
+
+/// Placeholder seed until DESIGN.md sets the visual identity.
+///
+/// Fixed on purpose, with no Dynamic Color, so pass/fail colors, the
+/// edited mark, and histogram markers look the same on every phone.
+const _seed = Colors.indigo;
+
+const _tabular = [FontFeature.tabularFigures()];
+
+/// Tabular figures in every style, so score columns line up.
+const _textTheme = TextTheme(
+  displayLarge: TextStyle(fontFeatures: _tabular),
+  displayMedium: TextStyle(fontFeatures: _tabular),
+  displaySmall: TextStyle(fontFeatures: _tabular),
+  headlineLarge: TextStyle(fontFeatures: _tabular),
+  headlineMedium: TextStyle(fontFeatures: _tabular),
+  headlineSmall: TextStyle(fontFeatures: _tabular),
+  titleLarge: TextStyle(fontFeatures: _tabular),
+  titleMedium: TextStyle(fontFeatures: _tabular),
+  titleSmall: TextStyle(fontFeatures: _tabular),
+  bodyLarge: TextStyle(fontFeatures: _tabular),
+  bodyMedium: TextStyle(fontFeatures: _tabular),
+  bodySmall: TextStyle(fontFeatures: _tabular),
+  labelLarge: TextStyle(fontFeatures: _tabular),
+  labelMedium: TextStyle(fontFeatures: _tabular),
+  labelSmall: TextStyle(fontFeatures: _tabular),
+);
+
+/// The one theme both engines use, in light and dark.
+ThemeData buildTheme(Brightness brightness) => ThemeData(
+      colorScheme: ColorScheme.fromSeed(seedColor: _seed, brightness: brightness),
+      textTheme: _textTheme,
+    );
+```
+
+- [ ] **Step 8: Run the tests to verify they pass**
+
+Run: `flutter test test/ui/theme_test.dart test/ui/l10n_test.dart`
+Expected: all tests PASS.
+
+- [ ] **Step 9: Write the failing run form tests**
 
 Create `test/ui/run_form_test.dart`:
 
@@ -3316,6 +3686,7 @@ import 'package:concapt/ui/run_form.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/app.dart';
 import '../helpers/sample.dart';
 
 Future<List<RunScores>> pumpForm(WidgetTester tester, RunDraft draft) async {
@@ -3323,8 +3694,8 @@ Future<List<RunScores>> pumpForm(WidgetTester tester, RunDraft draft) async {
   tester.view.devicePixelRatio = 2;
   addTearDown(tester.view.reset);
   final saved = <RunScores>[];
-  await tester.pumpWidget(MaterialApp(
-    home: Scaffold(body: RunForm(initial: draft, onSave: saved.add, onCancel: () {})),
+  await tester.pumpWidget(localizedApp(
+    Scaffold(body: RunForm(initial: draft, onSave: saved.add, onCancel: () {})),
   ));
   return saved;
 }
@@ -3341,10 +3712,11 @@ RunDraft draftWithStage3Total(int total) {
 
 void main() {
   test('stageStatus', () {
-    expect(stageStatus(const StageDraft(left: 1, middle: 2, right: 3, bonus: 4, total: 10)), 'Adds up');
-    expect(stageStatus(const StageDraft(left: 1, middle: 2, right: 3, bonus: 4, total: 9)), 'Off by +1');
-    expect(stageStatus(const StageDraft(left: 1, middle: 2, right: 3, bonus: 4, total: 1010)), 'Off by −1,000');
-    expect(stageStatus(const StageDraft(left: 1)), 'Missing values');
+    final l = en();
+    expect(stageStatus(l, const StageDraft(left: 1, middle: 2, right: 3, bonus: 4, total: 10)), 'Adds up');
+    expect(stageStatus(l, const StageDraft(left: 1, middle: 2, right: 3, bonus: 4, total: 9)), 'Off by +1');
+    expect(stageStatus(l, const StageDraft(left: 1, middle: 2, right: 3, bonus: 4, total: 1010)), 'Off by −1,000');
+    expect(stageStatus(l, const StageDraft(left: 1)), 'Missing values');
   });
 
   testWidgets('a valid draft saves directly', (tester) async {
@@ -3368,6 +3740,7 @@ void main() {
     await tester.tap(find.byKey(const Key('save')));
     await tester.pumpAndSettle();
     expect(find.text('Save anyway?'), findsOneWidget);
+    expect(find.text("Stage 3 doesn't add up."), findsOneWidget);
     await tester.tap(find.text('Save anyway'));
     await tester.pumpAndSettle();
     expect(saved.single.stages[2].total, 181222);
@@ -3384,15 +3757,17 @@ void main() {
 }
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [ ] **Step 10: Run the tests to verify they fail**
 
 Run: `flutter test test/ui/run_form_test.dart`
-Expected: FAIL with compile errors.
+Expected: FAIL with compile errors (`run_form.dart` not found).
 
-- [ ] **Step 3: Write `lib/ui/dialogs.dart`**
+- [ ] **Step 11: Write `lib/ui/dialogs.dart`**
 
 ```dart
 import 'package:flutter/material.dart';
+
+import '../l10n/app_localizations.dart';
 
 Future<bool> confirm(
   BuildContext context, {
@@ -3406,7 +3781,10 @@ Future<bool> confirm(
       title: Text(title),
       content: Text(message),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(AppLocalizations.of(context).cancel),
+        ),
         FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(action)),
       ],
     ),
@@ -3462,7 +3840,10 @@ class _PromptDialogState extends State<_PromptDialog> {
         onSubmitted: (value) => Navigator.pop(context, value),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(AppLocalizations.of(context).cancel),
+        ),
         FilledButton(
           onPressed: () => Navigator.pop(context, _controller.text),
           child: Text(widget.action),
@@ -3473,23 +3854,26 @@ class _PromptDialogState extends State<_PromptDialog> {
 }
 ```
 
-- [ ] **Step 4: Write `lib/ui/run_form.dart`**
+- [ ] **Step 12: Write `lib/ui/run_form.dart`**
 
 ```dart
 import 'package:flutter/material.dart';
 
 import '../core/models.dart';
+import '../l10n/app_localizations.dart';
 import 'dialogs.dart';
 import 'format.dart';
 
-const _fieldLabels = ['Left', 'Middle', 'Right', 'Bonus', 'Total'];
+/// Labels in [StageDraft.fields] order.
+List<String> fieldLabels(AppLocalizations l) =>
+    [l.slotLeft, l.slotMiddle, l.slotRight, l.fieldBonus, l.fieldTotal];
 
-String stageStatus(StageDraft stage) {
+String stageStatus(AppLocalizations l, StageDraft stage) {
   final scores = stage.toScores();
-  if (scores == null) return 'Missing values';
-  if (scores.sumOk) return 'Adds up';
+  if (scores == null) return l.statusMissing;
+  if (scores.sumOk) return l.statusAddsUp;
   final diff = scores.sum - scores.total;
-  return 'Off by ${diff > 0 ? '+' : '−'}${formatInt(diff.abs())}';
+  return l.statusOffBy('${diff > 0 ? '+' : '−'}${formatInt(diff.abs())}');
 }
 
 /// Fifteen fields (3 stages × left, middle, right, bonus, total) with a live sum check.
@@ -3533,17 +3917,18 @@ class _RunFormState extends State<RunForm> {
       ]);
 
   Future<void> _save() async {
+    final l = AppLocalizations.of(context);
     final draft = _draft;
     final scores = draft.toScores();
     if (scores == null) return;
     final invalid = draft.invalidStages;
     if (invalid.isNotEmpty) {
-      final names = invalid.map((i) => 'Stage ${i + 1}').join(', ');
+      final names = invalid.map((i) => l.stageLabel(i + 1)).join(l.listSeparator);
       final ok = await confirm(
         context,
-        title: 'Save anyway?',
-        message: "$names doesn't add up.",
-        action: 'Save anyway',
+        title: l.saveAnywayTitle,
+        message: l.saveAnywayMessage(names),
+        action: l.saveAnywayAction,
       );
       if (!ok) return;
     }
@@ -3552,6 +3937,7 @@ class _RunFormState extends State<RunForm> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final draft = _draft;
     return Column(
       children: [
@@ -3569,12 +3955,12 @@ class _RunFormState extends State<RunForm> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              TextButton(onPressed: widget.onCancel, child: const Text('Cancel')),
+              TextButton(onPressed: widget.onCancel, child: Text(l.cancel)),
               const SizedBox(width: 8),
               FilledButton(
                 key: const Key('save'),
                 onPressed: draft.toScores() == null ? null : _save,
-                child: const Text('Save'),
+                child: Text(l.save),
               ),
             ],
           ),
@@ -3593,8 +3979,22 @@ class _StageSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final labels = fieldLabels(l);
     final scheme = Theme.of(context).colorScheme;
     final ok = stage.isValid;
+
+    Widget field(int f) => TextField(
+          key: Key('field-$index-$f'),
+          controller: controllers[f],
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            labelText: labels[f],
+            isDense: true,
+            border: const OutlineInputBorder(),
+          ),
+        );
+
     return Container(
       key: Key('stage-$index'),
       margin: const EdgeInsets.only(bottom: 12),
@@ -3608,10 +4008,10 @@ class _StageSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text('Stage ${index + 1}', style: Theme.of(context).textTheme.titleSmall),
+              Text(l.stageLabel(index + 1), style: Theme.of(context).textTheme.titleSmall),
               const Spacer(),
               Text(
-                stageStatus(stage),
+                stageStatus(l, stage),
                 key: Key('status-$index'),
                 style: TextStyle(color: ok ? scheme.primary : scheme.error),
               ),
@@ -3624,7 +4024,7 @@ class _StageSection extends StatelessWidget {
                 Expanded(
                   child: Padding(
                     padding: EdgeInsets.only(right: f < 2 ? 8 : 0),
-                    child: _field(f),
+                    child: field(f),
                   ),
                 ),
             ],
@@ -3632,39 +4032,28 @@ class _StageSection extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              Expanded(child: _field(3)),
+              Expanded(child: field(3)),
               const SizedBox(width: 8),
-              Expanded(child: _field(4)),
+              Expanded(child: field(4)),
             ],
           ),
         ],
       ),
     );
   }
-
-  Widget _field(int f) => TextField(
-        key: Key('field-$index-$f'),
-        controller: controllers[f],
-        keyboardType: TextInputType.number,
-        decoration: InputDecoration(
-          labelText: _fieldLabels[f],
-          isDense: true,
-          border: const OutlineInputBorder(),
-        ),
-      );
 }
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [ ] **Step 13: Run all host tests**
 
-Run: `flutter test test/ui/run_form_test.dart`
+Run: `flutter test`
 Expected: all tests PASS.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 14: Commit**
 
 ```bash
-git add lib/ui/dialogs.dart lib/ui/run_form.dart test/ui/run_form_test.dart
-git commit -m "feat: add run form with live sum check" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git add pubspec.yaml pubspec.lock l10n.yaml lib/l10n lib/ui test/helpers/app.dart test/ui
+git commit -m "feat: add shared theme, English and Japanese strings, and run form" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
 
 ---
@@ -3672,14 +4061,84 @@ git commit -m "feat: add run form with live sum check" -m "Co-Authored-By: Claud
 ### Task 12: Overlay app
 
 **Files:**
-- Create: `lib/overlay/overlay_sizes.dart`, `lib/overlay/overlay_app.dart`
+- Create: `lib/overlay/overlay_sizes.dart`, `lib/overlay/outcome_messages.dart`, `lib/overlay/overlay_app.dart`
 - Modify: `lib/main.dart` (overlay entry point; delete the spike overlay)
+- Test: `test/overlay/outcome_messages_test.dart`
 
 **Interfaces:**
-- Consumes: `CaptureController`, `CaptureTarget`, `ScreenCaptureSource`, `MlKitTextReader`, `outcomeMessage` (Tasks 9–10), `AppDatabase.open()`, `Repository` (Task 7), `RunForm` (Task 11), `ScreenCapture` (Task 8), results of `docs/notes/overlay-spike.md` (Task 1)
-- Produces: `OverlayApp` widget; `OverlaySizes.bubbleDp`, `panelWidthDp`, `panelHeightDp`, `toWindowUnits(double dp, double devicePixelRatio) → int`
+- Consumes: `CaptureController`, `CaptureOutcome` subclasses, `CaptureTarget`, `ScreenCaptureSource`, `MlKitTextReader` (Tasks 9–10), `AppDatabase.open()`, `Repository` (Task 7), `RunForm`, `buildTheme`, `AppLocalizations` (Task 11), `ScreenCapture` (Task 8), results of `docs/notes/overlay-spike.md` (Task 1)
+- Produces: `OverlayApp` widget; `outcomeMessage(AppLocalizations, CaptureOutcome) → String`; `OverlaySizes.bubbleDp`, `panelWidthDp`, `panelHeightDp`, `toWindowUnits(double dp, double devicePixelRatio) → int`
 
-- [ ] **Step 1: Write `lib/overlay/overlay_sizes.dart`**
+- [ ] **Step 1: Write the failing message test**
+
+Create `test/overlay/outcome_messages_test.dart`:
+
+```dart
+import 'package:concapt/capture/capture_controller.dart';
+import 'package:concapt/l10n/app_localizations.dart';
+import 'package:concapt/overlay/outcome_messages.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  final en = lookupAppLocalizations(const Locale('en'));
+  final ja = lookupAppLocalizations(const Locale('ja'));
+  const toasts = <CaptureOutcome>[
+    CaptureSaved(7),
+    CaptureDuplicate(6),
+    CaptureNoResult(),
+    CaptureIncomplete(),
+    CaptureReadFailed(),
+    CaptureStopped(),
+  ];
+
+  test('English messages match the spec copy', () {
+    expect(toasts.map((o) => outcomeMessage(en, o)), [
+      'Run 7 saved',
+      'Same as run 6, skipped',
+      'No result screen detected',
+      "Couldn't read all three stages, try again",
+      "Couldn't read screen, try again",
+      'Capture stopped. Start again from the app.',
+    ]);
+  });
+
+  test('every toast has a Japanese message', () {
+    for (final o in toasts) {
+      expect(outcomeMessage(ja, o), isNot(outcomeMessage(en, o)));
+    }
+  });
+}
+```
+
+- [ ] **Step 2: Run the test to verify it fails**
+
+Run: `flutter test test/overlay/outcome_messages_test.dart`
+Expected: FAIL with compile errors (`outcome_messages.dart` not found).
+
+- [ ] **Step 3: Write `lib/overlay/outcome_messages.dart`**
+
+```dart
+import '../capture/capture_controller.dart';
+import '../l10n/app_localizations.dart';
+
+String outcomeMessage(AppLocalizations l, CaptureOutcome outcome) => switch (outcome) {
+      CaptureSaved(:final seq) => l.runSaved(seq),
+      CaptureDuplicate(:final seq) => l.runDuplicate(seq),
+      CaptureNoResult() => l.noResultScreen,
+      CaptureIncomplete() => l.incompleteScreen,
+      CaptureReadFailed() => l.readFailed,
+      CaptureStopped() => l.captureStopped,
+      CaptureNeedsReview() => l.checkHighlightedStage,
+    };
+```
+
+- [ ] **Step 4: Run the test to verify it passes**
+
+Run: `flutter test test/overlay/outcome_messages_test.dart`
+Expected: PASS.
+
+- [ ] **Step 5: Write `lib/overlay/overlay_sizes.dart`**
 
 Set `sizesArePixels` from check 3 in `docs/notes/overlay-spike.md`: `false` when the panel reported about 340 × 400 logical, `true` when it reported about 340/dpr × 400/dpr.
 
@@ -3698,7 +4157,7 @@ abstract final class OverlaySizes {
 }
 ```
 
-- [ ] **Step 2: Write `lib/overlay/overlay_app.dart`**
+- [ ] **Step 6: Write `lib/overlay/overlay_app.dart`**
 
 ```dart
 import 'dart:async';
@@ -3714,7 +4173,10 @@ import '../capture/screen_capture_source.dart';
 import '../core/models.dart';
 import '../data/database.dart';
 import '../data/repository.dart';
+import '../l10n/app_localizations.dart';
 import '../ui/run_form.dart';
+import '../ui/theme.dart';
+import 'outcome_messages.dart';
 import 'overlay_sizes.dart';
 
 class OverlayApp extends StatelessWidget {
@@ -3724,7 +4186,10 @@ class OverlayApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
+      theme: buildTheme(Brightness.light),
+      darkTheme: buildTheme(Brightness.dark),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: const OverlayHome(),
     );
   }
@@ -3750,13 +4215,15 @@ class _OverlayHomeState extends State<OverlayHome> {
   @override
   void initState() {
     super.initState();
-    _start();
+    // Localizations are readable once the first frame is built.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _start());
   }
 
   Future<void> _start() async {
+    final l = AppLocalizations.of(context);
     final sessionId = await CaptureTarget.read();
     if (sessionId == null) {
-      await ScreenCapture.toast('No session selected. Start capturing from the app.');
+      await ScreenCapture.toast(l.noSessionSelected);
       await FlutterOverlayWindow.closeOverlay();
       return;
     }
@@ -3800,17 +4267,18 @@ class _OverlayHomeState extends State<OverlayHome> {
   Future<void> _onTap() async {
     final controller = _controller;
     if (controller == null) return;
+    final l = AppLocalizations.of(context);
     final outcome = await controller.trigger();
     if (outcome == null || !mounted) return;
     switch (outcome) {
       case CaptureNeedsReview(:final draft):
         await _openPanel(draft);
       case CaptureStopped():
-        await ScreenCapture.toast(outcomeMessage(outcome));
+        await ScreenCapture.toast(outcomeMessage(l, outcome));
         await FlutterOverlayWindow.closeOverlay();
       default:
         setState(() => _mode = _Mode.bubble);
-        await ScreenCapture.toast(outcomeMessage(outcome));
+        await ScreenCapture.toast(outcomeMessage(l, outcome));
     }
   }
 
@@ -3843,8 +4311,9 @@ class _OverlayHomeState extends State<OverlayHome> {
   }
 
   Future<void> _save(RunScores scores) async {
+    final l = AppLocalizations.of(context);
     final seq = await _controller!.saveReviewed(scores);
-    await ScreenCapture.toast('Run $seq saved');
+    await ScreenCapture.toast(l.runSaved(seq));
     await _closePanel();
   }
 
@@ -3897,7 +4366,7 @@ class _Bubble extends StatelessWidget {
 }
 ```
 
-- [ ] **Step 3: Point the overlay entry at the new app**
+- [ ] **Step 7: Point the overlay entry at the new app**
 
 In `lib/main.dart`:
 
@@ -3914,15 +4383,15 @@ void overlayMain() {
 
 3. Delete the `SpikeOverlay` and `_SpikeOverlayState` classes.
 
-- [ ] **Step 4: Analyze and build**
+- [ ] **Step 8: Analyze and build**
 
-Run: `flutter analyze && flutter build apk --debug`
-Expected: `No issues found!` and a built APK. On-device checks for the overlay come in Task 16, once the main app can start a session.
+Run: `flutter analyze && flutter test && flutter build apk --debug`
+Expected: `No issues found!`, all tests PASS, and a built APK. On-device checks for the overlay come in Task 16, once the main app can start a session.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
-git add lib/overlay lib/main.dart
+git add lib/overlay lib/main.dart test/overlay
 git commit -m "feat: add capture overlay with bubble and edit panel" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
 
@@ -3936,7 +4405,7 @@ git commit -m "feat: add capture overlay with bubble and edit panel" -m "Co-Auth
 - Replace: `lib/main.dart`
 
 **Interfaces:**
-- Consumes: `Repository`, `SessionSummary` (Task 7), `CaptureTarget` (Task 10), `ScreenCapture` (Task 8), `OverlaySizes` (Task 12), `confirm`, `promptText` (Task 11), `formatTime` (Task 4)
+- Consumes: `Repository`, `SessionSummary` (Task 7), `CaptureTarget` (Task 10), `ScreenCapture` (Task 8), `OverlaySizes` (Task 12), `confirm`, `promptText`, `buildTheme`, `AppLocalizations` (Task 11), `formatTime` (Task 4)
 - Produces:
   - `startCapture(BuildContext, int sessionId) → Future<bool>`
   - `stopCapture() → Future<void>`
@@ -3953,18 +4422,22 @@ import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:screen_capture/screen_capture.dart';
 
 import '../capture/capture_target.dart';
+import '../l10n/app_localizations.dart';
 import '../overlay/overlay_sizes.dart';
 import 'dialogs.dart';
 
 /// Overlay permission → capture consent → bubble bound to [sessionId].
 Future<bool> startCapture(BuildContext context, int sessionId) async {
+  final l = AppLocalizations.of(context);
+  final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
+
   if (!await FlutterOverlayWindow.isPermissionGranted()) {
     if (!context.mounted) return false;
     final go = await confirm(
       context,
-      title: 'Allow the bubble',
-      message: 'concapt needs "Display over other apps" to show its capture bubble over the game.',
-      action: 'Open settings',
+      title: l.allowBubbleTitle,
+      message: l.allowBubbleMessage,
+      action: l.openSettings,
     );
     if (!go) return false;
     await FlutterOverlayWindow.requestPermission();
@@ -3974,32 +4447,29 @@ Future<bool> startCapture(BuildContext context, int sessionId) async {
   if (!context.mounted) return false;
   final ok = await confirm(
     context,
-    title: 'Share your screen',
-    message: 'On the next screen, choose "Entire screen", or pick the game if Android asks for a single app.',
-    action: 'Continue',
+    title: l.shareScreenTitle,
+    message: l.shareScreenMessage,
+    action: l.continueAction,
   );
   if (!ok) return false;
 
   if (!await ScreenCapture.requestConsent()) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Screen capture was declined.')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.captureDeclined)));
     }
     return false;
   }
 
   await CaptureTarget.write(sessionId);
   if (await FlutterOverlayWindow.isActive()) await FlutterOverlayWindow.closeOverlay();
-  if (!context.mounted) return false;
-  final bubble =
-      OverlaySizes.toWindowUnits(OverlaySizes.bubbleDp, MediaQuery.devicePixelRatioOf(context));
+  final bubble = OverlaySizes.toWindowUnits(OverlaySizes.bubbleDp, devicePixelRatio);
   await FlutterOverlayWindow.showOverlay(
     width: bubble,
     height: bubble,
     enableDrag: true,
     alignment: OverlayAlignment.centerRight,
-    overlayTitle: 'concapt',
-    overlayContent: 'Capture bubble is active',
+    overlayTitle: l.appTitle,
+    overlayContent: l.overlayNotification,
   );
   return true;
 }
@@ -4041,6 +4511,7 @@ class SessionDetailScreen extends StatelessWidget {
 import 'package:flutter/material.dart';
 
 import '../data/repository.dart';
+import '../l10n/app_localizations.dart';
 import 'dialogs.dart';
 import 'format.dart';
 import 'session_detail_screen.dart';
@@ -4082,11 +4553,12 @@ class _SessionsScreenState extends State<SessionsScreen> with WidgetsBindingObse
   }
 
   Future<void> _create() async {
+    final l = AppLocalizations.of(context);
     final name = await promptText(
       context,
-      title: 'New session',
-      hint: 'e.g. Contest week 3 · team A',
-      action: 'Create',
+      title: l.newSession,
+      hint: l.newSessionHint,
+      action: l.create,
     );
     if (name == null) return;
     final id = await widget.repository.createSession(name);
@@ -4102,19 +4574,20 @@ class _SessionsScreenState extends State<SessionsScreen> with WidgetsBindingObse
   }
 
   Future<void> _rename(SessionSummary s) async {
-    final name =
-        await promptText(context, title: 'Rename session', initial: s.name, action: 'Rename');
+    final l = AppLocalizations.of(context);
+    final name = await promptText(context, title: l.renameSession, initial: s.name, action: l.rename);
     if (name == null) return;
     await widget.repository.renameSession(s.id, name);
     await _reload();
   }
 
   Future<void> _delete(SessionSummary s) async {
+    final l = AppLocalizations.of(context);
     final ok = await confirm(
       context,
-      title: 'Delete "${s.name}"?',
-      message: 'This deletes its ${s.runCount} runs.',
-      action: 'Delete',
+      title: l.deleteSessionTitle(s.name),
+      message: l.deleteSessionMessage(s.runCount),
+      action: l.delete,
     );
     if (!ok) return;
     if (await isCapturingInto(s.id)) await stopCapture();
@@ -4124,23 +4597,21 @@ class _SessionsScreenState extends State<SessionsScreen> with WidgetsBindingObse
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final sessions = _sessions;
     return Scaffold(
-      appBar: AppBar(title: const Text('concapt')),
+      appBar: AppBar(title: Text(l.appTitle)),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _create,
         icon: const Icon(Icons.add),
-        label: const Text('New session'),
+        label: Text(l.newSession),
       ),
       body: switch (sessions) {
         null => const Center(child: CircularProgressIndicator()),
-        [] => const Center(
+        [] => Center(
             child: Padding(
-              padding: EdgeInsets.all(32),
-              child: Text(
-                'No sessions yet. Make one for each team you rehearse.',
-                textAlign: TextAlign.center,
-              ),
+              padding: const EdgeInsets.all(32),
+              child: Text(l.sessionsEmpty, textAlign: TextAlign.center),
             ),
           ),
         final list? => ListView(
@@ -4148,16 +4619,16 @@ class _SessionsScreenState extends State<SessionsScreen> with WidgetsBindingObse
               for (final s in list)
                 ListTile(
                   title: Text(s.name),
-                  subtitle: Text(
-                    '${s.runCount} runs · last '
-                    '${s.lastCapturedAt == null ? '—' : formatTime(s.lastCapturedAt!)}',
-                  ),
+                  subtitle: Text(l.sessionSubtitle(
+                    l.runCount(s.runCount),
+                    s.lastCapturedAt == null ? '—' : formatTime(s.lastCapturedAt!),
+                  )),
                   onTap: () => _open(s.id),
                   trailing: PopupMenuButton<String>(
                     onSelected: (v) => v == 'rename' ? _rename(s) : _delete(s),
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(value: 'rename', child: Text('Rename')),
-                      PopupMenuItem(value: 'delete', child: Text('Delete')),
+                    itemBuilder: (_) => [
+                      PopupMenuItem(value: 'rename', child: Text(l.rename)),
+                      PopupMenuItem(value: 'delete', child: Text(l.delete)),
                     ],
                   ),
                 ),
@@ -4176,8 +4647,10 @@ import 'package:flutter/material.dart';
 
 import 'data/database.dart';
 import 'data/repository.dart';
+import 'l10n/app_localizations.dart';
 import 'overlay/overlay_app.dart';
 import 'ui/sessions_screen.dart';
+import 'ui/theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -4199,8 +4672,11 @@ class ConcaptApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'concapt',
-      theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
+      onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
+      theme: buildTheme(Brightness.light),
+      darkTheme: buildTheme(Brightness.dark),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: SessionsScreen(repository: repository),
     );
   }
@@ -4230,10 +4706,10 @@ git commit -m "feat: add sessions screen and capture start flow" -m "Co-Authored
 - Test: `test/ui/stats_card_test.dart`
 
 **Interfaces:**
-- Consumes: `Repository` (Task 7), `summarize`, `seriesValues` (Task 4), `buildCsv` (Task 6), `RunForm` (Task 11), `startCapture`, `stopCapture`, `isCapturingInto` (Task 13), `confirm` (Task 11), `formatInt`, `formatTime` (Task 4)
+- Consumes: `Repository` (Task 7), `summarize`, `seriesValues` (Task 4), `buildCsv` (Task 6), `RunForm`, `confirm`, `AppLocalizations` (Task 11), `startCapture`, `stopCapture`, `isCapturingInto` (Task 13), `formatInt`, `formatTime` (Task 4)
 - Produces:
-  - `slotNames = ['Left', 'Middle', 'Right']`
-  - `summaryRows(Summary) → List<(String, num?)>`
+  - `slotName(AppLocalizations, int slot) → String`
+  - `summaryRows(AppLocalizations, Summary) → List<(String, num?)>`
   - `StatsCard({required int stage, required List<Summary> summaries, required ValueChanged<int> onSlotTap})`; slot header keys `slot-<stage>-<slot>`
   - `RunEditorScreen({required String title, required RunDraft initial})` pops with `RunScores?`
   - `SeriesDetailScreen({required String title, required List<int> values})` (stub here)
@@ -4252,11 +4728,13 @@ import 'package:concapt/ui/stats_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/app.dart';
+
 void main() {
   testWidgets('shows each slot column and reports taps', (tester) async {
     final tapped = <int>[];
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
+    await tester.pumpWidget(localizedApp(
+      Scaffold(
         body: StatsCard(
           stage: 0,
           summaries: [
@@ -4278,7 +4756,7 @@ void main() {
   });
 
   test('summaryRows lists the seven stats in order', () {
-    final rows = summaryRows(summarize(const [1, 2, 3]));
+    final rows = summaryRows(en(), summarize(const [1, 2, 3]));
     expect(rows.map((r) => r.$1), ['n', 'Mean', 'Median', 'Min', 'Max', 'P25', 'P75']);
     expect(rows.first.$2, 3);
   });
@@ -4296,18 +4774,20 @@ Expected: FAIL with compile errors.
 import 'package:flutter/material.dart';
 
 import '../core/stats.dart';
+import '../l10n/app_localizations.dart';
 import 'format.dart';
 
-const slotNames = ['Left', 'Middle', 'Right'];
+/// 0 left, 1 middle, 2 right.
+String slotName(AppLocalizations l, int slot) => [l.slotLeft, l.slotMiddle, l.slotRight][slot];
 
-List<(String, num?)> summaryRows(Summary s) => [
-      ('n', s.n),
-      ('Mean', s.mean),
-      ('Median', s.median),
-      ('Min', s.min),
-      ('Max', s.max),
-      ('P25', s.p25),
-      ('P75', s.p75),
+List<(String, num?)> summaryRows(AppLocalizations l, Summary s) => [
+      (l.statN, s.n),
+      (l.statMean, s.mean),
+      (l.statMedian, s.median),
+      (l.statMin, s.min),
+      (l.statMax, s.max),
+      (l.statP25, s.p25),
+      (l.statP75, s.p75),
     ];
 
 /// One stage's statistics: rows are stats, columns are the three slots.
@@ -4325,7 +4805,8 @@ class StatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rows = [for (final s in summaries) summaryRows(s)];
+    final l = AppLocalizations.of(context);
+    final rows = [for (final s in summaries) summaryRows(l, s)];
     final labels = rows.first.map((r) => r.$1).toList();
     return Card(
       child: Padding(
@@ -4333,20 +4814,20 @@ class StatsCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Stage ${stage + 1}', style: Theme.of(context).textTheme.titleMedium),
+            Text(l.stageLabel(stage + 1), style: Theme.of(context).textTheme.titleMedium),
             Table(
               columnWidths: const {0: IntrinsicColumnWidth()},
               defaultVerticalAlignment: TableCellVerticalAlignment.middle,
               children: [
                 TableRow(children: [
                   const SizedBox.shrink(),
-                  for (var slot = 0; slot < slotNames.length; slot++)
+                  for (var slot = 0; slot < summaries.length; slot++)
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         key: Key('slot-$stage-$slot'),
                         onPressed: () => onSlotTap(slot),
-                        child: Text(slotNames[slot]),
+                        child: Text(slotName(l, slot)),
                       ),
                     ),
                 ]),
@@ -4438,6 +4919,7 @@ import '../core/models.dart';
 import '../core/stats.dart';
 import '../data/database.dart';
 import '../data/repository.dart';
+import '../l10n/app_localizations.dart';
 import 'dialogs.dart';
 import 'format.dart';
 import 'run_editor_screen.dart';
@@ -4504,17 +4986,21 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> with WidgetsB
   }
 
   void _openSeries(int stage, int slot) {
+    final l = AppLocalizations.of(context);
     final values = seriesValues(_runs!, stage, slot);
     Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) =>
-          SeriesDetailScreen(title: 'Stage ${stage + 1} · ${slotNames[slot]}', values: values),
+      builder: (_) => SeriesDetailScreen(
+        title: l.seriesTitle(stage + 1, slotName(l, slot)),
+        values: values,
+      ),
     ));
   }
 
   Future<void> _edit(RunRecord run) async {
+    final l = AppLocalizations.of(context);
     final scores = await Navigator.of(context).push<RunScores>(MaterialPageRoute(
       builder: (_) =>
-          RunEditorScreen(title: 'Run ${run.seq}', initial: RunDraft.fromScores(run.scores)),
+          RunEditorScreen(title: l.runTitle(run.seq), initial: RunDraft.fromScores(run.scores)),
     ));
     if (scores == null) return;
     await widget.repository.updateRun(run.id, scores);
@@ -4522,11 +5008,12 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> with WidgetsB
   }
 
   Future<void> _delete(RunRecord run) async {
+    final l = AppLocalizations.of(context);
     final ok = await confirm(
       context,
-      title: 'Delete run ${run.seq}?',
-      message: 'Its scores leave the statistics.',
-      action: 'Delete',
+      title: l.deleteRunTitle(run.seq),
+      message: l.deleteRunMessage,
+      action: l.delete,
     );
     if (!ok) return;
     await widget.repository.deleteRun(run.id);
@@ -4547,6 +5034,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> with WidgetsB
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final session = _session;
     final runs = _runs;
     if (session == null || runs == null) {
@@ -4557,7 +5045,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> with WidgetsB
         title: Text(session.name),
         actions: [
           IconButton(
-            tooltip: 'Export CSV',
+            tooltip: l.exportCsv,
             icon: const Icon(Icons.ios_share),
             onPressed: runs.isEmpty ? null : _export,
           ),
@@ -4573,7 +5061,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> with WidgetsB
               child: FilledButton.icon(
                 onPressed: _toggleCapture,
                 icon: Icon(_capturing ? Icons.stop : Icons.camera_alt),
-                label: Text(_capturing ? 'Stop capturing' : 'Start capturing'),
+                label: Text(_capturing ? l.stopCapturing : l.startCapturing),
               ),
             );
           }
@@ -4584,8 +5072,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> with WidgetsB
               child: StatsCard(
                 stage: stage,
                 summaries: [
-                  for (var slot = 0; slot < slotNames.length; slot++)
-                    summarize(seriesValues(runs, stage, slot)),
+                  for (var slot = 0; slot < 3; slot++) summarize(seriesValues(runs, stage, slot)),
                 ],
                 onSlotTap: (slot) => _openSeries(stage, slot),
               ),
@@ -4594,12 +5081,12 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> with WidgetsB
           if (i == 4) {
             return Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-              child: Text('Runs (${runs.length})', style: Theme.of(context).textTheme.titleMedium),
+              child: Text(l.runsHeading(runs.length), style: Theme.of(context).textTheme.titleMedium),
             );
           }
           final run = runs[i - _headerCount];
           return ListTile(
-            title: Text('Run ${run.seq}${run.edited ? ' · edited' : ''}'),
+            title: Text('${l.runTitle(run.seq)}${run.edited ? ' · ${l.edited}' : ''}'),
             subtitle: Text([
               for (final s in run.scores.stages) s.members.map(formatInt).join(' / '),
             ].join('\n')),
@@ -4637,7 +5124,7 @@ git commit -m "feat: add session detail with stats, run editing, and CSV export"
 - Test: `test/ui/histogram_chart_test.dart`
 
 **Interfaces:**
-- Consumes: `Histogram`, `buildHistogram` (Task 5), `summarize` (Task 4), `summaryRows` (Task 14), `formatInt`, `formatCompact` (Task 4)
+- Consumes: `Histogram`, `buildHistogram` (Task 5), `summarize` (Task 4), `summaryRows` (Task 14), `AppLocalizations` (Task 11), `formatInt`, `formatCompact` (Task 4)
 - Produces: `HistogramChart({required Histogram histogram, double? mean, double? median})`, `HistogramPainter`, final `SeriesDetailScreen`
 
 - [ ] **Step 1: Write the failing test**
@@ -4651,13 +5138,15 @@ import 'package:concapt/ui/series_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/app.dart';
+
 Finder get painter =>
     find.byWidgetPredicate((w) => w is CustomPaint && w.painter is HistogramPainter);
 
 void main() {
   testWidgets('empty series shows a message instead of a chart', (tester) async {
-    await tester.pumpWidget(const MaterialApp(
-      home: Scaffold(body: HistogramChart(histogram: Histogram.empty)),
+    await tester.pumpWidget(localizedApp(
+      const Scaffold(body: HistogramChart(histogram: Histogram.empty)),
     ));
     expect(find.text('No runs yet'), findsOneWidget);
     expect(painter, findsNothing);
@@ -4665,8 +5154,8 @@ void main() {
 
   testWidgets('a series draws bars and labels its markers', (tester) async {
     final values = [for (var i = 0; i < 300; i++) 113000 + (i * 7919) % 15000];
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
+    await tester.pumpWidget(localizedApp(
+      Scaffold(
         body: SingleChildScrollView(
           child: HistogramChart(histogram: buildHistogram(values), mean: 120000, median: 119500),
         ),
@@ -4681,8 +5170,8 @@ void main() {
     tester.view.physicalSize = const Size(1200, 4000);
     tester.view.devicePixelRatio = 2;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(const MaterialApp(
-      home: SeriesDetailScreen(title: 'Stage 1 · Left', values: [100, 200, 300]),
+    await tester.pumpWidget(localizedApp(
+      const SeriesDetailScreen(title: 'Stage 1 · Left', values: [100, 200, 300]),
     ));
     expect(find.text('Stage 1 · Left'), findsOneWidget);
     expect(painter, findsOneWidget);
@@ -4692,10 +5181,21 @@ void main() {
   });
 
   testWidgets('empty series detail does not crash', (tester) async {
-    await tester.pumpWidget(const MaterialApp(
-      home: SeriesDetailScreen(title: 'Stage 1 · Left', values: []),
+    await tester.pumpWidget(localizedApp(
+      const SeriesDetailScreen(title: 'Stage 1 · Left', values: []),
     ));
     expect(find.text('No runs yet'), findsOneWidget);
+  });
+
+  testWidgets('dark theme renders the chart', (tester) async {
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+    await tester.pumpWidget(localizedApp(
+      const SeriesDetailScreen(title: 'Stage 1 · Left', values: [100, 200, 300]),
+    ));
+    expect(painter, findsOneWidget);
+    final context = tester.element(painter);
+    expect(Theme.of(context).brightness, Brightness.dark);
   });
 }
 ```
@@ -4713,6 +5213,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../core/histogram.dart';
+import '../l10n/app_localizations.dart';
 import 'format.dart';
 
 class HistogramChart extends StatelessWidget {
@@ -4724,11 +5225,13 @@ class HistogramChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     if (histogram.counts.isEmpty) {
-      return const SizedBox(height: 200, child: Center(child: Text('No runs yet')));
+      return SizedBox(height: 200, child: Center(child: Text(l.noRunsYet)));
     }
     final scheme = Theme.of(context).colorScheme;
-    final labelStyle = Theme.of(context).textTheme.labelSmall!.copyWith(color: scheme.onSurfaceVariant);
+    final labelStyle =
+        Theme.of(context).textTheme.labelSmall!.copyWith(color: scheme.onSurfaceVariant);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -4751,8 +5254,8 @@ class HistogramChart extends StatelessWidget {
         Wrap(
           spacing: 16,
           children: [
-            _LegendItem(color: scheme.primary, label: 'Mean ${formatInt(mean)}'),
-            _LegendItem(color: scheme.tertiary, label: 'Median ${formatInt(median)}'),
+            _LegendItem(color: scheme.primary, label: l.legendMean(formatInt(mean))),
+            _LegendItem(color: scheme.tertiary, label: l.legendMedian(formatInt(median))),
           ],
         ),
       ],
@@ -4872,6 +5375,7 @@ import 'package:flutter/material.dart';
 
 import '../core/histogram.dart';
 import '../core/stats.dart';
+import '../l10n/app_localizations.dart';
 import 'format.dart';
 import 'histogram_chart.dart';
 import 'stats_card.dart';
@@ -4885,6 +5389,7 @@ class SeriesDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final summary = summarize(values);
     return Scaffold(
       appBar: AppBar(title: Text(title)),
@@ -4897,7 +5402,7 @@ class SeriesDetailScreen extends StatelessWidget {
             median: summary.median,
           ),
           const SizedBox(height: 16),
-          for (final (label, value) in summaryRows(summary))
+          for (final (label, value) in summaryRows(l, summary))
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(children: [Text(label), const Spacer(), Text(formatInt(value))]),
@@ -4965,6 +5470,8 @@ Run on the user's phone (never the emulator) after any change to capture, overla
 | 16 | Screen lock | While capturing, lock and unlock, tap the bubble | Toast "Capture stopped. Start again from the app."; bubble closes |
 | 17 | App killed | Start capturing, swipe the app from Recents, capture a result | Toast "Run N saved"; reopening the app shows the run |
 | 18 | Delete active session | While capturing into a session, delete it from the sessions list | Bubble closes; session removed |
+| 19 | Japanese | Set the phone language to 日本語, then repeat rows 1, 5, 7, and 12 | Every screen, dialog, toast, and the capture notification is in Japanese; no English left over |
+| 20 | Dark theme | Turn on system dark mode, then open the session detail, a series, and the edit panel | Both engines switch to dark; pass/fail, "edited", and markers stay readable; score columns line up |
 ```
 
 - [ ] **Step 2: Install on the phone [device]**
@@ -4975,7 +5482,7 @@ Run: `flutter run --release -d <device-id>`
 
 - [ ] **Step 3: Walk through the checklist with the user [device]**
 
-Go through rows 1–18 with the user. For each row, record pass or fail and what they saw. Capture at least 10 real results in row 5–8 so the phone-resolution OCR path is exercised (spec §10, "OCR accuracy on phone captures").
+Go through rows 1–20 with the user. Before row 19, ask the user to review the Japanese strings in `lib/l10n/app_ja.arb` and `res/values-ja`. For each row, record pass or fail and what they saw. Capture at least 10 real results in row 5–8 so the phone-resolution OCR path is exercised (spec §10, "OCR accuracy on phone captures").
 
 - [ ] **Step 4: Fix failures**
 
