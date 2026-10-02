@@ -111,9 +111,11 @@ object CaptureSession {
         })
     }
 
+    /** Ends the projection and releases everything before returning. */
     fun stop() {
         val current = projection ?: return
-        current.stop() // onStop releases
+        current.stop()
+        release()
     }
 
     fun addStopListener(listener: () -> Unit) {
@@ -139,9 +141,10 @@ object CaptureSession {
         thread = null
         worker = null
         projection = null
-        pendingCaptures.toList().forEach { it(Result.failure(NotRunningException())) }
+        val failed = pendingCaptures.toList()
         pendingCaptures.clear()
-        stopListeners.toList().forEach { it() }
+        failed.forEach { runCatching { it(Result.failure(NotRunningException())) } }
+        stopListeners.toList().forEach { runCatching { it() } }
     }
 
     private fun writePng(context: Context): String {

@@ -1,15 +1,5 @@
 # screen_capture
 
-A new Flutter plugin project.
+Local Flutter plugin for concapt. Captures the screen through a MediaProjection foreground service.
 
-## Getting Started
-
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/to/develop-plugins),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-
+Capture state lives in the Android process, so both of the app's Flutter engines share one session. See `lib/screen_capture.dart` for the Dart API.

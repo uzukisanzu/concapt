@@ -18,6 +18,7 @@ void main() {
     expect(await ScreenCapture.requestConsent(), isTrue,
         reason: 'Choose "Entire screen" and tap Start on the consent dialog');
     expect(await ScreenCapture.isRunning(), isTrue);
+    final stopped = ScreenCapture.events.first;
 
     final path = await ScreenCapture.capture();
     final codec = await ui.instantiateImageCodec(await File(path).readAsBytes());
@@ -29,7 +30,6 @@ void main() {
     final pixels = (await image.toByteData())!.buffer.asUint32List();
     expect(pixels.toSet().length, greaterThan(1), reason: 'Frame is a single color');
 
-    final stopped = ScreenCapture.events.first;
     await ScreenCapture.stop();
     expect(await stopped.timeout(const Duration(seconds: 5)), 'stopped');
     expect(await ScreenCapture.isRunning(), isFalse);

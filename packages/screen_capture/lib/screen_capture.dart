@@ -9,7 +9,8 @@ abstract final class ScreenCapture {
   static const _events = EventChannel('concapt/screen_capture/events');
 
   /// Shows Android's capture prompt and starts the service on approval.
-  /// Needs the main app's Activity in the foreground.
+  /// Needs the main app's Activity in the foreground. Throws
+  /// [PlatformException] with code `consent_pending` while the prompt is up.
   static Future<bool> requestConsent() async =>
       await _methods.invokeMethod<bool>('requestConsent') ?? false;
 
@@ -25,6 +26,7 @@ abstract final class ScreenCapture {
   /// Throws [PlatformException] with code `not_running` when capture stopped.
   static Future<String> capture() async => (await _methods.invokeMethod<String>('capture'))!;
 
+  /// Completes once the projection is released.
   static Future<void> stop() => _methods.invokeMethod<void>('stop');
 
   /// Sends the app's task to the background, as Home would. No-op without an activity.

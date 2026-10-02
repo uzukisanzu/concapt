@@ -9,12 +9,14 @@ import android.content.pm.ServiceInfo
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 
 /** Foreground service that owns the MediaProjection while capture runs. */
 class CaptureService : Service() {
     companion object {
         const val EXTRA_RESULT_CODE = "resultCode"
         const val EXTRA_DATA = "data"
+        private const val TAG = "CaptureService"
         private const val CHANNEL_ID = "concapt_capture"
         private const val NOTIFICATION_ID = 41
     }
@@ -34,9 +36,12 @@ class CaptureService : Service() {
         }
         try {
             val manager = getSystemService(MediaProjectionManager::class.java)
-            CaptureSession.start(this, manager.getMediaProjection(resultCode, data)!!)
+            val projection = manager.getMediaProjection(resultCode, data)
+                ?: throw IllegalStateException("Consent token was rejected")
+            CaptureSession.start(this, projection)
             CaptureSession.addStopListener(onSessionStopped)
         } catch (e: Exception) {
+            Log.w(TAG, "Capture failed to start", e)
             CaptureSession.reportStarted(false)
             stopSelf()
         }

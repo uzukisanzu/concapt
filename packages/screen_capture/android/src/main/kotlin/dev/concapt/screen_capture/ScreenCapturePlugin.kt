@@ -48,8 +48,9 @@ class ScreenCapturePlugin :
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         methods.setMethodCallHandler(null)
         events.setStreamHandler(null)
-        stopListener?.let { CaptureSession.removeStopListener(it) }
-        stopListener = null
+        onCancel(null)
+        pendingConsent = null
+        pendingNotifications = null
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
@@ -90,6 +91,10 @@ class ScreenCapturePlugin :
         val activity = activityBinding?.activity
         if (activity == null) {
             result.error("no_activity", "Capture consent needs the app in the foreground", null)
+            return
+        }
+        if (pendingConsent != null) {
+            result.error("consent_pending", "The capture prompt is already showing", null)
             return
         }
         pendingConsent = result
@@ -141,6 +146,7 @@ class ScreenCapturePlugin :
     }
 
     override fun onListen(arguments: Any?, sink: EventChannel.EventSink) {
+        onCancel(null)
         val listener: () -> Unit = { sink.success("stopped") }
         stopListener = listener
         CaptureSession.addStopListener(listener)
