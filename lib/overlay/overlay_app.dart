@@ -48,11 +48,17 @@ class _OverlayHomeState extends State<OverlayHome> {
   AppDatabase? _db;
   MlKitTextReader? _reader;
   RunDraft? _draft;
+  CaptureController? _draftController;
   StreamSubscription<String>? _stopped;
   StreamSubscription<dynamic>? _messages;
 
   // Starts run one at a time, so a reset cannot overlap the first start.
   Future<void> _starting = Future.value();
+
+  // Bumped by every restart. Work begun under an older value is stale.
+  int _generation = 0;
+
+  Future<void>? _inFlight;
 
   @override
   void initState() {
@@ -69,40 +75,60 @@ class _OverlayHomeState extends State<OverlayHome> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _restart());
   }
 
-  void _restart() => _starting = _starting.then((_) => _start());
+  void _restart() {
+    _generation++;
+    _starting = _starting.then((_) => _start());
+  }
 
   Future<void> _start() async {
     if (!mounted) return;
-    await _teardown();
-    await _resetWindow();
-    if (!mounted) return;
-    setState(() {
-      _draft = null;
-      _mode = _Mode.starting;
-    });
-    final l = AppLocalizations.of(context);
-    final sessionId = await CaptureTarget.read();
-    if (sessionId == null) {
-      await ScreenCapture.toast(l.noSessionSelected);
-      await FlutterOverlayWindow.closeOverlay();
-      return;
+    final generation = _generation;
+    try {
+      await _teardown();
+      await _resetWindow();
+      if (!mounted) return;
+      setState(() {
+        _draft = null;
+        _draftController = null;
+        _mode = _Mode.starting;
+      });
+      final l = AppLocalizations.of(context);
+      final sessionId = await CaptureTarget.read();
+      if (sessionId == null) {
+        await ScreenCapture.toast(l.noSessionSelected);
+        await FlutterOverlayWindow.closeOverlay();
+        return;
+      }
+      final db = AppDatabase.open();
+      final reader = MlKitTextReader();
+      _db = db;
+      _reader = reader;
+      _controller = CaptureController(
+        source: ScreenCaptureSource(),
+        reader: reader,
+        repository: Repository(db),
+        sessionId: sessionId,
+        hideBubble: () async {
+          if (generation == _generation) await _hideBubble();
+        },
+        showBubble: () async {
+          if (generation == _generation) await _showBusy();
+        },
+      );
+      if (mounted) setState(() => _mode = _Mode.bubble);
+    } catch (_) {
+      // A failed start must not block later resets. Without a working
+      // bubble, closing is the only sane state.
+      try {
+        await _teardown();
+        await FlutterOverlayWindow.closeOverlay();
+      } catch (_) {}
     }
-    final db = AppDatabase.open();
-    final reader = MlKitTextReader();
-    _db = db;
-    _reader = reader;
-    _controller = CaptureController(
-      source: ScreenCaptureSource(),
-      reader: reader,
-      repository: Repository(db),
-      sessionId: sessionId,
-      hideBubble: _hideBubble,
-      showBubble: _showBusy,
-    );
-    if (mounted) setState(() => _mode = _Mode.bubble);
   }
 
   Future<void> _teardown() async {
+    // Let an in-flight capture finish before its database closes.
+    await _inFlight?.timeout(const Duration(seconds: 12), onTimeout: () {});
     final reader = _reader;
     final db = _db;
     _controller = null;
@@ -147,11 +173,19 @@ class _OverlayHomeState extends State<OverlayHome> {
     final controller = _controller;
     if (controller == null) return;
     final l = AppLocalizations.of(context);
-    final outcome = await controller.trigger();
-    if (outcome == null || !mounted) return;
+    final generation = _generation;
+    final run = controller.trigger();
+    _inFlight = run.then<void>((_) {}, onError: (_) {});
+    CaptureOutcome? outcome;
+    try {
+      outcome = await run;
+    } catch (_) {
+      outcome = const CaptureReadFailed();
+    }
+    if (outcome == null || !mounted || generation != _generation) return;
     switch (outcome) {
       case CaptureNeedsReview(:final draft):
-        await _openPanel(draft);
+        await _openPanel(draft, controller);
       case CaptureStopped():
         await ScreenCapture.toast(outcomeMessage(l, outcome));
         await _close();
@@ -161,7 +195,7 @@ class _OverlayHomeState extends State<OverlayHome> {
     }
   }
 
-  Future<void> _openPanel(RunDraft draft) async {
+  Future<void> _openPanel(RunDraft draft, CaptureController controller) async {
     await FlutterOverlayWindow.resizeOverlay(
       OverlaySizes.resizeUnits(OverlaySizes.panelWidthDp),
       OverlaySizes.resizeUnits(OverlaySizes.panelHeightDp),
@@ -171,6 +205,7 @@ class _OverlayHomeState extends State<OverlayHome> {
     if (!mounted) return;
     setState(() {
       _draft = draft;
+      _draftController = controller;
       _mode = _Mode.panel;
     });
   }
@@ -180,15 +215,17 @@ class _OverlayHomeState extends State<OverlayHome> {
     if (!mounted) return;
     setState(() {
       _draft = null;
+      _draftController = null;
       _mode = _Mode.bubble;
     });
   }
 
   Future<void> _save(RunScores scores) async {
     final l = AppLocalizations.of(context);
-    final seq = await _controller!.saveReviewed(scores);
+    final generation = _generation;
+    final seq = await _draftController!.saveReviewed(scores);
     await ScreenCapture.toast(l.runSaved(seq));
-    await _closePanel();
+    if (generation == _generation) await _closePanel();
   }
 
   @override
