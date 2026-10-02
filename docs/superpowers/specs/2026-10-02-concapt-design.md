@@ -163,7 +163,7 @@ The 総合力 number sits below the bonus, so step 4 never picks it.
 
 - 15 fields: per stage, left, middle, right, bonus, and total
 - Re-runs the sum check as values change
-- Save with all sums passing → save as edited
+- Save with all sums passing → save as edited (the app's run editor skips the save when nothing changed)
 - Save with a sum still failing → confirm "Save anyway?", then save as edited
 - Cancel → discard the capture
 

@@ -93,7 +93,8 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> with WidgetsB
       builder: (_) =>
           RunEditorScreen(title: l.runTitle(run.seq), initial: RunDraft.fromScores(run.scores)),
     ));
-    if (scores == null) return;
+    // Saving untouched scores keeps the run's OCR provenance.
+    if (scores == null || scores == run.scores) return;
     await widget.repository.updateRun(run.id, scores);
     await _reload();
   }
