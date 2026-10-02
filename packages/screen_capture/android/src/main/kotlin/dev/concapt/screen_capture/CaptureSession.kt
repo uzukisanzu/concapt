@@ -29,6 +29,7 @@ object CaptureSession {
     private val main = Handler(Looper.getMainLooper())
     private val lock = Any()
     private val stopListeners = mutableSetOf<() -> Unit>()
+    private val pendingCaptures = mutableSetOf<(Result<String>) -> Unit>()
 
     private var projection: MediaProjection? = null
     private var display: VirtualDisplay? = null
@@ -91,6 +92,7 @@ object CaptureSession {
             callback(Result.failure(NotRunningException()))
             return
         }
+        pendingCaptures += callback
         val requestedAt = SystemClock.uptimeMillis()
         val deadline = requestedAt + FRESH_FRAME_WAIT_MS
         handler.post(object : Runnable {
@@ -101,7 +103,10 @@ object CaptureSession {
                     return
                 }
                 val result = runCatching { writePng(context) }
-                main.post { callback(result) }
+                main.post {
+                    // release() may have already failed this capture.
+                    if (pendingCaptures.remove(callback)) callback(result)
+                }
             }
         })
     }
@@ -134,6 +139,8 @@ object CaptureSession {
         thread = null
         worker = null
         projection = null
+        pendingCaptures.toList().forEach { it(Result.failure(NotRunningException())) }
+        pendingCaptures.clear()
         stopListeners.toList().forEach { it() }
     }
 
