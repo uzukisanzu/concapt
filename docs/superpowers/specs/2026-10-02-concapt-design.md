@@ -84,7 +84,7 @@ Reloads on resume ◀── same SQLite database (WAL mode) ──┘
 |---|---|---|
 | Main app | Flutter, main engine | Sessions, stats, run editor, CSV export, starts capture |
 | Overlay | Flutter, second engine via `flutter_overlay_window` | Bubble, toast, edit panel; runs the capture pipeline |
-| CaptureService | Kotlin, foreground service (`mediaProjection` type) | Holds the projection and virtual display; returns the latest frame as PNG bytes; reports projection stop |
+| CaptureService | Kotlin, foreground service (`mediaProjection` type), in the local plugin `packages/screen_capture` | Holds the projection and virtual display; writes the latest frame to a PNG file and returns its path; reports projection stop; shows native toasts |
 | TextReader | Dart, `google_mlkit_text_recognition` (Latin) | Bitmap → list of `TextPiece` |
 | ResultParser | Pure Dart | `TextPiece`s → `ParseResult` |
 | SumCheck | Pure Dart | Validates each stage |
@@ -102,9 +102,13 @@ The core never imports Android code. Three interfaces isolate the platform:
 | `CaptureSource` | MediaProjection channel | Windows Graphics Capture of the game window | Screenshot handed in via App Intent |
 | `TextReader` | ML Kit | `Windows.Media.Ocr` | ML Kit |
 
+`CaptureTrigger` stays a concept until a second trigger exists. On Android the bubble calls `CaptureController.trigger()` directly.
+
+The capture plugin is a local Flutter plugin package, not code in `MainActivity`. Flutter registers plugin packages in every engine, so the overlay engine can call it.
+
 ### 4.4 Engine boundaries
 
-- The main app shows the capture consent prompt, since it needs an Activity. It starts CaptureService, then launches the overlay with the session id.
+- The main app shows the capture consent prompt, since it needs an Activity. It starts CaptureService, stores the session id under the `SharedPreferencesAsync` key `captureSessionId`, then launches the overlay, which reads that key on start.
 - The overlay runs the full pipeline itself, so capture keeps working if Android kills the main app.
 - Both engines open the same database file. Drift stream updates don't cross engines, so the main app re-queries on resume.
 
@@ -112,33 +116,38 @@ The core never imports Android code. Three interfaces isolate the platform:
 
 ### 5.1 Capture
 
-1. User taps the bubble.
-2. Overlay hides the bubble.
-3. CaptureService waits for a frame with a timestamp after the hide, then encodes it to PNG.
-4. Overlay shows the bubble again and passes the bytes to TextReader.
+1. User taps the bubble. Taps while a capture is in progress are ignored.
+2. Overlay hides the bubble, waits for the next rendered frame, then waits 150 ms more.
+3. CaptureService takes the first frame that arrives after the request. If none arrives within 300 ms (a static screen), it uses the latest frame, which already postdates the hide. It writes the frame to `cacheDir/capture.png` and returns the path.
+4. Overlay shows a busy bubble and passes the path to TextReader.
 
 ### 5.2 TextReader output
 
 ```dart
 class TextPiece {
   final String text;
-  final Rect box;
+  final double left, top, right, bottom;
 }
 ```
+
+`TextPiece` uses plain doubles instead of `dart:ui`'s `Rect`, which keeps the parser free of Flutter imports.
 
 Pieces come from ML Kit elements (words), not lines. ML Kit can merge the three member scores into one line, and elements keep them apart.
 
 ### 5.3 ResultParser
 
-1. **Classify.** Strip commas and spaces. Inside otherwise-numeric tokens, map `O`→`0` and `l`/`I`→`1`. Then:
+1. **Classify.** Split pieces that contain spaces into words. Strip commas and periods. Inside otherwise-numeric tokens, map `O`/`o`→`0` and `l`/`I`/`|`→`1`. Then:
    - **Total:** a number with `Pt` attached or as the adjacent piece
    - **Bonus:** `+` followed by digits; drop junk before the `+` (the crown icon)
-   - **Plain number:** anything else numeric
+   - **Plain number:** anything else numeric, **100 or more**. Smaller numbers are the 1/2/3 placement badges and the stage labels, and are ignored.
 2. **Find stages.** Require exactly 3 totals. Sort them by y as Stages 1–3. A stage's band runs from its total down to the next total (or the image bottom).
-3. **Find members.** In each band, take the first row below the total with exactly 3 plain numbers. Pieces share a row when their vertical centers differ by less than half the median piece height. Sort the row by x into left, middle, and right.
-4. **Find bonus.** The bonus piece in the band.
+3. **Find bonus.** The topmost bonus piece in the band.
+4. **Find members.** Pieces share a row when their vertical centers differ by less than half the median piece height. The member row is the first row of plain numbers below the total and above the bonus.
+   - Exactly 3 numbers → sorted by x into left, middle, and right
+   - Fewer than 3 → each number goes to the nearest slot, using the average x of each slot from stages that read completely; if no stage read completely, the slots stay empty
+   - More than 3 → slots stay empty
 
-The 総合力 number sits alone on its row, so step 3 never picks it.
+The 総合力 number sits below the bonus, so step 4 never picks it.
 
 ### 5.4 Outcomes
 
@@ -147,6 +156,7 @@ The 総合力 number sits alone on its row, so step 3 never picks it.
 | 3 stages parsed, all sums pass | Auto-save; toast "Run N saved" |
 | Parsed but a sum fails, or a field is missing | Edit panel opens, pre-filled with the parsed values; failing stages highlighted |
 | No totals found | Toast "No result screen detected"; nothing saved |
+| 1–2 or 4+ totals found | Toast "Couldn't read all three stages, try again"; nothing saved. A re-tap is cheaper than typing a whole stage |
 | Identical to the session's last run (9 scores + 3 totals) | Toast "Same as run N, skipped"; nothing saved |
 
 ### 5.5 Edit panel
@@ -165,9 +175,12 @@ The 総合力 number sits alone on its row, so step 3 never picks it.
 |---|---|
 | `sessions` | `id`, `name`, `created_at` |
 | `runs` | `id`, `session_id` → sessions, `seq` (run number within session), `captured_at`, `edited` |
-| `stage_results` | `run_id` → runs, `stage` (1–3), `left`, `middle`, `right`, `bonus`, `total`; PK (`run_id`, `stage`) |
+| `stage_results` | `run_id` → runs, `stage` (1–3), `left_score`, `middle_score`, `right_score`, `bonus`, `total`; PK (`run_id`, `stage`) |
 
-Deleting a session cascades to its runs and stage results.
+- The score columns carry a `_score` suffix because `LEFT` and `RIGHT` are SQL keywords.
+- Deleting a session cascades to its runs and stage results.
+- `seq` is assigned inside the insert (`INSERT … SELECT COALESCE(MAX(seq), 0) + 1`), so two engines inserting at once can't take the same number.
+- Connections set `foreign_keys = ON`, `busy_timeout = 5000`, and `journal_mode = WAL`.
 
 ### 6.2 CSV export
 
@@ -197,7 +210,7 @@ run,captured_at,s1_left,s1_middle,s1_right,s1_bonus,s1_total,s2_left,…,s3_tota
 
 One series (e.g. Stage 1 · Left), opened from its stats column.
 
-- **Histogram:** run count per score range, drawn with `fl_chart`
+- **Histogram:** run count per score range, drawn with a small `CustomPainter`. One chart with two marker lines doesn't justify a chart dependency.
 - **Markers:** vertical lines at mean and median
 - **Stats:** the same seven values as the card
 
@@ -222,7 +235,9 @@ The same form as the overlay edit panel, opened from the run list.
 | Capture consent declined | Stay on session detail; show a message |
 | Projection stopped (status-bar chip, screen lock) | CaptureService signals the overlay; bubble and service close; next Start re-prompts |
 | "Single app" sharing aimed at the wrong app | Results in "No result screen detected"; the pre-prompt screen tells the user to pick the game or the entire screen |
-| ML Kit error or timeout | Toast "Couldn't read screen, try again"; nothing saved |
+| ML Kit error or timeout (10 s) | Toast "Couldn't read screen, try again"; nothing saved |
+| Capture tapped after the projection stopped | Toast "Capture stopped. Start again from the app."; overlay closes |
+| Deleting the session the bubble is capturing into | Capture stops first, then the session is deleted |
 
 ## 9. Testing
 
@@ -260,4 +275,6 @@ The same form as the overlay edit panel, opened from the run list.
 | Trigger | Bubble tap | Predictable; auto-detect costs battery and risks duplicates |
 | Grouping | Stage × slot | Simple and reliable given fixed teams per session |
 | Distribution chart | Histogram | Sessions hold 200–500 runs, enough for a stable shape |
+| Chart rendering | `CustomPainter` | One simple chart; no dependency |
+| Overlay toasts | Native Android `Toast` via the capture plugin | Shows above the game without resizing the overlay window |
 | Failed checks | Edit panel over the game | Fix while the result is still on screen |
