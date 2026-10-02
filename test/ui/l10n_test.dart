@@ -22,5 +22,7 @@ void main() {
     expect(ja.runSaved(7, '1 / 2 / 3'), isNot(en.runSaved(7, '1 / 2 / 3')));
     expect(en.runCount(1), '1 run');
     expect(en.runCount(3), '3 runs');
+    expect(en.bubbleFailed, "Couldn't start the bubble. Start again from the app.");
+    expect(ja.bubbleFailed, isNot(en.bubbleFailed));
   });
 }

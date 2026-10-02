@@ -153,11 +153,14 @@ class _OverlayHomeState extends State<OverlayHome> {
       if (mounted) setState(() => _mode = _Mode.bubble);
     } catch (_) {
       // A failed start must not block later resets. Without a working
-      // bubble, closing is the only sane state.
+      // bubble, closing is the only sane state, and the user hears why.
       // closeOverlay never completes once the service is gone.
       try {
         await _teardown();
-        if (await FlutterOverlayWindow.isActive()) await FlutterOverlayWindow.closeOverlay();
+        if (await FlutterOverlayWindow.isActive()) {
+          if (mounted) await ScreenCapture.toast(AppLocalizations.of(context).bubbleFailed);
+          await FlutterOverlayWindow.closeOverlay();
+        }
       } catch (_) {}
     }
   }

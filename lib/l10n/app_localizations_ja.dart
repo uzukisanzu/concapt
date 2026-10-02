@@ -108,6 +108,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get readFailed => '画面を読み取れませんでした。もう一度お試しください';
 
   @override
+  String get bubbleFailed => 'バブルを開始できませんでした。アプリから再開してください。';
+
+  @override
   String get captureStopped => 'キャプチャが停止しました。アプリから再開してください。';
 
   @override

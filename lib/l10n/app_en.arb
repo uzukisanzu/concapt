@@ -35,6 +35,7 @@
   "noResultScreen": "No result screen detected",
   "incompleteScreen": "Couldn't read all three stages, try again",
   "readFailed": "Couldn't read screen, try again",
+  "bubbleFailed": "Couldn't start the bubble. Start again from the app.",
   "captureStopped": "Capture stopped. Start again from the app.",
   "checkHighlightedStage": "Check the highlighted stage",
   "noSessionSelected": "No session selected. Start capturing from the app.",

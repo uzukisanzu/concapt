@@ -108,6 +108,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readFailed => 'Couldn\'t read screen, try again';
 
   @override
+  String get bubbleFailed =>
+      'Couldn\'t start the bubble. Start again from the app.';
+
+  @override
   String get captureStopped => 'Capture stopped. Start again from the app.';
 
   @override

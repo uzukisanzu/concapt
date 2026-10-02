@@ -272,6 +272,12 @@ abstract class AppLocalizations {
   /// **'Couldn\'t read screen, try again'**
   String get readFailed;
 
+  /// No description provided for @bubbleFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start the bubble. Start again from the app.'**
+  String get bubbleFailed;
+
   /// No description provided for @captureStopped.
   ///
   /// In en, this message translates to:
