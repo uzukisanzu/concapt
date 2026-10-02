@@ -1,0 +1,118 @@
+import 'package:concapt/core/models.dart';
+import 'package:concapt/core/result_parser.dart';
+import 'package:concapt/core/text_piece.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import '../helpers/sample.dart';
+import '../helpers/screen.dart';
+
+RunDraft parsedDraft(List<TextPiece> pieces) {
+  final result = ResultParser.parse(pieces);
+  expect(result, isA<ParsedRun>());
+  return (result as ParsedRun).draft;
+}
+
+void main() {
+  group('number', () {
+    test('strips commas and periods', () {
+      expect(ResultParser.number('120,918'), 120918);
+      expect(ResultParser.number('39.482'), 39482);
+    });
+
+    test('maps lookalike letters inside numeric tokens', () {
+      expect(ResultParser.number('12O,918'), 120918);
+      expect(ResultParser.number('l5,385'), 15385);
+      expect(ResultParser.number('|4,862'), 14862);
+    });
+
+    test('rejects words and letter-only tokens', () {
+      expect(ResultParser.number('Pt'), isNull);
+      expect(ResultParser.number('lOl'), isNull);
+      expect(ResultParser.number('58929x'), isNull);
+    });
+  });
+
+  test('reads the reference screen', () {
+    final draft = parsedDraft(screenPieces(referenceScores()));
+    expect(draft.toScores(), referenceScores());
+    expect(draft.invalidStages, isEmpty);
+  });
+
+  test('reads Pt as a separate piece', () {
+    final pieces = screenPieces(referenceScores())
+        .where((piece) => piece.text != '214,882Pt')
+        .toList()
+      ..addAll([p('214,882', 170, 60, width: 100, height: 24), p('Pt', 272, 64, width: 20)]);
+    expect(parsedDraft(pieces).toScores(), referenceScores());
+  });
+
+  test('splits a piece holding several numbers', () {
+    final pieces = screenPieces(referenceScores())
+        .where((piece) => !['120,918', '39,482', '30,299'].contains(piece.text))
+        .toList()
+      ..add(p('120,918 39,482 30,299', 128, 92, width: 200));
+    expect(parsedDraft(pieces).toScores(), referenceScores());
+  });
+
+  test('drops crown junk before the bonus', () {
+    final pieces = [
+      for (final piece in screenPieces(referenceScores()))
+        piece.text == '+24183'
+            ? TextPiece('@+24183', piece.left, piece.top, piece.right, piece.bottom)
+            : piece,
+    ];
+    expect(parsedDraft(pieces).stages[0].bonus, 24183);
+  });
+
+  test('ignores placement badges, stage labels, and the total power row', () {
+    final draft = parsedDraft(screenPieces(referenceScores()));
+    for (final stage in draft.stages) {
+      expect(stage.fields.where((v) => v != null && v < 100), isEmpty);
+      expect(stage.fields, isNot(contains(58929)));
+    }
+  });
+
+  test('a missing number fills the other slots by position', () {
+    final pieces =
+        screenPieces(referenceScores()).where((piece) => piece.text != '39,562').toList();
+    final stage = parsedDraft(pieces).stages[1];
+    expect(stage.left, 107065);
+    expect(stage.middle, isNull);
+    expect(stage.right, 38123);
+    expect(stage.total, 206163);
+  });
+
+  test('missing member row leaves slots empty', () {
+    final pieces = screenPieces(referenceScores())
+        .where((piece) => !['120,918', '39,482', '30,299'].contains(piece.text))
+        .toList();
+    final draft = parsedDraft(pieces);
+    expect(draft.stages[0].left, isNull);
+    expect(draft.stages[0].middle, isNull);
+    expect(draft.stages[0].right, isNull);
+    expect(draft.invalidStages, {0});
+  });
+
+  test('a wrong digit fails the sum check for that stage only', () {
+    final pieces = [
+      for (final piece in screenPieces(referenceScores()))
+        piece.text == '14,862'
+            ? TextPiece('14,882', piece.left, piece.top, piece.right, piece.bottom)
+            : piece,
+    ];
+    expect(parsedDraft(pieces).invalidStages, {2});
+  });
+
+  test('two totals is an incomplete screen', () {
+    final pieces =
+        screenPieces(referenceScores()).where((piece) => piece.text != '181,221Pt').toList();
+    final result = ResultParser.parse(pieces);
+    expect(result, isA<IncompleteScreen>());
+    expect((result as IncompleteScreen).totalsFound, 2);
+  });
+
+  test('no totals is not a result screen', () {
+    expect(ResultParser.parse([p('Hello', 10, 10), p('12345', 10, 40)]), isA<NoResultScreen>());
+    expect(ResultParser.parse(const []), isA<NoResultScreen>());
+  });
+}
