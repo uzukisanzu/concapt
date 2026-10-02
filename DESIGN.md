@@ -272,7 +272,7 @@ A flat app bar on the white ground, ink title, and a hairline bottom rule. It st
 Stroke-gray bars with 1px gaps, a secondary-gray axis, a solid 2px utility-red mean line, and a dashed 2px ink median line. Each marker has a 4px ground-colored halo so it stays legible over bars. A legend below names both values.
 
 ### Overlay
-The capture bubble is a 56dp utility-red circle with a white camera icon or spinner, the same in both themes because it sits on the game, not the app's ground. The edit panel (340 × 560dp) is white with a 1px stroke-gray border and 4dp corners, and it reuses the run form.
+The capture bubble is a 56dp utility-red circle with a white 24dp glyph or spinner. The glyph is the launcher icon's viewfinder corners and histogram, without the mean line. The bubble is the same in both themes because it sits on the game, not the app's ground. The edit panel (340 × 560dp) is white with a 1px stroke-gray border and 4dp corners, and it reuses the run form.
 
 ## Do's and Don'ts
 

@@ -19,6 +19,7 @@ import '../ui/theme.dart';
 import 'capture_strip.dart';
 import 'outcome_messages.dart';
 import 'overlay_sizes.dart';
+import 'viewfinder_glyph.dart';
 
 class OverlayApp extends StatelessWidget {
   const OverlayApp({super.key});
@@ -416,7 +417,7 @@ class _Bubble extends StatelessWidget {
                 height: 24,
                 child: CircularProgressIndicator(strokeWidth: 2.5, color: scheme.onPrimary),
               )
-            : Icon(Icons.camera_alt, color: scheme.onPrimary),
+            : ViewfinderGlyph(color: scheme.onPrimary),
       ),
     );
   }
