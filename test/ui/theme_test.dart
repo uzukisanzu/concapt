@@ -43,12 +43,12 @@ void main() {
     }
   });
 
-  test('every set weight also sets the wght axis', () {
+  test('bold styles use the bundled Roboto at w700', () {
     final t = buildTheme(Brightness.light).textTheme;
     final weighted = [t.displayLarge, t.headlineSmall, t.titleLarge, t.titleSmall, bold(t.labelLarge)];
     for (final style in weighted) {
       expect(style!.fontWeight, FontWeight.w700);
-      expect(style.fontVariations, [const FontVariation.weight(700)]);
+      expect(style.fontFamily, 'Roboto');
     }
   });
 }

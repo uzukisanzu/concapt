@@ -65,23 +65,18 @@ const _dark = ColorScheme(
 
 const _tabular = [FontFeature.tabularFigures()];
 
-/// Android's Roboto is a variable font that ignores [FontWeight] alone,
-/// so every weight also sets the `wght` axis.
-List<FontVariation>? _axis(FontWeight? weight) =>
-    weight == null ? null : [FontVariation.weight(weight.value.toDouble())];
-
 /// [style] set bold.
-TextStyle? bold(TextStyle? style) =>
-    style?.copyWith(fontWeight: FontWeight.w700, fontVariations: _axis(FontWeight.w700));
+TextStyle? bold(TextStyle? style) => style?.copyWith(fontWeight: FontWeight.w700);
 
-/// Roboto with a Japanese fallback, tight leading, and tabular figures,
-/// so score columns line up. Sizes stay on the Material scale.
+/// Bundled Roboto (Regular and Bold) with a Japanese fallback, tight leading,
+/// and tabular figures, so score columns line up. Bundling keeps the face
+/// fixed on phones whose system font isn't Roboto. Sizes stay on the
+/// Material scale.
 TextStyle _style(double height, [FontWeight? weight]) => TextStyle(
       fontFamily: 'Roboto',
       fontFamilyFallback: const ['Noto Sans JP'],
       fontFeatures: _tabular,
       fontWeight: weight,
-      fontVariations: _axis(weight),
       height: height,
       leadingDistribution: TextLeadingDistribution.even,
     );
