@@ -16,6 +16,7 @@ String formatCompact(int value) =>
     value != 0 && value % 1000 == 0 ? '${value ~/ 1000}k' : formatInt(value);
 
 String formatTime(DateTime t) =>
-    '${_two(t.month)}-${_two(t.day)} ${_two(t.hour)}:${_two(t.minute)}';
+    '${twoDigits(t.month)}-${twoDigits(t.day)} ${twoDigits(t.hour)}:${twoDigits(t.minute)}';
 
-String _two(int v) => v.toString().padLeft(2, '0');
+/// Zero-padded to two digits, as in times and the numbered stage tab.
+String twoDigits(int v) => v.toString().padLeft(2, '0');
