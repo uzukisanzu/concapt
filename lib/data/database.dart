@@ -10,6 +10,7 @@ class Sessions extends Table {
   DateTimeColumn get createdAt => dateTime()();
 }
 
+@TableIndex(name: 'runs_session_seq', columns: {#sessionId, #seq}, unique: true)
 class Runs extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get sessionId =>
@@ -48,10 +49,13 @@ class AppDatabase extends _$AppDatabase {
       ));
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+        onUpgrade: (m, from, to) async {
+          if (from < 2) await m.createIndex(runsSessionSeq);
+        },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
           await customStatement('PRAGMA busy_timeout = 5000');

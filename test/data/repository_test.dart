@@ -76,6 +76,47 @@ void main() {
     expect(updated.seq, run.seq);
   });
 
+  test('stages are stored as 1, 2, 3', () async {
+    final sid = await repo.createSession('s');
+    await repo.addRun(sid, referenceScores(), edited: false);
+    final stages = await db.select(db.stageResults).get();
+    expect(stages.map((s) => s.stage), unorderedEquals([1, 2, 3]));
+    expect(stages.firstWhere((s) => s.stage == 3).total, 181221);
+  });
+
+  test('two runs in a session cannot share a number', () async {
+    final sid = await repo.createSession('s');
+    RunsCompanion run() =>
+        RunsCompanion.insert(sessionId: sid, seq: 1, capturedAt: DateTime(2026, 10, 2));
+    await db.into(db.runs).insert(run());
+    await expectLater(db.into(db.runs).insert(run()), throwsA(isA<SqliteException>()));
+  });
+
+  test('updating a missing run throws and stores nothing', () async {
+    await expectLater(repo.updateRun(999, referenceScores()), throwsA(isA<SqliteException>()));
+    expect(await db.select(db.stageResults).get(), isEmpty);
+  });
+
+  test('upgrading from version 1 adds the run number index', () async {
+    final dir = await Directory.systemTemp.createTemp('concapt_db');
+    final file = File('${dir.path}/v1.sqlite');
+    try {
+      final v1 = AppDatabase(NativeDatabase(file));
+      await v1.customStatement('DROP INDEX runs_session_seq');
+      await v1.customStatement('PRAGMA user_version = 1');
+      await v1.close();
+
+      final v2 = AppDatabase(NativeDatabase(file));
+      final index = await v2
+          .customSelect("SELECT name FROM sqlite_master WHERE name = 'runs_session_seq'")
+          .get();
+      await v2.close();
+      expect(index, hasLength(1));
+    } finally {
+      await dir.delete(recursive: true);
+    }
+  });
+
   test('deleting a session cascades to runs and stages', () async {
     final sid = await repo.createSession('s');
     await repo.addRun(sid, referenceScores(), edited: false);

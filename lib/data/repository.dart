@@ -76,9 +76,10 @@ class Repository {
     DateTime? capturedAt,
   }) {
     return _db.transaction(() async {
-      final runId = await _db.customInsert(
+      final rows = await _db.customWriteReturning(
         'INSERT INTO runs (session_id, seq, captured_at, edited) '
-        'SELECT ?1, COALESCE(MAX(seq), 0) + 1, ?2, ?3 FROM runs WHERE session_id = ?1',
+        'SELECT ?1, COALESCE(MAX(seq), 0) + 1, ?2, ?3 FROM runs WHERE session_id = ?1 '
+        'RETURNING id, seq',
         variables: [
           Variable.withInt(sessionId),
           Variable.withDateTime(capturedAt ?? DateTime.now()),
@@ -86,9 +87,9 @@ class Repository {
         ],
         updates: {_db.runs},
       );
-      await _insertStages(runId, scores);
-      final run = await (_db.select(_db.runs)..where((r) => r.id.equals(runId))).getSingle();
-      return run.seq;
+      final run = rows.single;
+      await _insertStages(run.read<int>('id'), scores);
+      return run.read<int>('seq');
     });
   }
 

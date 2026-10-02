@@ -1084,6 +1084,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SessionsTable sessions = $SessionsTable(this);
   late final $RunsTable runs = $RunsTable(this);
   late final $StageResultsTable stageResults = $StageResultsTable(this);
+  late final Index runsSessionSeq = Index(
+    'runs_session_seq',
+    'CREATE UNIQUE INDEX runs_session_seq ON runs (session_id, seq)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1092,6 +1096,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     sessions,
     runs,
     stageResults,
+    runsSessionSeq,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
