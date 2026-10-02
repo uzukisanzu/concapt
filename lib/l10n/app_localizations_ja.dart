@@ -141,7 +141,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String sessionSubtitle(String runs, String last) {
-    return '$runs · 最終 $last';
+    return '$runs · 最新 $last';
   }
 
   @override

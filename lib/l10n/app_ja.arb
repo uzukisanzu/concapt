@@ -35,7 +35,7 @@
   "deleteSessionTitle": "「{name}」を削除しますか？",
   "deleteSessionMessage": "{count, plural, other{{count}回分の記録も削除されます。}}",
   "runCount": "{count, plural, other{{count}回}}",
-  "sessionSubtitle": "{runs} · 最終 {last}",
+  "sessionSubtitle": "{runs} · 最新 {last}",
   "allowBubbleTitle": "バブルの表示を許可",
   "allowBubbleMessage": "ゲームの上にキャプチャ用のバブルを表示するため、「他のアプリの上に重ねて表示」の許可が必要です。",
   "openSettings": "設定を開く",
