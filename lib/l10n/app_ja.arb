@@ -19,6 +19,7 @@
   "statusOffBy": "{diff} ずれ",
   "saveAnywayTitle": "このまま保存しますか？",
   "saveAnywayMessage": "{stages}の合計が一致しません。",
+  "quickFix": "{field} → {value}",
   "saveAnywayAction": "保存する",
   "runSaved": "{seq}回目を保存しました\n{totals}",
   "runDuplicate": "{seq}回目と同じため、スキップしました",

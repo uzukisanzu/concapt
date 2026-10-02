@@ -40,16 +40,28 @@ class _RunFormState extends State<RunForm> {
       ],
   ];
 
+  late final List<List<FocusNode>> _focus = [
+    for (final row in _controllers) [for (final _ in row) FocusNode()..addListener(_changed)],
+  ];
+
   void _changed() => setState(() {});
 
   @override
   void dispose() {
-    for (final row in _controllers) {
+    for (final row in [..._controllers, ..._focus]) {
       for (final c in row) {
         c.dispose();
       }
     }
     super.dispose();
+  }
+
+  void _fill(int stage, int field, int value) {
+    final text = value.toString();
+    _controllers[stage][field].value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
   }
 
   RunDraft get _draft => RunDraft([
@@ -88,7 +100,13 @@ class _RunFormState extends State<RunForm> {
           child: ListView(
             children: [
               for (var i = 0; i < _controllers.length; i++)
-                _StageSection(index: i, stage: draft.stages[i], controllers: _controllers[i]),
+                _StageSection(
+                  index: i,
+                  stage: draft.stages[i],
+                  controllers: _controllers[i],
+                  focusNodes: _focus[i],
+                  onFix: (field, value) => _fill(i, field, value),
+                ),
               const Divider(),
             ],
           ),
@@ -115,13 +133,22 @@ class _RunFormState extends State<RunForm> {
 }
 
 /// One stage as a ruled module: a header band with the red numbered tab
-/// and the sum status, then the five score fields.
+/// and the sum status, then the five score fields. While a field of a
+/// failing stage has focus, the status gives way to a quick fix for it.
 class _StageSection extends StatelessWidget {
-  const _StageSection({required this.index, required this.stage, required this.controllers});
+  const _StageSection({
+    required this.index,
+    required this.stage,
+    required this.controllers,
+    required this.focusNodes,
+    required this.onFix,
+  });
 
   final int index;
   final StageDraft stage;
   final List<TextEditingController> controllers;
+  final List<FocusNode> focusNodes;
+  final void Function(int field, int value) onFix;
 
   @override
   Widget build(BuildContext context) {
@@ -135,6 +162,7 @@ class _StageSection extends StatelessWidget {
           child: TextField(
             key: Key('field-$index-$f'),
             controller: controllers[f],
+            focusNode: focusNodes[f],
             keyboardType: TextInputType.number,
             textAlign: TextAlign.end,
             decoration: InputDecoration(labelText: labels[f]),
@@ -142,6 +170,9 @@ class _StageSection extends StatelessWidget {
         );
 
     const gap = SizedBox(width: 8);
+
+    final focused = focusNodes.indexWhere((n) => n.hasFocus);
+    final fix = ok || focused < 0 ? null : stage.fixFor(focused);
 
     return Column(
       key: Key('stage-$index'),
@@ -157,13 +188,30 @@ class _StageSection extends StatelessWidget {
                 child: Text(l.stageLabel(index + 1), style: text.titleSmall),
               ),
               const Spacer(),
-              Text(
-                stageStatus(l, stage),
-                key: Key('status-$index'),
-                style: ok
-                    ? text.labelLarge?.copyWith(color: scheme.onSurface)
-                    : bold(text.labelLarge)?.copyWith(color: scheme.onErrorContainer),
-              ),
+              if (fix != null)
+                // Inside the fields' tap region, so tapping it keeps their focus.
+                TextFieldTapRegion(
+                  child: OutlinedButton(
+                    key: Key('fix-$index'),
+                    onPressed: () => onFix(focused, fix),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: scheme.onErrorContainer,
+                      side: BorderSide(color: scheme.onErrorContainer),
+                      textStyle: bold(text.labelLarge),
+                      visualDensity: VisualDensity.compact,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(l.quickFix(labels[focused], formatInt(fix))),
+                  ),
+                )
+              else
+                Text(
+                  stageStatus(l, stage),
+                  key: Key('status-$index'),
+                  style: ok
+                      ? text.labelLarge?.copyWith(color: scheme.onSurface)
+                      : bold(text.labelLarge)?.copyWith(color: scheme.onErrorContainer),
+                ),
             ],
           ),
         ),

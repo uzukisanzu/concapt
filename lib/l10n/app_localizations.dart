@@ -212,6 +212,12 @@ abstract class AppLocalizations {
   /// **'{stages} doesn\'t add up.'**
   String saveAnywayMessage(String stages);
 
+  /// No description provided for @quickFix.
+  ///
+  /// In en, this message translates to:
+  /// **'{field} → {value}'**
+  String quickFix(String field, String value);
+
   /// No description provided for @saveAnywayAction.
   ///
   /// In en, this message translates to:

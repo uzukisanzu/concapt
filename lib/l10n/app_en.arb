@@ -22,6 +22,8 @@
   "saveAnywayTitle": "Save anyway?",
   "saveAnywayMessage": "{stages} doesn't add up.",
   "@saveAnywayMessage": {"placeholders": {"stages": {"type": "String"}}},
+  "quickFix": "{field} → {value}",
+  "@quickFix": {"placeholders": {"field": {"type": "String"}, "value": {"type": "String"}}},
   "saveAnywayAction": "Save anyway",
   "runSaved": "Run {seq} saved\n{totals}",
   "@runSaved": {"placeholders": {"seq": {"type": "int"}, "totals": {"type": "String"}}},

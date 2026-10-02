@@ -95,6 +95,24 @@ class StageDraft {
 
   /// Complete and passing the sum check.
   bool get isValid => toScores()?.sumOk ?? false;
+
+  /// The value for [field] that makes the stage add up, given the other four.
+  /// Null when another field is empty or the value would be negative.
+  int? fixFor(int field) {
+    final f = fields;
+    var others = 0;
+    for (var i = 0; i < 4; i++) {
+      if (i == field) continue;
+      final v = f[i];
+      if (v == null) return null;
+      others += v;
+    }
+    if (field == 4) return others;
+    final total = f[4];
+    if (total == null) return null;
+    final value = total - others;
+    return value < 0 ? null : value;
+  }
 }
 
 /// A run as read or typed, before it is saved.

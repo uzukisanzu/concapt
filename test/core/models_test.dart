@@ -60,6 +60,32 @@ void main() {
     });
   });
 
+  group('StageDraft.fixFor', () {
+    // 1 + 2 + 3 + 4 = 10, read with a wrong total.
+    final stage = StageDraft.fromFields([1, 2, 3, 4, 20]);
+
+    test('a member or the bonus takes the total minus the other four', () {
+      expect(stage.fixFor(0), 11);
+      expect(stage.fixFor(3), 14);
+    });
+
+    test('the total takes the sum', () {
+      expect(stage.fixFor(4), 10);
+    });
+
+    test('fills the field itself when it is the only empty one', () {
+      expect(StageDraft.fromFields([null, 2, 3, 4, 10]).fixFor(0), 1);
+    });
+
+    test('is null when another field is empty', () {
+      expect(StageDraft.fromFields([1, null, 3, 4, 20]).fixFor(0), isNull);
+    });
+
+    test('is null when the result would be negative', () {
+      expect(StageDraft.fromFields([100, 2, 3, 4, 10]).fixFor(1), isNull);
+    });
+  });
+
   test('TextPiece round-trips through JSON', () {
     const piece = TextPiece('214,882Pt', 10, 20, 110, 44);
     final copy = TextPiece.fromJson(piece.toJson());

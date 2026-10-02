@@ -52,6 +52,21 @@ void main() {
     expect(find.text('Adds up'), findsNWidgets(3));
   });
 
+  testWidgets('the quick fix fills the focused field', (tester) async {
+    await pumpForm(tester, draftWithStage3Total(181222));
+    await tester.tap(find.byKey(const Key('field-0-0')));
+    await tester.pump();
+    expect(find.byKey(const Key('fix-0')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('field-2-4')));
+    await tester.pump();
+    expect(find.text('Total → 181,221'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('fix-2')));
+    await tester.pump();
+    expect(find.text('Adds up'), findsNWidgets(3));
+    expect(find.byKey(const Key('fix-2')), findsNothing);
+  });
+
   testWidgets('a failing sum asks before saving', (tester) async {
     final saved = await pumpForm(tester, draftWithStage3Total(181222));
     await tester.tap(find.byKey(const Key('save')));
@@ -66,6 +81,8 @@ void main() {
   testWidgets('a missing field disables save', (tester) async {
     await pumpForm(tester, RunDraft.fromScores(referenceScores()));
     await tester.enterText(find.byKey(const Key('field-1-0')), '');
+    // While focused, the emptied field offers its quick fix instead of the status.
+    FocusManager.instance.primaryFocus?.unfocus();
     await tester.pump();
     final save = tester.widget<FilledButton>(find.byKey(const Key('save')));
     expect(save.onPressed, isNull);

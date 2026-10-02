@@ -72,6 +72,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String quickFix(String field, String value) {
+    return '$field → $value';
+  }
+
+  @override
   String get saveAnywayAction => '保存する';
 
   @override
