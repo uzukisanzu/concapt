@@ -16,7 +16,7 @@ Run on the user's phone (never the emulator) after any change to capture, overla
 | 10 | Panel cancel | Open the panel, Cancel | Back to the bubble; nothing saved |
 | 11 | Background save | Return to the app | New runs listed; stats updated without restarting |
 | 12 | Series | Tap a slot column | Histogram with mean and median lines and seven stats |
-| 13 | Edit run | Tap a run, change a number, Save | "edited" mark; stats change |
+| 13 | Edit run | Tap a run, change a number, Save. Then open another run and Save without changes | The changed run gets the "edited" mark and the stats change; the unchanged one stays unmarked |
 | 14 | Delete run | Long-press a run, Delete | Run gone; next capture still gets a new number |
 | 15 | CSV | Export CSV, share to a file app | Header plus one row per run, oldest first |
 | 16 | Screen lock | While capturing, lock and unlock. Separately, end sharing from the status bar with the screen on, if the phone offers it (HyperOS doesn't; check logcat for a toast right after the lock's projection stop instead) | After unlock the bubble is gone. Ending from the status bar closes the bubble with toast "Capture stopped. Start again from the app."; Stop capturing in the app shows no toast |
@@ -29,3 +29,6 @@ Run on the user's phone (never the emulator) after any change to capture, overla
 | 23 | Permission return | On the overlay permission screen, grant it and press Back | The app continues to the capture consent dialog without a second tap |
 | 24 | Bold type | Open a session with runs | Titles and means render bold in Latin and Japanese alike |
 | 25 | Notifications denied | Clear app data, start capturing, deny notifications, capture a result | Capture still works; the run saves without a toast |
+| 26 | Quick fix | Open the edit panel on a stage that doesn't add up, tap the wrong field | The band offers "#N → value" without changing height; tapping it fills the field and the stage adds up |
+| 27 | Capture mark | Start capturing into a session, return to the sessions list | Only that session shows the red "Capturing" tab; it disappears after Stop capturing |
+| 28 | Column cue | Open a session with runs | Each slot header shows a chart icon; tapping the column opens its histogram |
