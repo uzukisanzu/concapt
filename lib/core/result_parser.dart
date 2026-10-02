@@ -44,8 +44,9 @@ abstract final class ResultParser {
   static final _ptAlone = RegExp(r'^[Pp][Tt]\.?$');
   static final _bonus = RegExp(r'\+\s*([^+]+?)[^\w|]*$');
   static final _digitLike = RegExp(r'^[\dOolI|Aó,.]+$');
+
   /// A comma-grouped number with up to three trailing chars, like `1,014,622Pr`.
-  static final _grouped =RegExp(r'^([\dOolI|Aó]{1,3}(?:[,.][\dOolI|Aó]{3})+)\D{0,3}$');
+  static final _grouped = RegExp(r'^([\dOolI|Aó]{1,3}(?:[,.][\dOolI|Aó]{3})+)\D{0,3}$');
   static final _threeDigits = RegExp(r'\d{3}');
   static final _endsNumeric = RegExp(r'[\d,.]$');
   static final _startsDigit = RegExp(r'^\d');
@@ -137,8 +138,11 @@ abstract final class ResultParser {
 
       final grouped = _grouped.firstMatch(text);
       if (grouped != null && word.height >= scoreHeight * _totalHeightRatio) {
-        tokens.add(_Token(_Kind.total, number(grouped.group(1)!)!, word));
-        continue;
+        final value = number(grouped.group(1)!);
+        if (value != null) {
+          tokens.add(_Token(_Kind.total, value, word));
+          continue;
+        }
       }
 
       final suffix = _ptSuffix.firstMatch(text);

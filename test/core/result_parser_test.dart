@@ -69,6 +69,12 @@ void main() {
     expect(parsedDraft(pieces).toScores(), referenceScores());
   });
 
+  test('total-sized lookalike-only text is not a total', () {
+    final pieces = screenPieces(referenceScores())
+      ..add(p('lll,lll', 170, 10, width: 130, height: 30));
+    expect(parsedDraft(pieces).toScores(), referenceScores());
+  });
+
   test('joins a number OCR split in two', () {
     final pieces = screenPieces(referenceScores())
         .where((piece) => !['+24183', '181,221Pt'].contains(piece.text))
