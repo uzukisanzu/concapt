@@ -42,16 +42,32 @@ class _Token {
 abstract final class ResultParser {
   static final _ptSuffix = RegExp(r'^(.*?)\s*[Pp][Tt]\.?$');
   static final _ptAlone = RegExp(r'^[Pp][Tt]\.?$');
-  static final _bonus = RegExp(r'\+\s*([^+]+)$');
-  static final _digitLike = RegExp(r'^[\dOolI|,.]+$');
+  static final _bonus = RegExp(r'\+\s*([^+]+?)[^\w|]*$');
+  static final _digitLike = RegExp(r'^[\dOolI|Aó,.]+$');
+  /// A comma-grouped number with up to three trailing chars, like `1,014,622Pr`.
+  static final _grouped =RegExp(r'^([\dOolI|Aó]{1,3}(?:[,.][\dOolI|Aó]{3})+)\D{0,3}$');
+  static final _threeDigits = RegExp(r'\d{3}');
+  static final _endsNumeric = RegExp(r'[\d,.]$');
+  static final _startsDigit = RegExp(r'^\d');
   static final _anyDigit = RegExp(r'\d');
   static final _separators = RegExp(r'[,.]');
-  static const _lookalikes = {'O': '0', 'o': '0', 'l': '1', 'I': '1', '|': '1'};
+  static const _lookalikes = {
+    'O': '0',
+    'o': '0',
+    'l': '1',
+    'I': '1',
+    '|': '1',
+    'A': '4',
+    'ó': '6',
+  };
 
   /// Smallest plain number kept; below this are badges and stage labels.
   static const _minPlainNumber = 100;
 
   static const _slots = 3;
+
+  /// Totals print about twice the height of member scores; 総合力 about 1.3×.
+  static const _totalHeightRatio = 1.6;
 
   /// Parses [raw] as a number, tolerating separators and lookalike letters.
   static int? number(String raw) {
@@ -109,11 +125,21 @@ abstract final class ResultParser {
   }
 
   static List<_Token> _classify(List<TextPiece> pieces) {
-    final words = pieces.expand(_splitWords).toList();
+    final words = _joinSplitNumbers(pieces).expand(_splitWords).toList();
+    final scoreHeight = _median([
+      for (final w in words)
+        if (_threeDigits.hasMatch(w.text)) w.height,
+    ]);
     final ptMarks = words.where((w) => _ptAlone.hasMatch(w.text.trim())).toList();
     final tokens = <_Token>[];
     for (final word in words) {
       final text = word.text.trim();
+
+      final grouped = _grouped.firstMatch(text);
+      if (grouped != null && word.height >= scoreHeight * _totalHeightRatio) {
+        tokens.add(_Token(_Kind.total, number(grouped.group(1)!)!, word));
+        continue;
+      }
 
       final suffix = _ptSuffix.firstMatch(text);
       if (suffix != null && suffix.group(1)!.isNotEmpty) {
@@ -139,6 +165,32 @@ abstract final class ResultParser {
       tokens.add(_Token(isTotal ? _Kind.total : _Kind.number, value, word));
     }
     return tokens;
+  }
+
+  /// Joins a number OCR broke in two, like `181,22` + `1Pt`.
+  static List<TextPiece> _joinSplitNumbers(List<TextPiece> words) {
+    final sorted = [...words]..sort((a, b) => a.left.compareTo(b.left));
+    final joined = <TextPiece>[];
+    for (final w in sorted) {
+      final i = joined.lastIndexWhere((j) => _continues(j, w));
+      if (i < 0) {
+        joined.add(w);
+      } else {
+        final j = joined[i];
+        joined[i] = TextPiece('${j.text.trim()}${w.text.trim()}', j.left,
+            math.min(j.top, w.top), w.right, math.max(j.bottom, w.bottom));
+      }
+    }
+    return joined;
+  }
+
+  static bool _continues(TextPiece left, TextPiece right) {
+    final h = math.max(left.height, right.height);
+    return (right.centerY - left.centerY).abs() < h / 2 &&
+        right.left >= left.right - h / 2 &&
+        right.left - left.right < h / 2 &&
+        _endsNumeric.hasMatch(left.text.trim()) &&
+        _startsDigit.hasMatch(right.text.trim());
   }
 
   /// Splits a piece containing spaces into words, sharing its width by length.

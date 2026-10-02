@@ -14,7 +14,8 @@ String commas(int value) {
   return b.toString();
 }
 
-/// One stage block as OCR sees it, starting at [y].
+/// One stage block as OCR sees it, starting at [y]. Proportions follow the
+/// real screen: totals about 1.9× member height, members 1.25× height apart.
 List<TextPiece> stagePieces({
   required double y,
   required String total,
@@ -24,9 +25,9 @@ List<TextPiece> stagePieces({
 }) =>
     [
       p('${(y / 240).round() + 1}', 250, y - 30, width: 12), // ステージN label digit
-      p(total, 170, y, width: 130, height: 24),
-      for (var i = 0; i < members.length; i++) p(members[i], [128.0, 205.0, 268.0][i], y + 32),
-      p(bonus, 120, y + 52, width: 70),
+      p(total, 170, y, width: 130, height: 30),
+      for (var i = 0; i < members.length; i++) p(members[i], [120.0, 200.0, 280.0][i], y + 38),
+      p(bonus, 120, y + 58, width: 70),
       p('1', 135, y + 110, width: 10), // placement badges
       p('2', 207, y + 110, width: 10),
       p('3', 280, y + 110, width: 10),

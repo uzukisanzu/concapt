@@ -25,6 +25,11 @@ void main() {
       expect(ResultParser.number('|4,862'), 14862);
     });
 
+    test('maps the lookalikes ML Kit reads in totals', () {
+      expect(ResultParser.number('241,25A'), 241254);
+      expect(ResultParser.number('225,98ó'), 225986);
+    });
+
     test('rejects words and letter-only tokens', () {
       expect(ResultParser.number('Pt'), isNull);
       expect(ResultParser.number('lOl'), isNull);
@@ -50,8 +55,53 @@ void main() {
     final pieces = screenPieces(referenceScores())
         .where((piece) => !['120,918', '39,482', '30,299'].contains(piece.text))
         .toList()
-      ..add(p('120,918 39,482 30,299', 128, 92, width: 200));
+      ..add(p('120,918 39,482 30,299', 120, 98, width: 220));
     expect(parsedDraft(pieces).toScores(), referenceScores());
+  });
+
+  test('reads totals whose Pt is misread or missing', () {
+    final misread = {'214,882Pt': '214,882r', '206,163Pt': '206,163Pr', '181,221Pt': '181.221'};
+    final pieces = [
+      for (final piece in screenPieces(referenceScores()))
+        TextPiece(misread[piece.text] ?? piece.text, piece.left, piece.top, piece.right,
+            piece.bottom),
+    ];
+    expect(parsedDraft(pieces).toScores(), referenceScores());
+  });
+
+  test('joins a number OCR split in two', () {
+    final pieces = screenPieces(referenceScores())
+        .where((piece) => !['+24183', '181,221Pt'].contains(piece.text))
+        .toList()
+      ..addAll([
+        p('+241', 120, 118, width: 42),
+        p('83', 166, 118, width: 28),
+        p('181,22', 170, 540, width: 105, height: 30),
+        p('1Pt', 282, 540, width: 48, height: 30),
+      ]);
+    expect(parsedDraft(pieces).toScores(), referenceScores());
+  });
+
+  test('reads a 7-digit member score drawn in a smaller font', () {
+    final scores = scoresWithLeft(1234567);
+    final pieces = [
+      for (final piece in screenPieces(scores))
+        piece.text == '1,234,567' ? p('1,234,567', 120, 102, width: 58, height: 12) : piece,
+    ];
+    final draft = parsedDraft(pieces);
+    expect(draft.stages[0].left, 1234567);
+    expect(draft.toScores(), scores);
+    expect(draft.invalidStages, isEmpty);
+  });
+
+  test('drops badge-border junk after the bonus', () {
+    final pieces = [
+      for (final piece in screenPieces(referenceScores()))
+        piece.text == '+24183'
+            ? TextPiece('+24183)', piece.left, piece.top, piece.right, piece.bottom)
+            : piece,
+    ];
+    expect(parsedDraft(pieces).stages[0].bonus, 24183);
   });
 
   test('drops crown junk before the bonus', () {
