@@ -21,11 +21,24 @@ String stageStatus(AppLocalizations l, StageDraft stage) {
 
 /// Fifteen fields (3 stages × left, middle, right, bonus, total) with a live sum check.
 class RunForm extends StatefulWidget {
-  const RunForm({super.key, required this.initial, required this.onSave, required this.onCancel});
+  const RunForm({
+    super.key,
+    required this.initial,
+    required this.onSave,
+    required this.onCancel,
+    this.stagePreviews,
+    this.foldPassing = false,
+  });
 
   final RunDraft initial;
   final ValueChanged<RunScores> onSave;
   final VoidCallback onCancel;
+
+  /// Shown above each stage's fields, such as a crop of the captured frame.
+  final List<Widget?>? stagePreviews;
+
+  /// Starts stages that add up folded, and lets every band fold its stage.
+  final bool foldPassing;
 
   @override
   State<RunForm> createState() => _RunFormState();
@@ -42,6 +55,10 @@ class _RunFormState extends State<RunForm> {
 
   late final List<List<FocusNode>> _focus = [
     for (final row in _controllers) [for (final _ in row) FocusNode()..addListener(_changed)],
+  ];
+
+  late final List<bool> _folded = [
+    for (final stage in widget.initial.stages) widget.foldPassing && stage.isValid,
   ];
 
   void _changed() => setState(() {});
@@ -108,6 +125,10 @@ class _RunFormState extends State<RunForm> {
                   controllers: _controllers[i],
                   focusNodes: _focus[i],
                   onFix: (field, value) => _fill(i, field, value),
+                  preview: widget.stagePreviews?[i],
+                  folded: _folded[i],
+                  onToggleFold:
+                      widget.foldPassing ? () => setState(() => _folded[i] = !_folded[i]) : null,
                 ),
               ],
               const Divider(),
@@ -136,8 +157,9 @@ class _RunFormState extends State<RunForm> {
 }
 
 /// One stage as a ruled module: a header band with the red numbered tab
-/// and the sum status, then the five score fields. While a field of a
-/// failing stage has focus, the status gives way to a quick fix for it.
+/// and the sum status, then an optional preview and the five score fields.
+/// While a field of a failing stage has focus, the status gives way to a
+/// quick fix for it. With [onToggleFold], the band folds the stage.
 class _StageSection extends StatelessWidget {
   const _StageSection({
     required this.index,
@@ -145,6 +167,9 @@ class _StageSection extends StatelessWidget {
     required this.controllers,
     required this.focusNodes,
     required this.onFix,
+    required this.preview,
+    required this.folded,
+    required this.onToggleFold,
   });
 
   final int index;
@@ -152,6 +177,9 @@ class _StageSection extends StatelessWidget {
   final List<TextEditingController> controllers;
   final List<FocusNode> focusNodes;
   final void Function(int field, int value) onFix;
+  final Widget? preview;
+  final bool folded;
+  final VoidCallback? onToggleFold;
 
   @override
   Widget build(BuildContext context) {
@@ -174,62 +202,80 @@ class _StageSection extends StatelessWidget {
 
     const gap = SizedBox(width: 8);
 
-    final focused = focusNodes.indexWhere((n) => n.hasFocus);
+    // A folded stage's fields are gone, even while their focus is still settling.
+    final focused = folded ? -1 : focusNodes.indexWhere((n) => n.hasFocus);
     final fix = ok || focused < 0 ? null : stage.fixFor(focused);
+
+    final band = ModuleBand(
+      color: ok ? null : scheme.errorContainer,
+      tab: ExcludeSemantics(child: ModuleTab(twoDigits(index + 1))),
+      child: Row(
+        children: [
+          Semantics(
+            header: true,
+            child: Text(l.stageLabel(index + 1), style: text.titleSmall),
+          ),
+          const Spacer(),
+          if (fix != null)
+            // Inside the fields' tap region, so tapping it keeps their focus.
+            TextFieldTapRegion(
+              child: OutlinedButton(
+                key: Key('fix-$index'),
+                onPressed: () => onFix(focused, fix),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: scheme.onErrorContainer,
+                  side: BorderSide(color: scheme.onErrorContainer),
+                  textStyle: bold(text.labelLarge),
+                  // As short as the status it replaces, so the band keeps its height.
+                  minimumSize: Size.zero,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(l.quickFix(labels[focused], formatInt(fix))),
+              ),
+            )
+          else
+            Text(
+              stageStatus(l, stage),
+              key: Key('status-$index'),
+              style: ok
+                  ? text.labelLarge?.copyWith(color: scheme.onSurface)
+                  : bold(text.labelLarge)?.copyWith(color: scheme.onErrorContainer),
+            ),
+          if (onToggleFold != null) ...[
+            const SizedBox(width: 4),
+            Icon(
+              folded ? Icons.expand_more : Icons.expand_less,
+              size: 20,
+              color: ok ? scheme.onSurfaceVariant : scheme.onErrorContainer,
+            ),
+          ],
+        ],
+      ),
+    );
 
     return Column(
       key: Key('stage-$index'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ModuleBand(
-          color: ok ? null : scheme.errorContainer,
-          tab: ExcludeSemantics(child: ModuleTab(twoDigits(index + 1))),
-          child: Row(
-            children: [
-              Semantics(
-                header: true,
-                child: Text(l.stageLabel(index + 1), style: text.titleSmall),
-              ),
-              const Spacer(),
-              if (fix != null)
-                // Inside the fields' tap region, so tapping it keeps their focus.
-                TextFieldTapRegion(
-                  child: OutlinedButton(
-                    key: Key('fix-$index'),
-                    onPressed: () => onFix(focused, fix),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: scheme.onErrorContainer,
-                      side: BorderSide(color: scheme.onErrorContainer),
-                      textStyle: bold(text.labelLarge),
-                      // As short as the status it replaces, so the band keeps its height.
-                      minimumSize: Size.zero,
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: Text(l.quickFix(labels[focused], formatInt(fix))),
-                  ),
-                )
-              else
-                Text(
-                  stageStatus(l, stage),
-                  key: Key('status-$index'),
-                  style: ok
-                      ? text.labelLarge?.copyWith(color: scheme.onSurface)
-                      : bold(text.labelLarge)?.copyWith(color: scheme.onErrorContainer),
-                ),
-            ],
+        if (onToggleFold != null)
+          InkWell(key: Key('band-$index'), onTap: onToggleFold, child: band)
+        else
+          band,
+        if (!folded) ...[
+          if (preview != null)
+            Padding(padding: const EdgeInsets.fromLTRB(12, 12, 12, 0), child: preview),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
+            child: Column(
+              children: [
+                Row(children: [field(0), gap, field(1), gap, field(2)]),
+                const SizedBox(height: 12),
+                Row(children: [field(3), gap, field(4)]),
+              ],
+            ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
-          child: Column(
-            children: [
-              Row(children: [field(0), gap, field(1), gap, field(2)]),
-              const SizedBox(height: 12),
-              Row(children: [field(3), gap, field(4)]),
-            ],
-          ),
-        ),
+        ],
       ],
     );
   }

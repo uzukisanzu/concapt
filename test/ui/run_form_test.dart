@@ -17,6 +17,23 @@ Future<List<RunScores>> pumpForm(WidgetTester tester, RunDraft draft) async {
   return saved;
 }
 
+Future<void> pumpReview(WidgetTester tester, RunDraft draft) async {
+  tester.view.physicalSize = const Size(1200, 2800);
+  tester.view.devicePixelRatio = 2;
+  addTearDown(tester.view.reset);
+  await tester.pumpWidget(localizedApp(
+    Scaffold(
+      body: RunForm(
+        initial: draft,
+        onSave: (_) {},
+        onCancel: () {},
+        foldPassing: true,
+        stagePreviews: [for (var i = 0; i < 3; i++) SizedBox(key: Key('preview-$i'), height: 40)],
+      ),
+    ),
+  ));
+}
+
 RunDraft draftWithStage3Total(int total) {
   final full = RunDraft.fromScores(referenceScores());
   final s3 = full.stages[2];
@@ -65,6 +82,49 @@ void main() {
     await tester.pump();
     expect(find.text('Adds up'), findsNWidgets(3));
     expect(find.byKey(const Key('fix-2')), findsNothing);
+  });
+
+  testWidgets('review folds passing stages and opens failing ones', (tester) async {
+    await pumpReview(tester, draftWithStage3Total(181222));
+    expect(find.byKey(const Key('field-0-0')), findsNothing);
+    expect(find.byKey(const Key('preview-0')), findsNothing);
+    expect(find.byKey(const Key('field-2-0')), findsOneWidget);
+    expect(find.byKey(const Key('preview-2')), findsOneWidget);
+    expect(find.byIcon(Icons.expand_more), findsNWidgets(2));
+    expect(find.byIcon(Icons.expand_less), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('band-0')));
+    await tester.pump();
+    expect(find.byKey(const Key('field-0-0')), findsOneWidget);
+    expect(find.byKey(const Key('preview-0')), findsOneWidget);
+  });
+
+  testWidgets('folding a focused failing stage shows its status again', (tester) async {
+    await pumpReview(tester, draftWithStage3Total(181222));
+    await tester.tap(find.byKey(const Key('field-2-4')));
+    await tester.pump();
+    expect(find.byKey(const Key('fix-2')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('band-2')));
+    await tester.pump();
+    expect(find.byKey(const Key('field-2-4')), findsNothing);
+    expect(find.byKey(const Key('fix-2')), findsNothing);
+    expect(find.text('Off by −1'), findsOneWidget);
+  });
+
+  testWidgets('save still checks folded stages', (tester) async {
+    await pumpReview(tester, draftWithStage3Total(181222));
+    await tester.tap(find.byKey(const Key('band-2')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('save')));
+    await tester.pumpAndSettle();
+    expect(find.text("Stage 3 doesn't add up."), findsOneWidget);
+  });
+
+  testWidgets('the plain form has no fold bands', (tester) async {
+    await pumpForm(tester, draftWithStage3Total(181222));
+    expect(find.byKey(const Key('band-0')), findsNothing);
+    expect(find.byKey(const Key('field-0-0')), findsOneWidget);
   });
 
   testWidgets('a failing sum asks before saving', (tester) async {
