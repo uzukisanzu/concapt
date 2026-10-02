@@ -26,22 +26,25 @@ void main() {
     final reader = MlKitTextReader();
     var passed = 0;
     final failures = <String>[];
-    for (final image in images) {
-      final name = image.uri.pathSegments.last.replaceFirst(_image, '');
-      final pieces = await reader.read(image.path);
-      final result = ResultParser.parse(pieces);
-      final ok = result is ParsedRun && (result.draft.toScores()?.allSumsOk ?? false);
-      if (ok) {
-        passed++;
-      } else {
-        failures.add('$name: ${_describe(result)}');
+    try {
+      for (final image in images) {
+        final name = image.uri.pathSegments.last.replaceFirst(_image, '');
+        final pieces = await reader.read(image.path);
+        final result = ResultParser.parse(pieces);
+        final ok = result is ParsedRun && (result.draft.toScores()?.allSumsOk ?? false);
+        if (ok) {
+          passed++;
+        } else {
+          failures.add('$name: ${_describe(result)}');
+        }
+        File('${out.path}/$name.json').writeAsStringSync(jsonEncode({
+          'passed': ok,
+          'pieces': [for (final piece in pieces) piece.toJson()],
+        }));
       }
-      File('${out.path}/$name.json').writeAsStringSync(jsonEncode({
-        'passed': ok,
-        'pieces': [for (final piece in pieces) piece.toJson()],
-      }));
+    } finally {
+      await reader.close();
     }
-    await reader.close();
 
     final rate = passed / images.length;
     final report = 'Passed $passed/${images.length} (${(rate * 100).toStringAsFixed(1)}%)\n'

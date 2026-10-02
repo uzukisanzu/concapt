@@ -62,13 +62,15 @@ class _OverlayHomeState extends State<OverlayHome> {
   bool _moving = false;
   int? _movePointer;
 
+  // The flag flips first, so a finger that lands before the plugin is
+  // ready still ends the move when it lifts.
   Future<void> _setMoving(bool moving) async {
+    setState(() => _moving = moving);
     await FlutterOverlayWindow.resizeOverlay(
       OverlaySizes.resizeUnits(OverlaySizes.panelWidthDp),
       OverlaySizes.resizeUnits(OverlaySizes.panelHeightDp),
       moving,
     );
-    if (mounted) setState(() => _moving = moving);
   }
 
   void _dropFrame() {
@@ -103,9 +105,10 @@ class _OverlayHomeState extends State<OverlayHome> {
       if (message == 'reset') _restart();
     });
     // Localizations are readable once the first frame is built. The engine
-    // also boots at app launch with no window, so start only when shown.
+    // also boots at app launch with no window, so start only when shown,
+    // and not again if a reset already started it.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (await FlutterOverlayWindow.isActive()) _restart();
+      if (await FlutterOverlayWindow.isActive() && _generation == 0) _restart();
     });
   }
 
@@ -129,6 +132,7 @@ class _OverlayHomeState extends State<OverlayHome> {
       _dropFrame();
       final l = AppLocalizations.of(context);
       final sessionId = await CaptureTarget.read();
+      if (generation != _generation) return;
       if (sessionId == null) {
         await ScreenCapture.toast(l.noSessionSelected);
         await FlutterOverlayWindow.closeOverlay();
@@ -157,6 +161,7 @@ class _OverlayHomeState extends State<OverlayHome> {
       // closeOverlay never completes once the service is gone.
       try {
         await _teardown();
+        if (generation != _generation) return;
         if (await FlutterOverlayWindow.isActive()) {
           if (mounted) await ScreenCapture.toast(AppLocalizations.of(context).bubbleFailed);
           await FlutterOverlayWindow.closeOverlay();
@@ -184,7 +189,16 @@ class _OverlayHomeState extends State<OverlayHome> {
     await FlutterOverlayWindow.resizeOverlay(bubble, bubble, true);
   }
 
+  // Clears the panel first; closeOverlay may never complete.
   Future<void> _close() async {
+    await _blank();
+    if (mounted) {
+      setState(() {
+        _draft = null;
+        _draftController = null;
+      });
+    }
+    _dropFrame();
     await _resetWindow();
     await FlutterOverlayWindow.closeOverlay();
   }
@@ -193,7 +207,7 @@ class _OverlayHomeState extends State<OverlayHome> {
   void dispose() {
     _stopped?.cancel();
     _messages?.cancel();
-    _teardown();
+    unawaited(_teardown());
     _dropFrame();
     super.dispose();
   }
@@ -201,6 +215,7 @@ class _OverlayHomeState extends State<OverlayHome> {
   /// Draws an empty window and waits for that frame, so a following
   /// capture or resize never shows stale content.
   Future<void> _blank() async {
+    if (!mounted) return;
     setState(() => _mode = _Mode.hidden);
     await WidgetsBinding.instance.endOfFrame;
   }
@@ -228,7 +243,12 @@ class _OverlayHomeState extends State<OverlayHome> {
     } catch (_) {
       outcome = const CaptureReadFailed();
     }
-    if (outcome == null || !mounted || generation != _generation) return;
+    if (outcome == null || !mounted) return;
+    if (generation != _generation) {
+      // The run is stored even though a restart replaced this bubble.
+      if (outcome is CaptureSaved) await ScreenCapture.toast(outcomeMessage(l, outcome));
+      return;
+    }
     switch (outcome) {
       case CaptureNeedsReview review:
         await _openPanel(review, controller, generation);
@@ -302,7 +322,16 @@ class _OverlayHomeState extends State<OverlayHome> {
   Future<void> _save(RunScores scores) async {
     final l = AppLocalizations.of(context);
     final generation = _generation;
-    final seq = await _draftController!.saveReviewed(scores);
+    final save = _draftController!.saveReviewed(scores);
+    _inFlight = save.then<void>((_) {}, onError: (_) {});
+    final int seq;
+    try {
+      seq = await save;
+    } catch (_) {
+      // The panel stays open so the user can try again.
+      await ScreenCapture.toast(l.saveFailed);
+      return;
+    }
     await ScreenCapture.toast(savedMessage(l, seq, scores));
     if (generation == _generation) await _closePanel();
   }

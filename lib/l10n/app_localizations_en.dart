@@ -112,6 +112,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Couldn\'t start the bubble. Start again from the app.';
 
   @override
+  String get saveFailed => 'Couldn\'t save the run. Try again.';
+
+  @override
   String get captureStopped => 'Capture stopped. Start again from the app.';
 
   @override

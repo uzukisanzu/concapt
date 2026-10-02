@@ -125,7 +125,7 @@ class _RunFormState extends State<RunForm> {
                   controllers: _controllers[i],
                   focusNodes: _focus[i],
                   onFix: (field, value) => _fill(i, field, value),
-                  preview: widget.stagePreviews?[i],
+                  preview: widget.stagePreviews?.elementAtOrNull(i),
                   folded: _folded[i],
                   onToggleFold:
                       widget.foldPassing ? () => setState(() => _folded[i] = !_folded[i]) : null,

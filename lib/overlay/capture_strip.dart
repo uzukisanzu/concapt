@@ -29,13 +29,18 @@ class CaptureStrip extends StatefulWidget {
   State<CaptureStrip> createState() => _CaptureStripState();
 }
 
-class _CaptureStripState extends State<CaptureStrip> {
+// Kept alive so a fold survives the strip scrolling out of the panel.
+class _CaptureStripState extends State<CaptureStrip> with AutomaticKeepAliveClientMixin {
   late bool _collapsed = widget.collapsed;
+
+  @override
+  bool get wantKeepAlive => true;
 
   void _toggle() => setState(() => _collapsed = !_collapsed);
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final l = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;

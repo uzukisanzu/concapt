@@ -33,9 +33,11 @@ class FakeReader implements TextReader {
   List<TextPiece> pieces;
   Object? error;
   bool hang = false;
+  void Function()? onRead;
 
   @override
   Future<List<TextPiece>> read(String imagePath) async {
+    onRead?.call();
     if (hang) await Completer<void>().future;
     if (error != null) throw error!;
     return pieces;
@@ -58,6 +60,7 @@ void main() {
     source = FakeSource();
     reader = FakeReader(screenPieces(referenceScores()));
     events = [];
+    reader.onRead = () => events.add('read');
     controller = CaptureController(
       source: source,
       reader: reader,
@@ -75,7 +78,7 @@ void main() {
     final outcome = await controller.trigger();
     expect(outcome, isA<CaptureSaved>());
     expect((outcome as CaptureSaved).seq, 1);
-    expect(events, ['hide', 'show']);
+    expect(events, ['hide', 'show', 'read']);
     final run = (await repo.lastRun(sessionId))!;
     expect(run.scores, referenceScores());
     expect(run.edited, isFalse);

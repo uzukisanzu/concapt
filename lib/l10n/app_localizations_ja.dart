@@ -111,6 +111,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get bubbleFailed => 'バブルを開始できませんでした。アプリから再開してください。';
 
   @override
+  String get saveFailed => '保存できませんでした。もう一度お試しください。';
+
+  @override
   String get captureStopped => 'キャプチャが停止しました。アプリから再開してください。';
 
   @override

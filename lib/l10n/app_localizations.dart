@@ -278,6 +278,12 @@ abstract class AppLocalizations {
   /// **'Couldn\'t start the bubble. Start again from the app.'**
   String get bubbleFailed;
 
+  /// No description provided for @saveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the run. Try again.'**
+  String get saveFailed;
+
   /// No description provided for @captureStopped.
   ///
   /// In en, this message translates to:
