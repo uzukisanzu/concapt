@@ -105,7 +105,10 @@ void main() {
     ]));
     final outcome = await controller.trigger();
     expect(outcome, isA<CaptureNeedsReview>());
-    expect((outcome as CaptureNeedsReview).draft.invalidStages, {2});
+    final review = outcome as CaptureNeedsReview;
+    expect(review.draft.invalidStages, {2});
+    expect(review.framePath, '/tmp/capture.png');
+    expect(review.stageBounds, hasLength(3));
     expect(await repo.runs(sessionId), isEmpty);
   });
 

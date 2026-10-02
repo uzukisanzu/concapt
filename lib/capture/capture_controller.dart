@@ -1,4 +1,5 @@
 import '../core/models.dart';
+import '../core/pixel_rect.dart';
 import '../core/result_parser.dart';
 import '../core/text_piece.dart';
 import '../data/repository.dart';
@@ -39,9 +40,13 @@ class CaptureStopped extends CaptureOutcome {
 }
 
 class CaptureNeedsReview extends CaptureOutcome {
-  const CaptureNeedsReview(this.draft);
+  const CaptureNeedsReview(this.draft, {required this.framePath, required this.stageBounds});
 
   final RunDraft draft;
+
+  /// The captured frame, and where each stage sits in it.
+  final String framePath;
+  final List<PixelRect> stageBounds;
 }
 
 /// Turns one bubble tap into a saved run or a reason it wasn't saved.
@@ -99,9 +104,11 @@ class CaptureController {
           return const CaptureNoResult();
         case IncompleteScreen():
           return const CaptureIncomplete();
-        case ParsedRun(:final draft):
+        case ParsedRun(:final draft, :final stageBounds):
           final scores = draft.toScores();
-          if (scores == null || !scores.allSumsOk) return CaptureNeedsReview(draft);
+          if (scores == null || !scores.allSumsOk) {
+            return CaptureNeedsReview(draft, framePath: path, stageBounds: stageBounds);
+          }
           final last = await repository.lastRun(sessionId);
           if (last != null && last.scores == scores) return CaptureDuplicate(last.seq);
           return CaptureSaved(await repository.addRun(sessionId, scores, edited: false), scores);
