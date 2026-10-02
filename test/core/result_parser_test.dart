@@ -214,6 +214,16 @@ void main() {
       }
     });
 
+    test('a stage missing a member still spans the member columns', () {
+      final y = stageTops[0];
+      final pieces = screenPieces(referenceScores())
+          .where((p) => !(p.left == 280 && p.top == y + 38))
+          .toList();
+      final b = (ResultParser.parse(pieces) as ParsedRun).stageBounds[0];
+      expect(b.left, lessThanOrEqualTo(120));
+      expect(b.right, greaterThanOrEqualTo(340));
+    });
+
     test('without a bonus, the members set the bottom', () {
       final y = stageTops[0];
       final pieces = screenPieces(referenceScores())

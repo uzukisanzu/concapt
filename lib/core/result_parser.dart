@@ -123,15 +123,20 @@ abstract final class ResultParser {
     }
 
     final anchors = _slotAnchors(memberRows);
+    final bounds = [
+      for (var i = 0; i < totals.length; i++)
+        _bounds(totals[i], [...memberRows[i], ?bonuses[i]], tolerance),
+    ];
+    // Stages share one column layout, so every stage spans the widest one;
+    // a member OCR missed stays inside the strip.
+    final left = bounds.map((b) => b.left).reduce(math.min);
+    final right = bounds.map((b) => b.right).reduce(math.max);
     return ParsedRun(
       RunDraft([
         for (var i = 0; i < totals.length; i++)
           _stage(memberRows[i], anchors, bonuses[i]?.value, totals[i].value),
       ]),
-      [
-        for (var i = 0; i < totals.length; i++)
-          _bounds(totals[i], [...memberRows[i], ?bonuses[i]], tolerance),
-      ],
+      [for (final b in bounds) PixelRect(left, b.top, right, b.bottom)],
     );
   }
 
