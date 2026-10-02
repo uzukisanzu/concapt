@@ -4,6 +4,7 @@ import '../core/stats.dart';
 import '../l10n/app_localizations.dart';
 import 'format.dart';
 import 'module_header.dart';
+import 'theme.dart';
 
 /// 0 left, 1 middle, 2 right.
 String slotName(AppLocalizations l, int slot) => [l.slotLeft, l.slotMiddle, l.slotRight][slot];
@@ -19,8 +20,8 @@ List<(String, num?)> summaryRows(AppLocalizations l, Summary s) => [
     ];
 
 /// One stage's statistics as a ruled module: rows are stats, columns are
-/// the three slots, and the mean row is set large. Any cell in a column
-/// opens that slot.
+/// the three slots, and the mean row is set large. Each slot column is one
+/// tap target that opens that slot.
 class StatsCard extends StatelessWidget {
   const StatsCard({
     super.key,
@@ -43,65 +44,108 @@ class StatsCard extends StatelessWidget {
     final rows = [for (final s in summaries) summaryRows(l, s)];
     final labels = rows.first.map((r) => r.$1).toList();
     final last = summaries.length - 1;
-    final rule = BoxDecoration(border: Border(bottom: BorderSide(color: scheme.outlineVariant)));
+    final hairline = BorderSide(color: scheme.outlineVariant);
+    final rule = BoxDecoration(border: Border(bottom: hairline));
 
     Widget label(String value, TextStyle? style, double vertical) => Padding(
           padding: EdgeInsets.fromLTRB(12, vertical, 8, vertical),
           child: Text(value, style: style),
         );
 
-    Widget cell(int slot, String value, TextStyle? style, double vertical, {Key? key}) => InkWell(
-          key: key,
-          onTap: () => onSlotTap(slot),
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(4, vertical, slot == last ? 12 : 0, vertical),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
-              child: Text(value, style: style, maxLines: 1),
-            ),
+    Widget cell(int slot, String value, TextStyle? style, double vertical) => Padding(
+          padding: EdgeInsets.fromLTRB(8, vertical, slot == last ? 12 : 8, vertical),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(value, style: style, maxLines: 1),
           ),
         );
 
     final slotStyle = text.labelMedium?.copyWith(color: scheme.onSurfaceVariant);
     final labelStyle = text.bodySmall?.copyWith(color: scheme.onSurfaceVariant);
-    final meanLabelStyle = text.labelLarge?.copyWith(fontWeight: FontWeight.w700);
+    final meanLabelStyle = bold(text.labelLarge);
+    TextStyle? labelStyleOf(int r) => r == _meanRow ? meanLabelStyle : labelStyle;
     TextStyle? valueStyle(int r) => r == _meanRow ? text.titleLarge : text.bodyMedium;
     double pad(int r) => r == _meanRow ? 4 : 2;
+
+    final table = Table(
+      columnWidths: const {0: IntrinsicColumnWidth()},
+      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+      children: [
+        TableRow(
+          decoration: rule,
+          children: [
+            const SizedBox.shrink(),
+            for (var slot = 0; slot <= last; slot++) cell(slot, slotName(l, slot), slotStyle, 4),
+          ],
+        ),
+        for (var r = 0; r < labels.length; r++)
+          TableRow(
+            decoration: r == labels.length - 1 ? null : rule,
+            children: [
+              label(labels[r], labelStyleOf(r), pad(r)),
+              for (var slot = 0; slot <= last; slot++)
+                cell(slot, formatInt(rows[slot][r].$2), valueStyle(r), pad(r)),
+            ],
+          ),
+      ],
+    );
+
+    // Laid over the table: an invisible copy of the label column sets the
+    // offset, then each slot column is one ruled tap target.
+    final columns = Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        IntrinsicWidth(
+          child: Opacity(
+            opacity: 0,
+            child: Column(
+              children: [
+                for (var r = 0; r < labels.length; r++) label(labels[r], labelStyleOf(r), pad(r)),
+              ],
+            ),
+          ),
+        ),
+        for (var slot = 0; slot <= last; slot++)
+          Expanded(
+            child: Semantics(
+              button: true,
+              label: l.slotColumnSemantics(
+                l.stageLabel(stage + 1),
+                slotName(l, slot),
+                formatInt(summaries[slot].mean),
+                formatInt(summaries[slot].n),
+              ),
+              onTap: () => onSlotTap(slot),
+              excludeSemantics: true,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(left: slot == 0 ? BorderSide.none : hairline),
+                ),
+                child: InkWell(
+                  key: Key('slot-$stage-$slot'),
+                  onTap: () => onSlotTap(slot),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ModuleBand(
-          child: Row(
-            children: [
-              ModuleTab(twoDigits(stage + 1)),
-              const SizedBox(width: 8),
-              Text(l.stageLabel(stage + 1), style: text.titleSmall),
-            ],
+          tab: ExcludeSemantics(child: ModuleTab(twoDigits(stage + 1))),
+          child: Semantics(
+            header: true,
+            child: Text(l.stageLabel(stage + 1), style: text.titleSmall),
           ),
         ),
-        Table(
-          columnWidths: const {0: IntrinsicColumnWidth()},
-          defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+        Stack(
           children: [
-            TableRow(
-              decoration: rule,
-              children: [
-                const SizedBox.shrink(),
-                for (var slot = 0; slot <= last; slot++)
-                  cell(slot, slotName(l, slot), slotStyle, 4, key: Key('slot-$stage-$slot')),
-              ],
-            ),
-            for (var r = 0; r < labels.length; r++)
-              TableRow(
-                decoration: r == labels.length - 1 ? null : rule,
-                children: [
-                  label(labels[r], r == _meanRow ? meanLabelStyle : labelStyle, pad(r)),
-                  for (var slot = 0; slot <= last; slot++)
-                    cell(slot, formatInt(rows[slot][r].$2), valueStyle(r), pad(r)),
-                ],
-              ),
+            ExcludeSemantics(child: table),
+            Positioned.fill(child: columns),
           ],
         ),
       ],

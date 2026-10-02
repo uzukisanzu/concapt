@@ -162,10 +162,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> with WidgetsB
           }
           if (i == 3) {
             return ModuleBand(
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: ModuleTab(l.runsHeading(runs.length)),
-              ),
+              tab: Semantics(header: true, child: ModuleTab(l.runsHeading(runs.length))),
             );
           }
           if (runs.isEmpty) {

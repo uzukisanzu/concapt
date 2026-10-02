@@ -6,6 +6,7 @@ import '../l10n/app_localizations.dart';
 import 'format.dart';
 import 'histogram_chart.dart';
 import 'stats_card.dart';
+import 'theme.dart';
 
 /// One member's score distribution within a session: the histogram, then
 /// the seven stats as a ruled table with the mean set large.
@@ -49,7 +50,7 @@ class SeriesDetailScreen extends StatelessWidget {
                     Text(
                       rows[r].$1,
                       style: r == _meanRow
-                          ? text.labelLarge?.copyWith(fontWeight: FontWeight.w700)
+                          ? bold(text.labelLarge)
                           : text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
                     ),
                     const Spacer(),

@@ -446,6 +446,12 @@ abstract class AppLocalizations {
   /// **'P75'**
   String get statP75;
 
+  /// No description provided for @slotColumnSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{stage} {slot}, mean {mean}, n {n}'**
+  String slotColumnSemantics(String stage, String slot, String mean, String n);
+
   /// No description provided for @seriesTitle.
   ///
   /// In en, this message translates to:

@@ -58,6 +58,7 @@
   "statMax": "最大",
   "statP25": "P25",
   "statP75": "P75",
+  "slotColumnSemantics": "{stage} {slot}, 平均 {mean}, n {n}",
   "seriesTitle": "ステージ{stage}・{slot}",
   "noRunsYet": "まだ記録がありません",
   "legendMean": "平均 {value}",

@@ -5,6 +5,7 @@ import '../l10n/app_localizations.dart';
 import 'dialogs.dart';
 import 'format.dart';
 import 'module_header.dart';
+import 'theme.dart';
 
 /// Labels in [StageDraft.fields] order.
 List<String> fieldLabels(AppLocalizations l) =>
@@ -148,21 +149,20 @@ class _StageSection extends StatelessWidget {
       children: [
         ModuleBand(
           color: ok ? null : scheme.errorContainer,
+          tab: ExcludeSemantics(child: ModuleTab(twoDigits(index + 1))),
           child: Row(
             children: [
-              ModuleTab(twoDigits(index + 1)),
-              const SizedBox(width: 8),
-              Text(l.stageLabel(index + 1), style: text.titleSmall),
+              Semantics(
+                header: true,
+                child: Text(l.stageLabel(index + 1), style: text.titleSmall),
+              ),
               const Spacer(),
               Text(
                 stageStatus(l, stage),
                 key: Key('status-$index'),
                 style: ok
                     ? text.labelLarge?.copyWith(color: scheme.onSurface)
-                    : text.labelLarge?.copyWith(
-                        color: scheme.onErrorContainer,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    : bold(text.labelLarge)?.copyWith(color: scheme.onErrorContainer),
               ),
             ],
           ),

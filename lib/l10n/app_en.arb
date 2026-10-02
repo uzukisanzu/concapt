@@ -70,6 +70,8 @@
   "statMax": "Max",
   "statP25": "P25",
   "statP75": "P75",
+  "slotColumnSemantics": "{stage} {slot}, mean {mean}, n {n}",
+  "@slotColumnSemantics": {"placeholders": {"stage": {"type": "String"}, "slot": {"type": "String"}, "mean": {"type": "String"}, "n": {"type": "String"}}},
   "seriesTitle": "Stage {stage} · {slot}",
   "@seriesTitle": {"placeholders": {"stage": {"type": "int"}, "slot": {"type": "String"}}},
   "noRunsYet": "No runs yet",

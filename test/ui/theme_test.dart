@@ -24,7 +24,7 @@ void main() {
     expect(light.surfaceContainerHighest, const Color(0xFFF2F2F2));
     expect(light.outlineVariant, const Color(0xFFE0E0E0));
     expect(light.outline, const Color(0xFFD6D6D6));
-    expect(light.onSurfaceVariant, const Color(0xFF7A7A7A));
+    expect(light.onSurfaceVariant, const Color(0xFF6B6B6B));
   });
 
   test('every text style uses tabular figures', () {
@@ -40,6 +40,15 @@ void main() {
       for (final style in styles) {
         expect(style!.fontFeatures, contains(const FontFeature.tabularFigures()));
       }
+    }
+  });
+
+  test('every set weight also sets the wght axis', () {
+    final t = buildTheme(Brightness.light).textTheme;
+    final weighted = [t.displayLarge, t.headlineSmall, t.titleLarge, t.titleSmall, bold(t.labelLarge)];
+    for (final style in weighted) {
+      expect(style!.fontWeight, FontWeight.w700);
+      expect(style.fontVariations, [const FontVariation.weight(700)]);
     }
   });
 }

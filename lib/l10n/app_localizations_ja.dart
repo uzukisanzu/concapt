@@ -219,6 +219,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get statP75 => 'P75';
 
   @override
+  String slotColumnSemantics(String stage, String slot, String mean, String n) {
+    return '$stage $slot, 平均 $mean, n $n';
+  }
+
+  @override
   String seriesTitle(int stage, String slot) {
     return 'ステージ$stage・$slot';
   }
