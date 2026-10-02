@@ -71,8 +71,11 @@ class _OverlayHomeState extends State<OverlayHome> {
     _messages = FlutterOverlayWindow.overlayListener.listen((message) {
       if (message == 'reset') _restart();
     });
-    // Localizations are readable once the first frame is built.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _restart());
+    // Localizations are readable once the first frame is built. The engine
+    // also boots at app launch with no window, so start only when shown.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (await FlutterOverlayWindow.isActive()) _restart();
+    });
   }
 
   void _restart() {
@@ -119,9 +122,10 @@ class _OverlayHomeState extends State<OverlayHome> {
     } catch (_) {
       // A failed start must not block later resets. Without a working
       // bubble, closing is the only sane state.
+      // closeOverlay never completes once the service is gone.
       try {
         await _teardown();
-        await FlutterOverlayWindow.closeOverlay();
+        if (await FlutterOverlayWindow.isActive()) await FlutterOverlayWindow.closeOverlay();
       } catch (_) {}
     }
   }
