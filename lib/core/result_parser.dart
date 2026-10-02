@@ -70,21 +70,35 @@ abstract final class ResultParser {
     if (totals.length != RunScores.stageCount) return IncompleteScreen(totals.length);
 
     final tolerance = _median([for (final t in tokens) t.piece.height]) / 2;
-    final memberRows = <List<_Token>>[];
+    final bands = <List<_Token>>[];
     final bonuses = <_Token?>[];
     for (var i = 0; i < totals.length; i++) {
       final top = totals[i].centerY + tolerance;
       final bottom =
           i + 1 < totals.length ? totals[i + 1].centerY - tolerance : double.infinity;
       final band = tokens.where((t) => t.centerY > top && t.centerY < bottom).toList();
-      final bonus = _topmost(band.where((t) => t.kind == _Kind.bonus));
-      final limit = bonus == null ? bottom : bonus.centerY - tolerance;
+      bands.add(band);
+      bonuses.add(_topmost(band.where((t) => t.kind == _Kind.bonus)));
+    }
+
+    final bonusOffset = _median([
+      for (var i = 0; i < totals.length; i++)
+        if (bonuses[i] != null) bonuses[i]!.centerY - totals[i].centerY,
+    ]);
+    final memberRows = <List<_Token>>[];
+    for (var i = 0; i < totals.length; i++) {
+      final bonus = bonuses[i];
+      final limit = bonus != null
+          ? bonus.centerY - tolerance
+          : bonusOffset > 0
+              ? totals[i].centerY + bonusOffset - tolerance
+              : double.infinity;
+      final band = bands[i];
       final rows = _groupRows(
         band.where((t) => t.kind == _Kind.number && t.centerY < limit),
         tolerance,
       );
       memberRows.add(rows.isEmpty ? const [] : rows.first);
-      bonuses.add(bonus);
     }
 
     final anchors = _slotAnchors(memberRows);

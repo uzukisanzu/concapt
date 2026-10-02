@@ -93,6 +93,33 @@ void main() {
     expect(draft.invalidStages, {0});
   });
 
+  test('missing member row and bonus leaves slots empty', () {
+    final pieces = screenPieces(referenceScores())
+        .where((piece) =>
+            !['120,918', '39,482', '30,299', '+24183'].contains(piece.text))
+        .toList();
+    final stage = parsedDraft(pieces).stages[0];
+    expect(stage.left, isNull);
+    expect(stage.middle, isNull);
+    expect(stage.right, isNull);
+    expect(stage.bonus, isNull);
+    expect(parsedDraft(pieces).invalidStages, {0});
+  });
+
+  test('an unsigned bonus is not read as a member', () {
+    final pieces = [
+      for (final piece in screenPieces(referenceScores()))
+        if (!['120,918', '39,482', '30,299'].contains(piece.text))
+          piece.text == '+24183'
+              ? TextPiece('24183', piece.left, piece.top, piece.right, piece.bottom)
+              : piece,
+    ];
+    final stage = parsedDraft(pieces).stages[0];
+    expect(stage.left, isNull);
+    expect(stage.middle, isNull);
+    expect(stage.right, isNull);
+  });
+
   test('a wrong digit fails the sum check for that stage only', () {
     final pieces = [
       for (final piece in screenPieces(referenceScores()))
