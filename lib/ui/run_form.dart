@@ -98,8 +98,10 @@ class _RunFormState extends State<RunForm> {
       children: [
         Expanded(
           child: ListView(
+            padding: const EdgeInsets.only(top: 12),
             children: [
-              for (var i = 0; i < _controllers.length; i++)
+              for (var i = 0; i < _controllers.length; i++) ...[
+                if (i > 0) const SizedBox(height: 12),
                 _StageSection(
                   index: i,
                   stage: draft.stages[i],
@@ -107,6 +109,7 @@ class _RunFormState extends State<RunForm> {
                   focusNodes: _focus[i],
                   onFix: (field, value) => _fill(i, field, value),
                 ),
+              ],
               const Divider(),
             ],
           ),
@@ -198,7 +201,9 @@ class _StageSection extends StatelessWidget {
                       foregroundColor: scheme.onErrorContainer,
                       side: BorderSide(color: scheme.onErrorContainer),
                       textStyle: bold(text.labelLarge),
-                      visualDensity: VisualDensity.compact,
+                      // As short as the status it replaces, so the band keeps its height.
+                      minimumSize: Size.zero,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     child: Text(l.quickFix(labels[focused], formatInt(fix))),
