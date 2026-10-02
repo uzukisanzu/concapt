@@ -55,6 +55,9 @@ Future<bool> startCapture(BuildContext context, int sessionId) async {
 
   // The cached overlay engine returns to the bubble and re-reads the target.
   await FlutterOverlayWindow.shareData('reset');
+
+  // Step aside so the game can be opened straight away.
+  await ScreenCapture.moveToBack();
   return true;
 }
 

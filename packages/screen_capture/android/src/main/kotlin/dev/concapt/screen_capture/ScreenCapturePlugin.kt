@@ -63,6 +63,10 @@ class ScreenCapturePlugin :
                 CaptureSession.stop()
                 result.success(null)
             }
+            "moveToBack" -> {
+                activityBinding?.activity?.moveTaskToBack(true)
+                result.success(null)
+            }
             "toast" -> {
                 Toast.makeText(context, call.argument<String>("message") ?: "", Toast.LENGTH_SHORT).show()
                 result.success(null)

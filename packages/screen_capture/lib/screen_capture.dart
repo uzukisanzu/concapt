@@ -22,6 +22,9 @@ abstract final class ScreenCapture {
 
   static Future<void> stop() => _methods.invokeMethod<void>('stop');
 
+  /// Sends the app's task to the background, as Home would. No-op without an activity.
+  static Future<void> moveToBack() => _methods.invokeMethod<void>('moveToBack');
+
   static Future<void> toast(String message) =>
       _methods.invokeMethod<void>('toast', {'message': message});
 
