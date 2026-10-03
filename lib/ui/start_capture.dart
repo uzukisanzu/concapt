@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:screen_capture/screen_capture.dart';
@@ -97,9 +98,12 @@ Future<void> stopCapture() async {
 }
 
 /// The session the bubble saves into, or null while capture is off.
-Future<int?> capturingSessionId() async =>
-    await ScreenCapture.isRunning() && await FlutterOverlayWindow.isActive()
-    ? await CaptureTarget.read()
-    : null;
+/// Always null off Android, where no bubble runs.
+Future<int?> capturingSessionId() async {
+  if (defaultTargetPlatform != TargetPlatform.android) return null;
+  return await ScreenCapture.isRunning() && await FlutterOverlayWindow.isActive()
+      ? await CaptureTarget.read()
+      : null;
+}
 
 Future<bool> isCapturingInto(int sessionId) async => await capturingSessionId() == sessionId;
