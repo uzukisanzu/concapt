@@ -1,6 +1,6 @@
 # Follow-ups
 
-Work set aside when the Android branch wrapped up (2026-10-03), with the reason and what picking it up takes.
+Work set aside when the Android and Windows branches wrapped up (2026-10-03), with the reason and what picking it up takes.
 
 ## From the overlay finish review
 
@@ -29,7 +29,29 @@ Work set aside when the Android branch wrapped up (2026-10-03), with the reason 
 | `addRun`'s raw SQL uses snake_case column names | Drift's name getters would hurt readability; the concurrency test fails on a rename |
 | Panel opens after the frame decodes | Review path only; chosen to leave it |
 
+## Windows deferred minors
+
+| Item | Why |
+|---|---|
+| The detached OCR worker can touch a freed plugin if concapt closes mid-read | Only on closing during a read; the process is exiting |
+| An unknown OCR-done message id is undefined behavior in `jobs_.extract` | Ids come only from `Recognize`; no other sender |
+| A late `FrameArrived` callback could signal a closed event handle | The handler is removed before the handle closes; a race window only |
+| A `DwmGetWindowAttribute` failure in `ClientCrop` is ignored | Falls back to the full frame, which still reads |
+| A run saved after leaving the capture screen mid-capture shows only after a reload | Rare; session detail re-queries on resume |
+| All captures share `capture.png` | One capture at a time; the re-read stops at the capture's deadline |
+| An unmodified letter or digit hotkey swallows that key system-wide, without a warning | Defaults to F9; the user picks the key |
+| The capture screen stays blank if its startup throws, for example on corrupt prefs | Needs corrupt prefs; restart clears it |
+| The `+` join could pair `Lv+` with `12` | The sum check catches it |
+| Refresh doesn't fall back to the remembered window, so a reopened scrcpy must be picked again | Developer declined for now; when nothing is selected after a refresh, use `RememberedWindow.findIn` |
+| The total re-read sweeps fully (about 30–40 small reads) on member misreads too, delaying the edit form | Under a second; only on failing stages |
+| If the game changes its bonus rule, the true bonus can't be typed; "Save anyway" stores the computed one | Every run would fail loudly first; members and totals still save |
+| The Windows CSV save doesn't add `.csv` to a typed name and shows no confirmation | The dialog suggests `<session>.csv` |
+| `CLAUDE.md` doesn't list `file_selector`, and `file_selector_android` ships unused in the APK | Docs gap; no permissions added |
+| No test for a recovered stage with an empty band in `ResultParser._bounds` | Unreachable today: recovery needs a member row |
+
 ## Not verified on the device
 
 - The bubble-failed toast (3c049ba)
 - The save, export, and load failure snackbars, which need a failing database or file system to trigger
+- Windows W12 (Japanese display language): this PC runs Windows 11 Home Single Language. Host tests cover the strings; Windows passing a Japanese locale to Flutter is unverified
+- Windows W14 (elevated game) and the PC game client versions of W1, W2, and W4: the game isn't installed; all four passed against scrcpy where they apply
