@@ -968,6 +968,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.4.0"
+  window_capture:
+    dependency: "direct main"
+    description:
+      path: "packages/window_capture"
+      relative: true
+    source: path
+    version: "0.0.1"
   xdg_directories:
     dependency: transitive
     description:
