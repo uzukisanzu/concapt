@@ -163,7 +163,7 @@ The reader prefers `en-US`, then any installed Latin-script OCR language. If nei
 
 ## 8. CSV export
 
-Export stays shared. If `share_plus` can't hand a file over on Windows, Windows writes the CSV through a save dialog (`file_selector`). The plan verifies this first.
+Export stays shared on Android. On Windows, the share sheet can't take a file from an app run outside a package (W13 showed "We couldn't show you all the ways you could share"), so Export CSV opens a save dialog (`file_selector`) suggesting `<session>.csv` and writes the file there.
 
 ## 9. Testing
 

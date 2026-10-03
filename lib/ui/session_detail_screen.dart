@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -148,9 +149,24 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> with WidgetsB
     final l = AppLocalizations.of(context);
     final session = _session!;
     try {
+      final name = csvFileName(session.name);
+      final csv = buildCsv(_runs!);
+
+      // Windows' share sheet can't take a file from an app run outside a package.
+      if (defaultTargetPlatform == TargetPlatform.windows) {
+        final location = await getSaveLocation(
+          suggestedName: name,
+          acceptedTypeGroups: const [
+            XTypeGroup(extensions: ['csv']),
+          ],
+        );
+        if (location != null) await File(location.path).writeAsString(csv);
+        return;
+      }
+
       final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/${csvFileName(session.name)}');
-      await file.writeAsString(buildCsv(_runs!));
+      final file = File('${dir.path}/$name');
+      await file.writeAsString(csv);
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path, mimeType: 'text/csv')],
@@ -181,7 +197,9 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> with WidgetsB
         actions: [
           IconButton(
             tooltip: l.exportCsv,
-            icon: const Icon(Icons.share),
+            icon: Icon(
+              defaultTargetPlatform == TargetPlatform.windows ? Icons.save_alt : Icons.share,
+            ),
             onPressed: runs.isEmpty ? null : _export,
           ),
         ],

@@ -56,5 +56,5 @@ Run on the developer's PC with `flutter run -d windows`.
 | W10 | Keep on top | Turn it on, click the game; then leave the screen | concapt stays above the game; after leaving, it no longer does |
 | W11 | DPI-unaware target | On a monitor scaled above 100%, set scrcpy.exe's Properties › Compatibility › Change high DPI settings › Override › System, restart scrcpy, force a failed check | The capture strips show each stage, not the top-left part of the frame |
 | W12 | Japanese | Set the Windows display language to 日本語, repeat W1 and W2 | Every string on the capture screen is Japanese |
-| W13 | CSV | Export CSV from a session | Windows' share sheet offers the CSV; note the result if it can't save to a file |
+| W13 | CSV | Export CSV from a session | A Save As dialog suggests `<session>.csv`; the saved file opens in Excel or a text editor with every run |
 | W14 | Elevated game | If the game runs as administrator, press F9 | Captures; if not, rerun concapt as administrator and note it in the README |
