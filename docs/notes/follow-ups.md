@@ -25,5 +25,5 @@ Work set aside when the Android branch wrapped up (2026-10-03), with the reason 
 
 ## Not verified on the device
 
-- The bubble-failed toast (42304a4)
+- The bubble-failed toast (3c049ba)
 - The save, export, and load failure snackbars, which need a failing database or file system to trigger
