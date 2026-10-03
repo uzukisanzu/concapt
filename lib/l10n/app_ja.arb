@@ -72,5 +72,7 @@
   "seriesTitle": "ステージ{stage}・{slot}",
   "noRunsYet": "まだ記録がありません",
   "legendMean": "平均 {value}",
-  "legendMedian": "中央値 {value}"
+  "legendMedian": "中央値 {value}",
+  "windowClosed": "キャプチャ対象のウィンドウがありません。ウィンドウを選び直してください。",
+  "windowMinimized": "キャプチャ対象のウィンドウが最小化されています。元に戻してからもう一度お試しください。"
 }

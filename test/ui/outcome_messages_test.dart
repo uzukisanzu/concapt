@@ -1,4 +1,5 @@
 import 'package:concapt/capture/capture_controller.dart';
+import 'package:concapt/capture/capture_source.dart';
 import 'package:concapt/core/models.dart';
 import 'package:concapt/l10n/app_localizations.dart';
 import 'package:concapt/ui/outcome_messages.dart';
@@ -35,5 +36,20 @@ void main() {
     for (final o in toasts) {
       expect(outcomeMessage(ja, o), isNot(outcomeMessage(en, o)));
     }
+  });
+
+  test('window messages say what happened to the window', () {
+    expect(
+      outcomeMessage(en, const CaptureWindowUnavailable(WindowUnavailableReason.closed)),
+      'The captured window is gone. Pick a window.',
+    );
+    expect(
+      outcomeMessage(en, const CaptureWindowUnavailable(WindowUnavailableReason.minimized)),
+      'The captured window is minimized. Restore it and try again.',
+    );
+    expect(
+      outcomeMessage(ja, const CaptureWindowUnavailable(WindowUnavailableReason.closed)),
+      isNot(outcomeMessage(en, const CaptureWindowUnavailable(WindowUnavailableReason.closed))),
+    );
   });
 }

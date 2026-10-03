@@ -1,4 +1,5 @@
 import '../capture/capture_controller.dart';
+import '../capture/capture_source.dart';
 import '../core/models.dart';
 import '../l10n/app_localizations.dart';
 import 'format.dart';
@@ -10,6 +11,8 @@ String outcomeMessage(AppLocalizations l, CaptureOutcome outcome) => switch (out
   CaptureIncomplete() => l.incompleteScreen,
   CaptureReadFailed() => l.readFailed,
   CaptureStopped() => l.captureStopped,
+  CaptureWindowUnavailable(reason: WindowUnavailableReason.closed) => l.windowClosed,
+  CaptureWindowUnavailable(reason: WindowUnavailableReason.minimized) => l.windowMinimized,
   CaptureNeedsReview() => l.checkHighlightedStage,
 };
 

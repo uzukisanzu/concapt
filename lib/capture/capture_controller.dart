@@ -39,6 +39,13 @@ class CaptureStopped extends CaptureOutcome {
   const CaptureStopped();
 }
 
+/// The chosen window was closed or minimized; nothing was captured.
+class CaptureWindowUnavailable extends CaptureOutcome {
+  const CaptureWindowUnavailable(this.reason);
+
+  final WindowUnavailableReason reason;
+}
+
 class CaptureNeedsReview extends CaptureOutcome {
   const CaptureNeedsReview(this.draft, {required this.framePath, required this.stageBounds});
 
@@ -86,6 +93,8 @@ class CaptureController {
         path = await source.capture();
       } on CaptureStoppedException {
         return const CaptureStopped();
+      } on WindowUnavailableException catch (e) {
+        return CaptureWindowUnavailable(e.reason);
       } catch (_) {
         return const CaptureReadFailed();
       } finally {

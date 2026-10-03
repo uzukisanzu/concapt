@@ -163,4 +163,12 @@ void main() {
     expect(await controller.saveReviewed(referenceScores()), 1);
     expect((await repo.lastRun(sessionId))!.edited, isTrue);
   });
+
+  test('an unavailable window is reported with its reason and saves nothing', () async {
+    source.error = const WindowUnavailableException(WindowUnavailableReason.minimized);
+    final outcome = await controller.trigger();
+    expect(outcome, isA<CaptureWindowUnavailable>());
+    expect((outcome as CaptureWindowUnavailable).reason, WindowUnavailableReason.minimized);
+    expect(await repo.runs(sessionId), isEmpty);
+  });
 }

@@ -90,5 +90,7 @@
   "legendMean": "Mean {value}",
   "@legendMean": {"placeholders": {"value": {"type": "String"}}},
   "legendMedian": "Median {value}",
-  "@legendMedian": {"placeholders": {"value": {"type": "String"}}}
+  "@legendMedian": {"placeholders": {"value": {"type": "String"}}},
+  "windowClosed": "The captured window is gone. Pick a window.",
+  "windowMinimized": "The captured window is minimized. Restore it and try again."
 }
