@@ -143,6 +143,7 @@ ThemeData buildTheme(Brightness brightness) {
       contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       border: box(scheme.outline),
       enabledBorder: box(scheme.outline),
+      disabledBorder: box(scheme.outlineVariant),
       focusedBorder: box(scheme.primary, 2),
       errorBorder: box(scheme.error),
       focusedErrorBorder: box(scheme.error, 2),

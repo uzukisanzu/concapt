@@ -16,6 +16,12 @@ String outcomeMessage(AppLocalizations l, CaptureOutcome outcome) => switch (out
   CaptureNeedsReview() => l.checkHighlightedStage,
 };
 
+/// Whether [outcome] means nothing was captured or saved.
+bool isFailure(CaptureOutcome outcome) => switch (outcome) {
+  CaptureSaved() || CaptureDuplicate() || CaptureNeedsReview() || CaptureStopped() => false,
+  _ => true,
+};
+
 /// The run number with its three stage totals, to check against the game screen.
 String savedMessage(AppLocalizations l, int seq, RunScores scores) =>
     l.runSaved(seq, scores.stages.map((s) => formatInt(s.total)).join(' / '));

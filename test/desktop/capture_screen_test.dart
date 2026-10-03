@@ -53,6 +53,8 @@ class FakePlugin {
           if (captureError != null) throw PlatformException(code: captureError!);
           return null;
         case 'recognize':
+          // Region reads are the total re-read; none confirms here.
+          if ((call.arguments as Map).containsKey('region')) return const [];
           return [for (final p in pieces) p.toJson()];
       }
       return null;
@@ -80,6 +82,14 @@ Future<void> settle(WidgetTester tester) async {
   for (var i = 0; i < 3; i++) {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
     await tester.pump();
+  }
+}
+
+/// Settles until [finder] matches; a failing capture runs the total re-read
+/// first, which takes more turns than [settle] gives.
+Future<void> settleUntil(WidgetTester tester, Finder finder) async {
+  for (var i = 0; i < 40 && finder.evaluate().isEmpty; i++) {
+    await settle(tester);
   }
 }
 
@@ -156,6 +166,7 @@ void main() {
     ];
     await open(tester);
     await press(tester);
+    await settleUntil(tester, find.byType(RunForm));
 
     expect(find.byType(RunForm), findsOneWidget);
     expect(plugin.count('flashWindow'), 1);
@@ -164,6 +175,52 @@ void main() {
     await press(tester);
     expect(plugin.count('captureWindow'), 1);
     expect(find.text('Save or cancel the open run first.'), findsOneWidget);
+  });
+
+  testWidgets('Enter in the open form saves the run', (tester) async {
+    plugin.pieces = [
+      for (final p in screenPieces(referenceScores()))
+        p.text == '181,221Pt' ? TextPiece('181,222Pt', p.left, p.top, p.right, p.bottom) : p,
+    ];
+    await open(tester);
+    await press(tester);
+    await settleUntil(tester, find.byType(RunForm));
+
+    await tester.enterText(find.byKey(const Key('field-2-3')), '181221');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await settle(tester);
+
+    expect(await runCount(tester), 1);
+    expect(find.byType(RunForm), findsNothing);
+  });
+
+  testWidgets('with no runs the runs band says so', (tester) async {
+    await open(tester);
+    expect(find.text('No runs yet'), findsOneWidget);
+  });
+
+  testWidgets('the last run shows its number', (tester) async {
+    await open(tester);
+    await press(tester);
+    expect(find.text('Run 1'), findsOneWidget);
+    expect(find.text('No runs yet'), findsNothing);
+  });
+
+  testWidgets('a failure reads in the error color', (tester) async {
+    plugin.captureError = 'closed';
+    await open(tester);
+    await press(tester);
+
+    final message = tester.widget<Text>(find.text('The captured window is gone. Pick a window.'));
+    final context = tester.element(find.byType(CaptureScreen));
+    expect(message.style?.color, Theme.of(context).colorScheme.error);
+  });
+
+  testWidgets('on a wide window the content keeps to a column', (tester) async {
+    await open(tester);
+    tester.view.physicalSize = const Size(2400, 1600);
+    await tester.pump();
+    expect(tester.getSize(find.byType(ListView)).width, lessThanOrEqualTo(560));
   });
 
   testWidgets('a closed window clears the selection', (tester) async {

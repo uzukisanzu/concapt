@@ -6,7 +6,11 @@ import 'package:flutter_test/flutter_test.dart';
 import '../helpers/app.dart';
 import '../helpers/sample.dart';
 
-Future<List<RunScores>> pumpForm(WidgetTester tester, RunDraft draft) async {
+Future<List<RunScores>> pumpForm(
+  WidgetTester tester,
+  RunDraft draft, {
+  bool saveOnEnter = false,
+}) async {
   tester.view.physicalSize = const Size(1200, 2800);
   tester.view.devicePixelRatio = 2;
   addTearDown(tester.view.reset);
@@ -14,7 +18,7 @@ Future<List<RunScores>> pumpForm(WidgetTester tester, RunDraft draft) async {
   await tester.pumpWidget(
     localizedApp(
       Scaffold(
-        body: RunForm(initial: draft, onSave: saved.add, onCancel: () {}),
+        body: RunForm(initial: draft, onSave: saved.add, onCancel: () {}, saveOnEnter: saveOnEnter),
       ),
     ),
   );
@@ -53,14 +57,8 @@ RunDraft draftWithStage3Total(int total) {
 void main() {
   test('stageStatus', () {
     final l = en();
-    expect(
-      stageStatus(l, const StageDraft(left: 10, middle: 2, right: 3, total: 17)),
-      'Adds up',
-    );
-    expect(
-      stageStatus(l, const StageDraft(left: 10, middle: 2, right: 3, total: 16)),
-      'Off by +1',
-    );
+    expect(stageStatus(l, const StageDraft(left: 10, middle: 2, right: 3, total: 17)), 'Adds up');
+    expect(stageStatus(l, const StageDraft(left: 10, middle: 2, right: 3, total: 16)), 'Off by +1');
     expect(
       stageStatus(l, const StageDraft(left: 10, middle: 2, right: 3, total: 1017)),
       'Off by −1,000',
@@ -97,6 +95,22 @@ void main() {
       find.descendant(of: find.byKey(const Key('bonus-0')), matching: find.byType(EditableText)),
       findsNothing,
     );
+  });
+
+  testWidgets('with saveOnEnter, Enter in a field saves', (tester) async {
+    final saved = await pumpForm(tester, RunDraft.fromScores(referenceScores()), saveOnEnter: true);
+    await tester.tap(find.byKey(const Key('field-0-3')));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(saved.single, referenceScores());
+  });
+
+  testWidgets('without saveOnEnter, Enter in a field does not save', (tester) async {
+    final saved = await pumpForm(tester, RunDraft.fromScores(referenceScores()));
+    await tester.tap(find.byKey(const Key('field-0-3')));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(saved, isEmpty);
   });
 
   testWidgets('the quick fix fills the focused field', (tester) async {

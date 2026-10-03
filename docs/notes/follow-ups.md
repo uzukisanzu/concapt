@@ -10,6 +10,12 @@ Work set aside when the Android branch wrapped up (2026-10-03), with the reason 
 | White ring on the bubble | New visual not in DESIGN.md | 2px `onPrimary` border on `_Bubble`'s circle; add it to DESIGN.md. Red on the game's gray is about 1.3:1 in luminance, so only hue sets it apart |
 | Grouped digits in fields | Changes typing in the main app's editor too; caret handling needs care | `TextInputFormatter` that regroups with `formatInt`, caret at the end; seed controllers with `formatInt`. `_draft` already strips commas |
 
+## From the capture screen finish review
+
+| Item | Why set aside | To pick it up |
+|---|---|---|
+| Minimum window size | The layout holds at 360 × 560; below about 320dp wide, 7-digit values crowd the member fields | Handle `WM_GETMINMAXINFO` in `windows/runner/win32_window.cpp`, setting `ptMinTrackSize` to 360 × 560 logical scaled by `GetDpiForWindow` |
+
 ## Deferred minors left as is
 
 | Item | Why |

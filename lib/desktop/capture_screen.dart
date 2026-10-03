@@ -17,10 +17,10 @@ import '../core/models.dart';
 import '../data/repository.dart';
 import '../l10n/app_localizations.dart';
 import '../ui/capture_strip.dart';
-import '../ui/format.dart';
 import '../ui/module_header.dart';
 import '../ui/outcome_messages.dart';
 import '../ui/run_form.dart';
+import '../ui/run_row.dart';
 
 /// Captures runs into a session from another window, on a global hotkey.
 /// The Windows counterpart to the overlay.
@@ -39,6 +39,9 @@ class CaptureScreen extends StatefulWidget {
   @override
   State<CaptureScreen> createState() => _CaptureScreenState();
 }
+
+/// Rows line up on the page's 12 dp gutter.
+const _gutter = EdgeInsets.symmetric(horizontal: 12);
 
 class _CaptureScreenState extends State<CaptureScreen> {
   late final _controller = CaptureController(
@@ -65,6 +68,9 @@ class _CaptureScreenState extends State<CaptureScreen> {
   bool _onTop = false;
   bool _busy = false;
   String? _message;
+
+  /// Whether [_message] reports a failure.
+  bool _failed = false;
 
   /// The run waiting for review, and its decoded frame for the capture strips.
   CaptureNeedsReview? _review;
@@ -121,17 +127,24 @@ class _CaptureScreenState extends State<CaptureScreen> {
     setState(() {
       _hotkeyBound = bound;
       _message = bound ? null : l.hotkeyTaken(hotkey.label);
+      _failed = !bound;
     });
   }
 
   Future<void> _capture() async {
     final l = AppLocalizations.of(context);
     if (_review != null) {
-      setState(() => _message = l.finishReviewFirst);
+      setState(() {
+        _message = l.finishReviewFirst;
+        _failed = true;
+      });
       return;
     }
     if (_window == null) {
-      setState(() => _message = l.pickWindowFirst);
+      setState(() {
+        _message = l.pickWindowFirst;
+        _failed = true;
+      });
       return;
     }
     if (_busy) return;
@@ -158,6 +171,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
           _review = review;
           _frame = frame;
           _message = l.checkHighlightedStage;
+          _failed = false;
         });
         await WindowCapture.flashWindow();
       case CaptureWindowUnavailable(reason: WindowUnavailableReason.closed):
@@ -168,6 +182,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
           _windows = windows;
           _window = null;
           _message = outcomeMessage(l, outcome);
+          _failed = true;
         });
       default:
         await _reloadRuns();
@@ -175,6 +190,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
         setState(() {
           _busy = false;
           _message = outcomeMessage(l, outcome);
+          _failed = isFailure(outcome);
         });
     }
   }
@@ -186,7 +202,12 @@ class _CaptureScreenState extends State<CaptureScreen> {
       seq = await _controller.saveReviewed(scores);
     } catch (_) {
       // The form stays open so the user can try again.
-      if (mounted) setState(() => _message = l.saveFailed);
+      if (mounted) {
+        setState(() {
+          _message = l.saveFailed;
+          _failed = true;
+        });
+      }
       return;
     }
     await _reloadRuns();
@@ -200,6 +221,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
       _review = null;
       _frame = null;
       _message = message;
+      _failed = false;
     });
     frame?.dispose();
   }
@@ -249,32 +271,44 @@ class _CaptureScreenState extends State<CaptureScreen> {
       body: switch (_ocrReady) {
         null => const SizedBox.shrink(),
         false => Padding(padding: const EdgeInsets.all(12), child: Text(l.ocrMissing)),
-        true => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: review == null
-                  ? _controls(l)
-                  : RunForm(
-                      initial: review.draft,
-                      onSave: _save,
-                      onCancel: () => _closeReview(null),
-                      foldPassing: true,
-                      stagePreviews: frame == null
-                          ? null
-                          : [
-                              for (var i = 0; i < review.stageBounds.length; i++)
-                                CaptureStrip(
-                                  image: frame,
-                                  rect: review.stageBounds[i],
-                                  collapsed: review.draft.stages[i].isValid,
-                                ),
-                            ],
-                    ),
+        // A desktop window can grow far wider than the content needs.
+        true => Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: review == null
+                      ? _controls(l)
+                      : RunForm(
+                          initial: review.draft,
+                          onSave: _save,
+                          onCancel: () => _closeReview(null),
+                          foldPassing: true,
+                          topInset: 0,
+                          saveOnEnter: true,
+                          stagePreviews: frame == null
+                              ? null
+                              : [
+                                  for (var i = 0; i < review.stageBounds.length; i++)
+                                    CaptureStrip(
+                                      image: frame,
+                                      rect: review.stageBounds[i],
+                                      collapsed: review.draft.stages[i].isValid,
+                                    ),
+                                ],
+                        ),
+                ),
+                if (_busy) const LinearProgressIndicator(),
+                _OutcomeLine(
+                  _message ?? (_hotkeyBound ? l.hotkeyReady(_hotkey.label) : ''),
+                  failed: _message != null && _failed,
+                ),
+              ],
             ),
-            if (_busy) const LinearProgressIndicator(),
-            _OutcomeLine(_message ?? (_hotkeyBound ? l.hotkeyReady(_hotkey.label) : '')),
-          ],
+          ),
         ),
       },
     );
@@ -285,14 +319,15 @@ class _CaptureScreenState extends State<CaptureScreen> {
     return ListView(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+          padding: const EdgeInsets.fromLTRB(12, 12, 4, 4),
           child: Row(
             children: [
               Expanded(
-                child: DropdownButton<int>(
+                child: DropdownButtonFormField<int>(
                   isExpanded: true,
+                  style: Theme.of(context).textTheme.bodyLarge,
                   hint: Text(l.pickWindowFirst),
-                  value: _window?.handle,
+                  initialValue: _window?.handle,
                   items: [
                     for (final w in _windows)
                       DropdownMenuItem(
@@ -315,13 +350,30 @@ class _CaptureScreenState extends State<CaptureScreen> {
           ),
         ),
         ListTile(
+          contentPadding: _gutter,
           title: Text(l.hotkeyLabel),
           subtitle: Text(_hotkey.label),
           trailing: TextButton(onPressed: _rebind, child: Text(l.changeHotkey)),
         ),
-        SwitchListTile(title: Text(l.alwaysOnTop), value: _onTop, onChanged: _setOnTop),
+        SwitchListTile(
+          contentPadding: _gutter,
+          title: Text(l.alwaysOnTop),
+          value: _onTop,
+          onChanged: _setOnTop,
+        ),
         ModuleBand(tab: ModuleTab(l.runsHeading(_runCount))),
-        if (last != null) _LastRun(last.scores),
+        if (last != null)
+          RunRow(run: last)
+        else
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Text(
+              l.noRunsYet,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -329,9 +381,10 @@ class _CaptureScreenState extends State<CaptureScreen> {
 
 /// The latest outcome, in place of the overlay's toasts.
 class _OutcomeLine extends StatelessWidget {
-  const _OutcomeLine(this.message);
+  const _OutcomeLine(this.message, {required this.failed});
 
   final String message;
+  final bool failed;
 
   @override
   Widget build(BuildContext context) {
@@ -341,38 +394,9 @@ class _OutcomeLine extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
       ),
-      child: Text(message, style: theme.textTheme.bodyMedium),
-    );
-  }
-}
-
-/// The last saved run's member scores, one row per stage.
-class _LastRun extends StatelessWidget {
-  const _LastRun(this.scores);
-
-  final RunScores scores;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    final text = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Table(
-        columnWidths: const {0: IntrinsicColumnWidth()},
-        children: [
-          for (var i = 0; i < scores.stages.length; i++)
-            TableRow(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 12, bottom: 4),
-                  child: Text(l.stageLabel(i + 1), style: text.bodySmall),
-                ),
-                for (final member in scores.stages[i].members)
-                  Text(formatInt(member), textAlign: TextAlign.end, style: text.bodyMedium),
-              ],
-            ),
-        ],
+      child: Text(
+        message,
+        style: theme.textTheme.bodyMedium?.copyWith(color: failed ? theme.colorScheme.error : null),
       ),
     );
   }

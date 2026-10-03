@@ -34,6 +34,7 @@ class RunForm extends StatefulWidget {
     this.stagePreviews,
     this.foldPassing = false,
     this.topInset = 12,
+    this.saveOnEnter = false,
   });
 
   final RunDraft initial;
@@ -48,6 +49,9 @@ class RunForm extends StatefulWidget {
 
   /// Ground above the first stage; zero when a rule already sits there.
   final double topInset;
+
+  /// Enter in a field saves, as on a desktop keyboard.
+  final bool saveOnEnter;
 
   @override
   State<RunForm> createState() => _RunFormState();
@@ -133,6 +137,11 @@ class _RunFormState extends State<RunForm> {
                   controllers: _controllers[i],
                   focusNodes: _focus[i],
                   onFix: (field, value) => _fill(i, field, value),
+                  onSubmit: widget.saveOnEnter
+                      ? () {
+                          if (_draft.toScores() != null) _save();
+                        }
+                      : null,
                   preview: widget.stagePreviews?.elementAtOrNull(i),
                   folded: _folded[i],
                   onToggleFold: widget.foldPassing
@@ -177,6 +186,7 @@ class _StageSection extends StatelessWidget {
     required this.controllers,
     required this.focusNodes,
     required this.onFix,
+    required this.onSubmit,
     required this.preview,
     required this.folded,
     required this.onToggleFold,
@@ -187,6 +197,7 @@ class _StageSection extends StatelessWidget {
   final List<TextEditingController> controllers;
   final List<FocusNode> focusNodes;
   final void Function(int field, int value) onFix;
+  final VoidCallback? onSubmit;
   final Widget? preview;
   final bool folded;
   final VoidCallback? onToggleFold;
@@ -206,7 +217,15 @@ class _StageSection extends StatelessWidget {
         focusNode: focusNodes[f],
         keyboardType: TextInputType.number,
         textAlign: TextAlign.end,
-        decoration: InputDecoration(labelText: labels[f]),
+        textInputAction: onSubmit == null ? null : TextInputAction.done,
+        onSubmitted: onSubmit == null ? null : (_) => onSubmit!(),
+        decoration: InputDecoration(
+          labelText: labels[f],
+          // The one box left to fill in a failing stage.
+          enabledBorder: !ok && stage.fields[f] == null
+              ? Theme.of(context).inputDecorationTheme.errorBorder
+              : null,
+        ),
       ),
     );
 
@@ -214,7 +233,13 @@ class _StageSection extends StatelessWidget {
     final bonus = Expanded(
       child: InputDecorator(
         key: Key('bonus-$index'),
-        decoration: InputDecoration(labelText: l.fieldBonus, enabled: false),
+        decoration: InputDecoration(
+          labelText: l.fieldBonus,
+          enabled: false,
+          filled: false,
+          labelStyle: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+          floatingLabelStyle: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+        ),
         isEmpty: stage.bonus == null,
         child: Text(
           stage.bonus == null ? '' : formatInt(stage.bonus!),

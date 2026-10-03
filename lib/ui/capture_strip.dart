@@ -66,15 +66,21 @@ class _CaptureStripState extends State<CaptureStrip> with AutomaticKeepAliveClie
       button: true,
       label: l.hideCapture,
       excludeSemantics: true,
-      child: GestureDetector(
-        key: const Key('strip'),
-        onTap: _toggle,
-        child: AspectRatio(
-          aspectRatio: src.width / src.height,
-          child: DecoratedBox(
-            position: DecorationPosition.foreground,
-            decoration: BoxDecoration(border: Border.all(color: scheme.outlineVariant)),
-            child: CustomPaint(painter: _StripPainter(widget.image, src)),
+      child: Tooltip(
+        message: l.hideCapture,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            key: const Key('strip'),
+            onTap: _toggle,
+            child: AspectRatio(
+              aspectRatio: src.width / src.height,
+              child: DecoratedBox(
+                position: DecorationPosition.foreground,
+                decoration: BoxDecoration(border: Border.all(color: scheme.outlineVariant)),
+                child: CustomPaint(painter: _StripPainter(widget.image, src)),
+              ),
+            ),
           ),
         ),
       ),
