@@ -4,6 +4,7 @@ import 'package:concapt/capture/capture_controller.dart';
 import 'package:concapt/capture/capture_source.dart';
 import 'package:concapt/capture/text_reader.dart';
 import 'package:concapt/core/models.dart';
+import 'package:concapt/core/pixel_rect.dart';
 import 'package:concapt/core/text_piece.dart';
 import 'package:concapt/data/database.dart';
 import 'package:concapt/data/repository.dart';
@@ -42,6 +43,16 @@ class FakeReader implements TextReader {
     if (error != null) throw error!;
     return pieces;
   }
+}
+
+/// Reads [pieces] for the frame and the reference stage 3 total in any region.
+class FakeRegionTextReader extends FakeReader implements RegionReader {
+  FakeRegionTextReader(super.pieces);
+
+  @override
+  Future<List<TextPiece>> readRegion(String imagePath, PixelRect region, double scale) async => [
+    TextPiece('181,221', region.left, region.top, region.right, region.bottom),
+  ];
 }
 
 void main() {
@@ -105,12 +116,7 @@ void main() {
       RunScores([
         reference.stages[0],
         reference.stages[1],
-        StageScores(
-          left: s3.left,
-          middle: s3.middle,
-          right: s3.right,
-          total: s3.total + 1,
-        ),
+        StageScores(left: s3.left, middle: s3.middle, right: s3.right, total: s3.total + 1),
       ]),
     );
     final outcome = await controller.trigger();
@@ -127,9 +133,34 @@ void main() {
     expect(await controller.trigger(), isA<CaptureNoResult>());
   });
 
-  test('two totals is incomplete', () async {
-    reader.pieces = screenPieces(referenceScores()).where((x) => x.text != '181,221Pt').toList();
+  test('two totals without a third member row is incomplete', () async {
+    reader.pieces = screenPieces(
+      referenceScores(),
+    ).where((x) => x.top < stageTops[2] - 30).toList();
     expect(await controller.trigger(), isA<CaptureIncomplete>());
+  });
+
+  test('a dropped total asks for review with that total empty', () async {
+    reader.pieces = screenPieces(referenceScores()).where((x) => x.text != '181,221Pt').toList();
+    final outcome = await controller.trigger();
+    expect(outcome, isA<CaptureNeedsReview>());
+    expect((outcome as CaptureNeedsReview).draft.stages[2].total, isNull);
+  });
+
+  test('a reader that reads regions confirms a dropped total and saves', () async {
+    final regionReader = FakeRegionTextReader(
+      screenPieces(referenceScores()).where((x) => x.text != '181,221Pt').toList(),
+    );
+    final outcome = await CaptureController(
+      source: source,
+      reader: regionReader,
+      repository: repo,
+      sessionId: sessionId,
+      hideBubble: () async {},
+      showBubble: () async {},
+    ).trigger();
+    expect(outcome, isA<CaptureSaved>());
+    expect((outcome as CaptureSaved).scores, referenceScores());
   });
 
   test('a reader error is a read failure', () async {

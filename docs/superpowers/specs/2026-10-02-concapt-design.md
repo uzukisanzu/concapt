@@ -142,7 +142,7 @@ Pieces come from ML Kit elements (words), not lines. ML Kit can merge the three 
    - **Total:** a number with `Pt` attached or as the adjacent piece
    - **Bonus:** `+` followed by digits; drop junk before the `+` (the crown icon)
    - **Plain number:** anything else numeric, **100 or more**. Smaller numbers are the 1/2/3 placement badges and the stage labels, and are ignored.
-2. **Find stages.** Require exactly 3 totals. Sort them by y as Stages 1–3. A stage's band runs from its total down to the next total (or the image bottom).
+2. **Find stages.** Sort the totals by y as Stages 1–3. A stage's band runs from its total down to the next total (or the image bottom). With 1–2 totals, fall back to member rows: if exactly 3 rows hold two or more plain numbers, and each total sits above a different one, the row without a total is a stage whose total line OCR dropped. Its total stays empty, and its line sits where the others do relative to their rows.
 3. **Find bonus.** The topmost bonus piece in the band. Only its position is used; the bonus value is computed (§3.1).
 4. **Find members.** Pieces share a row when their vertical centers differ by less than half the median piece height. The member row is the first row of plain numbers below the total and above the bonus.
    - Exactly 3 numbers → sorted by x into left, middle, and right
@@ -158,7 +158,8 @@ The 総合力 number sits below the bonus, so step 4 never picks it.
 | 3 stages parsed, all sums pass | Auto-save; toast "Run N saved" |
 | Parsed but a sum fails, or a field is missing | Edit panel opens, pre-filled with the parsed values; failing stages highlighted |
 | No totals found | Toast "No result screen detected"; nothing saved |
-| 1–2 or 4+ totals found | Toast "Couldn't read all three stages, try again"; nothing saved. A re-tap is cheaper than typing a whole stage |
+| A total line dropped, members found (step 2) | Edit panel opens with that total empty; the quick fix fills it from the members |
+| Otherwise 1–2 or 4+ totals found | Toast "Couldn't read all three stages, try again"; nothing saved. A re-tap is cheaper than typing a whole stage |
 | Identical to the session's last run (9 scores + 3 totals) | Toast "Same as run N, skipped"; nothing saved |
 
 ### 5.5 Edit panel

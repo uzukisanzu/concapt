@@ -21,12 +21,16 @@ class IncompleteScreen extends ParseResult {
 }
 
 class ParsedRun extends ParseResult {
-  const ParsedRun(this.draft, this.stageBounds);
+  const ParsedRun(this.draft, this.stageBounds, this.totalLines);
 
   final RunDraft draft;
 
   /// Each stage's total, members, and bonus in frame pixels, top to bottom.
   final List<PixelRect> stageBounds;
+
+  /// Each stage's total line across its strip, in frame pixels, even where
+  /// OCR dropped the total.
+  final List<PixelRect> totalLines;
 }
 
 enum _Kind { total, bonus, number }
@@ -80,30 +84,34 @@ abstract final class ResultParser {
     final totals = tokens.where((t) => t.kind == _Kind.total).toList()
       ..sort((a, b) => a.centerY.compareTo(b.centerY));
     if (totals.isEmpty) return const NoResultScreen();
-    if (totals.length != RunScores.stageCount) return IncompleteScreen(totals.length);
 
     final tolerance = _median([for (final t in tokens) t.piece.height]) / 2;
+    final stages = totals.length == RunScores.stageCount
+        ? [for (final t in totals) (total: t, y: t.centerY)]
+        : _recoverStages(tokens, totals, tolerance);
+    if (stages == null) return IncompleteScreen(totals.length);
+
     final bands = <List<_Token>>[];
     final bonuses = <_Token?>[];
-    for (var i = 0; i < totals.length; i++) {
-      final top = totals[i].centerY + tolerance;
-      final bottom = i + 1 < totals.length ? totals[i + 1].centerY - tolerance : double.infinity;
+    for (var i = 0; i < stages.length; i++) {
+      final top = stages[i].y + tolerance;
+      final bottom = i + 1 < stages.length ? stages[i + 1].y - tolerance : double.infinity;
       final band = tokens.where((t) => t.centerY > top && t.centerY < bottom).toList();
       bands.add(band);
       bonuses.add(_topmost(band.where((t) => t.kind == _Kind.bonus)));
     }
 
     final bonusOffset = _median([
-      for (var i = 0; i < totals.length; i++)
-        if (bonuses[i] != null) bonuses[i]!.centerY - totals[i].centerY,
+      for (var i = 0; i < stages.length; i++)
+        if (bonuses[i] != null) bonuses[i]!.centerY - stages[i].y,
     ]);
     final memberRows = <List<_Token>>[];
-    for (var i = 0; i < totals.length; i++) {
+    for (var i = 0; i < stages.length; i++) {
       final bonus = bonuses[i];
       final limit = bonus != null
           ? bonus.centerY - tolerance
           : bonusOffset > 0
-          ? totals[i].centerY + bonusOffset - tolerance
+          ? stages[i].y + bonusOffset - tolerance
           : double.infinity;
       final band = bands[i];
       final rows = _groupRows(
@@ -114,9 +122,14 @@ abstract final class ResultParser {
     }
 
     final anchors = _slotAnchors(memberRows);
+    final halfLine = _median([for (final t in totals) t.piece.height]) * 0.75;
     final bounds = [
-      for (var i = 0; i < totals.length; i++)
-        _bounds(totals[i], [...memberRows[i], ?bonuses[i]], tolerance),
+      for (var i = 0; i < stages.length; i++)
+        _bounds(stages[i].total?.piece.top ?? stages[i].y - halfLine, [
+          ?stages[i].total,
+          ...memberRows[i],
+          ?bonuses[i],
+        ], tolerance),
     ];
     // Stages share one column layout, so every stage spans the widest one;
     // a member OCR missed stays inside the strip.
@@ -124,23 +137,50 @@ abstract final class ResultParser {
     final right = bounds.map((b) => b.right).reduce(math.max);
     return ParsedRun(
       RunDraft([
-        for (var i = 0; i < totals.length; i++)
-          _stage(memberRows[i], anchors, totals[i].value),
+        for (var i = 0; i < stages.length; i++)
+          _stage(memberRows[i], anchors, stages[i].total?.value),
       ]),
       [for (final b in bounds) PixelRect(left, b.top, right, b.bottom)],
+      [for (final s in stages) PixelRect(left, s.y - halfLine, right, s.y + halfLine)],
     );
   }
 
-  /// From the total's top down through [below], widened by [margin].
-  static PixelRect _bounds(_Token total, List<_Token> below, double margin) {
-    final pieces = [total.piece, for (final t in below) t.piece];
-    return PixelRect(
-      pieces.map((p) => p.left).reduce(math.min) - margin,
-      total.piece.top - margin,
-      pieces.map((p) => p.right).reduce(math.max) + margin,
-      pieces.map((p) => p.bottom).reduce(math.max) + margin,
-    );
+  /// Finds the stages from their member rows when OCR dropped a total line:
+  /// three rows of two or more plain numbers, with each total found above a
+  /// different one. A dropped total sits where the others do relative to
+  /// their rows. Null when the rows don't line up that way.
+  static List<({_Token? total, double y})>? _recoverStages(
+    List<_Token> tokens,
+    List<_Token> totals,
+    double tolerance,
+  ) {
+    if (totals.length > RunScores.stageCount) return null;
+    final rows = _groupRows(
+      tokens.where((t) => t.kind == _Kind.number),
+      tolerance,
+    ).where((r) => r.length >= 2).toList();
+    if (rows.length != RunScores.stageCount) return null;
+
+    final owners = [for (final t in totals) rows.indexWhere((r) => r.first.centerY > t.centerY)];
+    if (owners.contains(-1) || owners.toSet().length != owners.length) return null;
+    final offset = _median([
+      for (var i = 0; i < totals.length; i++) rows[owners[i]].first.centerY - totals[i].centerY,
+    ]);
+    return [
+      for (var r = 0; r < rows.length; r++)
+        owners.contains(r)
+            ? (total: totals[owners.indexOf(r)], y: totals[owners.indexOf(r)].centerY)
+            : (total: null, y: rows[r].first.centerY - offset),
+    ];
   }
+
+  /// From [top] down through [pieces], widened by [margin].
+  static PixelRect _bounds(double top, List<_Token> pieces, double margin) => PixelRect(
+    pieces.map((t) => t.piece.left).reduce(math.min) - margin,
+    top - margin,
+    pieces.map((t) => t.piece.right).reduce(math.max) + margin,
+    pieces.map((t) => t.piece.bottom).reduce(math.max) + margin,
+  );
 
   static List<_Token> _classify(List<TextPiece> pieces) {
     final words = _joinSplitNumbers(pieces).expand(_splitWords).toList();
@@ -276,7 +316,7 @@ abstract final class ResultParser {
     ];
   }
 
-  static StageDraft _stage(List<_Token> row, List<double>? anchors, int total) {
+  static StageDraft _stage(List<_Token> row, List<double>? anchors, int? total) {
     final slots = List<int?>.filled(_slots, null);
     if (row.length == _slots) {
       for (var s = 0; s < _slots; s++) {

@@ -67,7 +67,7 @@ A new local plugin with C++/WinRT, Windows only. `packages/screen_capture` stays
 | `registerHotkey(key)` | `RegisterHotKey` on the runner window; returns false if the key is taken |
 | `unregisterHotkey()` | Releases the hotkey |
 | `hotkeyPresses` | Event stream, one event per press |
-| `recognize(path)` | `Windows.Media.Ocr` words with bounding boxes in the image's own pixels (§5.1) |
+| `recognize(path, region, scale)` | `Windows.Media.Ocr` words with bounding boxes in the image's own pixels. With `region`, reads only that part, enlarged `scale` times (§5.1) |
 | `ocrAvailable()` | Whether an OCR language is usable (§7.3) |
 | `flashWindow()` | `FlashWindowEx` on the runner window, taskbar button only |
 | `setAlwaysOnTop(bool)` | Toggles `HWND_TOPMOST` on the runner window |
@@ -112,6 +112,8 @@ The bonus no longer needs reading. Every stage's bonus equals its highest member
 With the computed bonus, this one pass reads 228 / 237 corpus images and both readable live scrcpy frames. A second pass keyed to the blue bonus pills, tried first, scored no higher: scrcpy's video carries color at half resolution, which blurred bonus 3s into 5s.
 
 Window capture grabs the window as drawn, so a taller scrcpy window gives each digit more pixels.
+
+Windows OCR drops or garbles totals holding `444` (`204,444Pt` vanishes, `444,386Pt` reads as `3` `86pt`), yet reads them once a crop cuts off `Pt`. So when a stage fails the sum check but has all three members, the controller re-reads its total line: the crop's right edge sweeps leftward in steps of a sixth of the line's height, each crop read at 2× and 3×. A reading counts only if it equals the members plus the bonus. A total still missing opens the edit form with that field empty (Android spec §5.4). Live samples: 3 of 3 `444` frames recover; `206,666Pt` and `411,599Pt` read without help.
 
 Windows OCR cannot read 7-digit totals such as `1,022,411Pt`, even cropped and enlarged. Those runs fail the sum check and open the edit form.
 

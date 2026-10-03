@@ -253,10 +253,23 @@ void main() {
     expect(parsedDraft(pieces).invalidStages, {2});
   });
 
-  test('two totals is an incomplete screen', () {
+  test("a dropped total line leaves that stage's total empty", () {
+    for (final (stage, total) in [(2, '181,221Pt'), (1, '206,163Pt')]) {
+      final pieces = screenPieces(referenceScores()).where((p) => p.text != total).toList();
+      final draft = parsedDraft(pieces);
+      final expected = referenceScores().stages[stage];
+
+      expect(draft.stages[stage].total, isNull, reason: total);
+      expect(draft.stages[stage].fields.take(3), expected.members, reason: total);
+      expect(draft.invalidStages, {stage}, reason: total);
+    }
+  });
+
+  test('two totals without a third member row is an incomplete screen', () {
+    final y = stageTops[2];
     final pieces = screenPieces(
       referenceScores(),
-    ).where((piece) => piece.text != '181,221Pt').toList();
+    ).where((p) => p.top < y - 30).toList();
     final result = ResultParser.parse(pieces);
     expect(result, isA<IncompleteScreen>());
     expect((result as IncompleteScreen).totalsFound, 2);
@@ -300,6 +313,31 @@ void main() {
       final b = (ResultParser.parse(pieces) as ParsedRun).stageBounds[0];
       expect(b.bottom, greaterThanOrEqualTo(y + 54));
       expect(b.bottom, lessThan(y + 110));
+    });
+  });
+
+  group('total lines', () {
+    test("span each stage's strip at its total", () {
+      final result = ResultParser.parse(screenPieces(referenceScores())) as ParsedRun;
+      for (var i = 0; i < 3; i++) {
+        final y = stageTops[i];
+        final line = result.totalLines[i];
+        expect(line.top, lessThanOrEqualTo(y));
+        expect(line.bottom, greaterThanOrEqualTo(y + 30));
+        expect(line.bottom, lessThan(y + 38));
+        expect(line.left, lessThanOrEqualTo(120));
+        expect(line.right, greaterThanOrEqualTo(340));
+      }
+    });
+
+    test('a dropped total line sits where the others do', () {
+      final pieces = screenPieces(referenceScores()).where((p) => p.text != '181,221Pt').toList();
+      final result = ResultParser.parse(pieces) as ParsedRun;
+      final y = stageTops[2];
+      final line = result.totalLines[2];
+      expect(line.top, lessThanOrEqualTo(y));
+      expect(line.bottom, greaterThanOrEqualTo(y + 30));
+      expect(line.bottom, lessThan(y + 38));
     });
   });
 }

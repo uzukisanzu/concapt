@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:concapt/capture/total_reread.dart';
 import 'package:concapt/capture/windows_ocr_text_reader.dart';
 import 'package:concapt/core/result_parser.dart';
 import 'package:flutter/services.dart';
@@ -71,11 +72,25 @@ void main() {
   });
 
   testWidgets('live scrcpy frames read every stage', (tester) async {
-    for (final name in ['scrcpy 560,318', 'scrcpy 816,559']) {
-      final pieces = await WindowsOcrTextReader().read('$repo/ref-script/result-live/$name.png');
-      final result = ResultParser.parse(pieces) as ParsedRun;
+    // Windows OCR drops or garbles totals holding 444 until a crop cuts off
+    // their Pt; the re-read recovers them.
+    const live = {
+      'scrcpy 560,318': null,
+      'scrcpy 816,559': null,
+      '666pt': null,
+      '99pt': null,
+      'couldntreadstages': (2, 204444),
+      'misreadstage2total-386': (1, 444386),
+      'another444sample': (1, 452444),
+    };
+    final reader = WindowsOcrTextReader();
+    for (final MapEntry(key: name, value: reread) in live.entries) {
+      final path = '$repo/ref-script/result-live/$name.png';
+      final run = ResultParser.parse(await reader.read(path)) as ParsedRun;
+      final draft = await rereadTotals(reader, path, run);
 
-      expect(result.draft.invalidStages, isEmpty, reason: name);
+      expect(draft.invalidStages, isEmpty, reason: name);
+      if (reread != null) expect(draft.stages[reread.$1].total, reread.$2, reason: name);
     }
   });
 

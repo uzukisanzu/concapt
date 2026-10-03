@@ -16,6 +16,11 @@
 
 namespace window_capture {
 
+// Part of an image in its own pixels, and how far to enlarge it for OCR.
+struct ReadRegion {
+  double left, top, right, bottom, scale;
+};
+
 class WindowCapturePlugin : public flutter::Plugin {
  public:
   static void RegisterWithRegistrar(flutter::PluginRegistrarWindows* registrar);
@@ -43,7 +48,7 @@ class WindowCapturePlugin : public flutter::Plugin {
   // The runner's top-level window, which owns the hotkey, flashing, and z-order.
   HWND RootWindow() const;
 
-  void Recognize(std::wstring path, Result result);
+  void Recognize(std::wstring path, std::optional<ReadRegion> region, Result result);
 
   flutter::PluginRegistrarWindows* registrar_;
   std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> methods_;

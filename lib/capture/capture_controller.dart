@@ -5,6 +5,7 @@ import '../core/text_piece.dart';
 import '../data/repository.dart';
 import 'capture_source.dart';
 import 'text_reader.dart';
+import 'total_reread.dart';
 
 sealed class CaptureOutcome {
   const CaptureOutcome();
@@ -113,7 +114,9 @@ class CaptureController {
           return const CaptureNoResult();
         case IncompleteScreen():
           return const CaptureIncomplete();
-        case ParsedRun(:final draft, :final stageBounds):
+        case final ParsedRun run:
+          final draft = await _reread(path, run);
+          final stageBounds = run.stageBounds;
           final scores = draft.toScores();
           if (scores == null || !scores.allSumsOk) {
             return CaptureNeedsReview(draft, framePath: path, stageBounds: stageBounds);
@@ -124,6 +127,17 @@ class CaptureController {
       }
     } finally {
       _busy = false;
+    }
+  }
+
+  /// The run with failing totals re-read, when the reader can read regions.
+  Future<RunDraft> _reread(String path, ParsedRun run) async {
+    final reader = this.reader;
+    if (reader is! RegionReader || run.draft.invalidStages.isEmpty) return run.draft;
+    try {
+      return await rereadTotals(reader as RegionReader, path, run).timeout(readTimeout);
+    } catch (_) {
+      return run.draft;
     }
   }
 

@@ -44,9 +44,18 @@ abstract final class WindowCapture {
       _methods.invokeMethod<void>('captureWindow', {'handle': handle, 'path': path});
 
   /// OCR words with boxes in image pixels, as maps of `text`, `l`, `t`, `r`, `b`.
+  /// With [region] (`[left, top, right, bottom]`), reads only that part,
+  /// enlarged [scale] times.
   /// Throws [PlatformException] with code `no_language` when no OCR language is usable.
-  static Future<List<Map<Object?, Object?>>> recognize(String path) async =>
-      await _methods.invokeListMethod<Map<Object?, Object?>>('recognize', {'path': path}) ??
+  static Future<List<Map<Object?, Object?>>> recognize(
+    String path, {
+    List<double>? region,
+    double scale = 1,
+  }) async =>
+      await _methods.invokeListMethod<Map<Object?, Object?>>('recognize', {
+        'path': path,
+        if (region != null) ...{'region': region, 'scale': scale},
+      }) ??
       const [];
 
   /// Whether English or another Latin-script OCR language is installed.

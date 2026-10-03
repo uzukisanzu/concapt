@@ -249,19 +249,40 @@ ocr::OcrEngine CreateEngine() {
   return nullptr;
 }
 
-// Shrinks tall frames to kReadLongest and returns boxes in the image's own
-// pixels.
-EncodableList ReadWords(const ocr::OcrEngine& engine, const std::wstring& path) {
+// Reads the whole frame, shrinking tall ones to kReadLongest, or just [region]
+// enlarged by its scale. Boxes come back in the image's own pixels.
+EncodableList ReadWords(const ocr::OcrEngine& engine, const std::wstring& path,
+                        const std::optional<ReadRegion>& region) {
   const auto file = storage::StorageFile::GetFileFromPathAsync(path).get();
   const auto stream = file.OpenAsync(storage::FileAccessMode::Read).get();
   const auto decoder = imaging::BitmapDecoder::CreateAsync(stream).get();
 
   const uint32_t longest = std::max(decoder.PixelWidth(), decoder.PixelHeight());
-  const double scale = std::min(1.0, static_cast<double>(kReadLongest) / longest);
+  const double scale =
+      region ? region->scale : std::min(1.0, static_cast<double>(kReadLongest) / longest);
+  const auto width = static_cast<uint32_t>(decoder.PixelWidth() * scale);
+  const auto height = static_cast<uint32_t>(decoder.PixelHeight() * scale);
   imaging::BitmapTransform transform;
-  transform.ScaledWidth(static_cast<uint32_t>(decoder.PixelWidth() * scale));
-  transform.ScaledHeight(static_cast<uint32_t>(decoder.PixelHeight() * scale));
-  transform.InterpolationMode(imaging::BitmapInterpolationMode::Fant);
+  transform.ScaledWidth(width);
+  transform.ScaledHeight(height);
+
+  // Fant blurs when enlarging.
+  transform.InterpolationMode(scale > 1 ? imaging::BitmapInterpolationMode::Cubic
+                                        : imaging::BitmapInterpolationMode::Fant);
+
+  // Bounds apply after scaling.
+  imaging::BitmapBounds bounds{0, 0, width, height};
+  if (region) {
+    const auto at = [scale](double v, uint32_t limit) {
+      return static_cast<uint32_t>(std::clamp(v * scale, 0.0, static_cast<double>(limit)));
+    };
+    bounds.X = at(region->left, width);
+    bounds.Y = at(region->top, height);
+    bounds.Width = at(region->right, width) - bounds.X;
+    bounds.Height = at(region->bottom, height) - bounds.Y;
+    if (bounds.Width == 0 || bounds.Height == 0) return {};
+    transform.Bounds(bounds);
+  }
 
   const auto bitmap = decoder
                           .GetSoftwareBitmapAsync(imaging::BitmapPixelFormat::Bgra8,
@@ -278,10 +299,10 @@ EncodableList ReadWords(const ocr::OcrEngine& engine, const std::wstring& path) 
       const auto box = word.BoundingRect();
       words.push_back(EncodableValue(EncodableMap{
           {EncodableValue("text"), EncodableValue(Utf8(word.Text()))},
-          {EncodableValue("l"), EncodableValue(box.X / scale)},
-          {EncodableValue("t"), EncodableValue(box.Y / scale)},
-          {EncodableValue("r"), EncodableValue((box.X + box.Width) / scale)},
-          {EncodableValue("b"), EncodableValue((box.Y + box.Height) / scale)},
+          {EncodableValue("l"), EncodableValue((bounds.X + box.X) / scale)},
+          {EncodableValue("t"), EncodableValue((bounds.Y + box.Y) / scale)},
+          {EncodableValue("r"), EncodableValue((bounds.X + box.X + box.Width) / scale)},
+          {EncodableValue("b"), EncodableValue((bounds.Y + box.Y + box.Height) / scale)},
       }));
     }
   }
@@ -354,7 +375,19 @@ void WindowCapturePlugin::HandleMethodCall(const flutter::MethodCall<EncodableVa
   } else if (method == "recognize") {
     const auto* path = std::get_if<std::string>(Arg(call, "path"));
     if (!path) return result->Error("bad_args", "path is required");
-    Recognize(Wide(*path), std::move(result));
+    std::optional<ReadRegion> region;
+    if (const auto* bounds = std::get_if<EncodableList>(Arg(call, "region"))) {
+      const auto* scale = std::get_if<double>(Arg(call, "scale"));
+      if (bounds->size() != 4 || !scale) return result->Error("bad_args", "region needs 4 edges and a scale");
+      double edges[4];
+      for (size_t i = 0; i < 4; ++i) {
+        const auto* edge = std::get_if<double>(&(*bounds)[i]);
+        if (!edge) return result->Error("bad_args", "region edges must be doubles");
+        edges[i] = *edge;
+      }
+      region = ReadRegion{edges[0], edges[1], edges[2], edges[3], *scale};
+    }
+    Recognize(Wide(*path), region, std::move(result));
   } else if (method == "ocrAvailable") {
     result->Success(EncodableValue(static_cast<bool>(CreateEngine())));
   } else if (method == "registerHotkey") {
@@ -403,7 +436,8 @@ std::optional<LRESULT> WindowCapturePlugin::HandleWindowMessage(UINT message, WP
   return 0;
 }
 
-void WindowCapturePlugin::Recognize(std::wstring path, Result result) {
+void WindowCapturePlugin::Recognize(std::wstring path, std::optional<ReadRegion> region,
+                                    Result result) {
   path = FullPath(path);
   WPARAM id;
   {
@@ -414,14 +448,14 @@ void WindowCapturePlugin::Recognize(std::wstring path, Result result) {
   // WinRT async calls can't block the platform thread, which is single-threaded
   // COM. The worker posts back to the window so the reply leaves from the
   // platform thread.
-  std::thread([this, id, root = RootWindow(), path = std::move(path)] {
+  std::thread([this, id, region, root = RootWindow(), path = std::move(path)] {
     winrt::init_apartment(winrt::apartment_type::multi_threaded);
     EncodableList words;
     std::string error_code;
     std::string error_message;
     try {
       if (const auto engine = CreateEngine()) {
-        words = ReadWords(engine, path);
+        words = ReadWords(engine, path, region);
       } else {
         error_code = "no_language";
       }

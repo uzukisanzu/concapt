@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:concapt/capture/windows_ocr_text_reader.dart';
+import 'package:concapt/core/pixel_rect.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -32,5 +33,13 @@ void main() {
     final total = pieces.single;
     expect(total.text, '1,014,622Pt');
     expect([total.left, total.top, total.right, total.bottom], [10, 20, 110, 50]);
+  });
+
+  test('reads a region with its edges and scale', () async {
+    await WindowsOcrTextReader().readRegion('frame.png', const PixelRect(10, 20, 110, 50), 2);
+
+    expect(calls.single['region'], [10.0, 20.0, 110.0, 50.0]);
+    expect(calls.single['scale'], 2.0);
+    expect(File(calls.single['path']! as String).isAbsolute, isTrue);
   });
 }
