@@ -14,7 +14,7 @@
 
 ## Global Constraints
 
-- Target: Windows 10 1903+ / Windows 11. The developer's PC runs Windows 11 with Visual Studio Build Tools 2026.
+- Target: Windows 10 2004+ / Windows 11. The developer's PC runs Windows 11 with Visual Studio Build Tools 2026.
 - Shell: Git Bash. `flutter analyze` and `flutter test` pass before every commit.
 - Steps marked **[pc]** need the developer at the PC (a game window, a key press, or a visual check). Ask, then wait.
 - Plugin package `window_capture`, C++ namespace `window_capture`, `pluginClass: WindowCapturePluginCApi`, method channel `concapt/window_capture`, event channel `concapt/window_capture/hotkey`.
@@ -2894,12 +2894,12 @@ Run on the developer's PC with `flutter run -d windows`.
 `CLAUDE.md`:
 - Change the opening line to: "An Android and Windows app that captures Gakuen Idolmaster contest rehearsal results. On Android a floating bubble triggers the capture; on Windows a global hotkey captures a chosen window. Each capture reads the 9 member scores with on-device OCR, checks each stage's sum, and adds the run to a session. Sessions show per-slot statistics, histograms, and CSV export."
 - Add `- Windows spec: docs/superpowers/specs/2026-10-03-concapt-windows-design.md` and `- Windows plan: docs/superpowers/plans/2026-10-03-concapt-windows.md` under the spec and plan lines.
-- In Stack, change "Android only for now (…)" to "Android (app id `dev.concapt.app`, `minSdk` 26) and Windows 10 1903+ (run from the repo)", and add "C++/WinRT for Windows capture, hotkey, and OCR (local plugin `packages/window_capture`)".
+- In Stack, change "Android only for now (…)" to "Android (app id `dev.concapt.app`, `minSdk` 26) and Windows 10 2004+ (run from the repo)", and add "C++/WinRT for Windows capture, hotkey, and OCR (local plugin `packages/window_capture`)".
 - In Commands, add rows `| Run on PC | flutter run -d windows |` and `| Windows device tests | flutter test integration_test/<file>.dart -d windows |`.
 - In Layout, add rows `| lib/desktop/ | The Windows capture screen |` and `| packages/window_capture/ | Local Flutter plugin with the C++/WinRT capture, hotkey, and OCR |`, and change the `test/fixtures/ocr/` row to `test/fixtures/ocr/`, `ocr-windows/` with "Real ML Kit and Windows OCR output recorded from the corpus".
 - In Verifying changes, change the fixture line to name both fixture sets.
 
-`README.md`: change the first sentence to describe both platforms the same way, add `flutter run -d windows` under Build, and change "Android only, `minSdk` 26." to "Android (`minSdk` 26) and Windows 10 1903+. The Windows build runs from the repo."
+`README.md`: change the first sentence to describe both platforms the same way, add `flutter run -d windows` under Build, and change "Android only, `minSdk` 26." to "Android (`minSdk` 26) and Windows 10 2004+. The Windows build runs from the repo."
 
 `PRODUCT.md`: change `## Platform` to `android, windows`, and the Technical bullet to "Android (`minSdk` 26, sideloaded) and Windows (run from the repo). Android runs two Flutter engines (main app and overlay) that share one SQLite database; Windows runs one. iOS is planned later through the same platform seams."
 

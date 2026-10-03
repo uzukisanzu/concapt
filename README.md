@@ -11,7 +11,7 @@ flutter build apk --release
 flutter run -d windows
 ```
 
-Android (`minSdk` 26) and Windows 10 1903+. The Windows build runs from the repo.
+Android (`minSdk` 26) and Windows 10 2004+. The Windows build runs from the repo.
 
 ## Docs
 

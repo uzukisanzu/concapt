@@ -2,7 +2,7 @@
 
 - **Date:** 2026-10-03
 - **Status:** Approved; amended 2026-10-03 after the OCR spike (§5.1)
-- **Platform:** Windows 10 1903+ / Windows 11, alongside the Android app
+- **Platform:** Windows 10 2004+ / Windows 11, alongside the Android app
 - **Builds on:** `2026-10-02-concapt-design.md` (the Android spec). Everything not covered here is unchanged.
 
 ## 1. Goal

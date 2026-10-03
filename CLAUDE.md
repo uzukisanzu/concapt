@@ -77,7 +77,7 @@ An Android and Windows app that captures Gakuen Idolmaster contest rehearsal res
 
 ## Stack
 
-- Flutter 3.41.4 / Dart 3.11.1, Android (app id `dev.concapt.app`, `minSdk` 26) and Windows 10 1903+ (run from the repo)
+- Flutter 3.41.4 / Dart 3.11.1, Android (app id `dev.concapt.app`, `minSdk` 26) and Windows 10 2004+ (run from the repo)
 - Kotlin for screen capture (local plugin `packages/screen_capture`, MediaProjection foreground service)
 - `flutter_overlay_window` for the bubble, `google_mlkit_text_recognition` (Latin) for OCR
 - C++/WinRT for Windows capture, hotkey, and two-pass OCR (local plugin `packages/window_capture`)
