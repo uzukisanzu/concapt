@@ -47,7 +47,7 @@ Run on the developer's PC with `flutter run -d windows`.
 | W1 | Open | With the game open, open a session and Start capturing | Capture screen; the picker lists the game as "title — process"; the bottom line reads "Press F9 on a result screen to capture." |
 | W2 | Auto-save | Pick the game, focus it, open a rehearsal result, press F9 | "Run 1 saved" over three totals that match the game; the game keeps focus |
 | W3 | scrcpy | Pick a scrcpy window mirroring the phone on a result, press F9 | Run saved; totals match |
-| W4 | Overlap | Drag concapt over the game's scores, press F9 | Saved correctly; concapt is not in the frame |
+| W4 | Covered target | Move the concapt window so it covers the game's scores, then press F9 | Saved correctly: capture reads the game window itself, so concapt on top isn't in the frame |
 | W5 | Failed check | Press F9 while the result screen is still animating | The run form replaces the controls with capture strips; the taskbar button flashes; the game keeps focus; F9 again shows "Save or cancel the open run first." |
 | W6 | Minimized | Minimize the game, press F9 | "The captured window is minimized…"; nothing saved |
 | W7 | Closed | Close scrcpy, press F9 | "The captured window is gone…"; picker empty; after reopening scrcpy, Refresh lists it |
