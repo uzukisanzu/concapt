@@ -48,7 +48,7 @@ Run on the developer's PC with `flutter run -d windows`.
 | W2 | Auto-save | Pick the game, focus it, open a rehearsal result, press F9 | "Run 1 saved" over three totals that match the game; the game keeps focus |
 | W3 | scrcpy | Pick a scrcpy window mirroring the phone on a result, press F9 | Run saved; totals match |
 | W4 | Covered target | Move the concapt window so it covers the game's scores, then press F9 | Saved correctly: capture reads the game window itself, so concapt on top isn't in the frame |
-| W5 | Failed check | Press F9 while the result screen is still animating | The run form replaces the controls with capture strips; the taskbar button flashes; the game keeps focus; F9 again shows "Save or cancel the open run first." |
+| W5 | Failed check | Open a saved result frame with a 7-digit total (Windows OCR can't read one) in Paint or Photos at about 100%, pick that window, press F9 | The run form replaces the controls with capture strips; the taskbar button flashes; the game keeps focus; F9 again shows "Save or cancel the open run first." |
 | W6 | Minimized | Minimize the game, press F9 | "The captured window is minimized…"; nothing saved |
 | W7 | Closed | Close scrcpy, press F9 | "The captured window is gone…"; picker empty; after reopening scrcpy, Refresh lists it |
 | W8 | Hotkey conflict | Bind F9 in another app first, then Start capturing | "F9 is in use by another app…"; Change, press F10, and F10 captures |
