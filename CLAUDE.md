@@ -103,7 +103,7 @@ An Android app that floats a capture bubble over Gakuen Idolmaster. A tap on a c
 | `lib/ui/` | Main app screens and shared widgets |
 | `packages/screen_capture/` | Local Flutter plugin with the Kotlin capture service |
 | `test/fixtures/ocr/` | Real ML Kit output recorded from the corpus |
-| `ref-script/` | The original PC script and 206 rehearsal result captures (OCR test corpus) |
+| `ref-script/` | Local only, gitignored: the original PC script and the rehearsal result captures (OCR test corpus) |
 | `docs/` | Spec, plan, spike notes, manual test checklist |
 
 ## Design system (keep it consistent)

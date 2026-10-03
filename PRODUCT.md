@@ -53,8 +53,8 @@ The sum check sets concapt apart. Each stage's three member scores plus the crow
 
 ## Evidence on Hand
 
-- `ref-script/result/`: 206 real rehearsal result captures (461×764 PNG crops), the OCR test corpus.
-- `ref-script/contest.py`: the original PC script.
+- `ref-script/result/` (local only, gitignored): 206 real rehearsal result captures (461×764 PNG crops), the OCR test corpus.
+- `ref-script/contest.py` (local only, gitignored): the original PC script.
 - No users beyond the developer, no testimonials, no accuracy figures yet. Phone-capture OCR accuracy is still to be measured.
 
 ## Product Principles

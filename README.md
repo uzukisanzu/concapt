@@ -18,3 +18,9 @@ Android only, `minSdk` 26.
 - `DESIGN.md`: the design system
 - `docs/superpowers/specs/`: the design spec
 - `docs/manual-test-checklist.md`: on-device checks
+
+## License
+
+MIT, see `LICENSE`. The bundled Roboto fonts are under the SIL Open Font License (`assets/fonts/OFL.txt`).
+
+Gakuen Idolmaster is a trademark of Bandai Namco Entertainment. This project is unofficial and not affiliated with it.
