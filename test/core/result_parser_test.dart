@@ -121,6 +121,20 @@ void main() {
     expect(draft.toScores(), referenceScores());
   });
 
+  test('joins a lone bonus marker read as its own piece', () {
+    final pieces = [
+      for (final piece in screenPieces(referenceScores()))
+        if (piece.text == '+24183') ...[
+          TextPiece('+', piece.left, piece.top, piece.left + 10, piece.bottom),
+          TextPiece('24183', piece.left + 16, piece.top, piece.right, piece.bottom),
+        ] else
+          piece,
+    ];
+    final draft = parsedDraft(pieces);
+    expect(draft.stages[0].bonus, 24183);
+    expect(draft.toScores(), referenceScores());
+  });
+
   test('does not join a number onto a total ending in Pt.', () {
     final pieces = [
       for (final piece in screenPieces(referenceScores()))

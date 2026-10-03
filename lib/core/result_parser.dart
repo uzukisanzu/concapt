@@ -188,7 +188,8 @@ abstract final class ResultParser {
     return tokens;
   }
 
-  /// Joins a number OCR broke in two, like `181,22` + `1Pt`.
+  /// Joins a number OCR broke in two, like `181,22` + `1Pt`, and a bonus
+  /// marker read apart from its number, like `+` + `46150`.
   static List<TextPiece> _joinSplitNumbers(List<TextPiece> words) {
     final sorted = [...words]..sort((a, b) => a.left.compareTo(b.left));
     final joined = <TextPiece>[];
@@ -212,10 +213,15 @@ abstract final class ResultParser {
 
   static bool _continues(TextPiece left, TextPiece right) {
     final h = math.max(left.height, right.height);
+    final text = left.text.trim();
+    final marker = text.endsWith('+');
+
+    // A marker read as its own word sits a space away from its number.
+    final gap = marker ? h : h / 2;
     return (right.centerY - left.centerY).abs() < h / 2 &&
         right.left >= left.right - h / 2 &&
-        right.left - left.right < h / 2 &&
-        _endsNumeric.hasMatch(left.text.trim()) &&
+        right.left - left.right < gap &&
+        (marker || _endsNumeric.hasMatch(text)) &&
         _startsDigit.hasMatch(right.text.trim());
   }
 
