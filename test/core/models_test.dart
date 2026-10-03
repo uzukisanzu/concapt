@@ -7,10 +7,15 @@ import '../helpers/sample.dart';
 void main() {
   group('StageScores', () {
     test('has value equality', () {
-      const a = StageScores(left: 1, middle: 2, right: 3, bonus: 4, total: 10);
-      expect(a, const StageScores(left: 1, middle: 2, right: 3, bonus: 4, total: 10));
-      expect(a == const StageScores(left: 1, middle: 2, right: 3, bonus: 4, total: 11), isFalse);
-      expect(a.members, [1, 2, 3]);
+      const a = StageScores(left: 10, middle: 2, right: 3, total: 17);
+      expect(a, const StageScores(left: 10, middle: 2, right: 3, total: 17));
+      expect(a == const StageScores(left: 10, middle: 2, right: 3, total: 18), isFalse);
+      expect(a.members, [10, 2, 3]);
+    });
+
+    test('the bonus is the highest member over five, rounded down', () {
+      expect(const StageScores(left: 2, middle: 14, right: 3, total: 0).bonus, 2);
+      expect([for (final s in referenceScores().stages) s.bonus], [24183, 21413, 25162]);
     });
 
     test('sum check passes when members plus bonus equal total', () {
@@ -18,8 +23,8 @@ void main() {
     });
 
     test('sum check fails when off by one', () {
-      const s = StageScores(left: 1, middle: 2, right: 3, bonus: 4, total: 11);
-      expect(s.sum, 10);
+      const s = StageScores(left: 10, middle: 2, right: 3, total: 18);
+      expect(s.sum, 17);
       expect(s.sumOk, isFalse);
     });
   });
@@ -44,10 +49,15 @@ void main() {
       expect(() => RunDraft(const [StageDraft()]), throwsArgumentError);
     });
 
-    test('fields run left, middle, right, bonus, total', () {
-      const stage = StageDraft(left: 1, middle: 2, right: 3, bonus: 4, total: 10);
-      expect(stage.fields, [1, 2, 3, 4, 10]);
+    test('fields run left, middle, right, total', () {
+      const stage = StageDraft(left: 10, middle: 2, right: 3, total: 17);
+      expect(stage.fields, [10, 2, 3, 17]);
       expect(StageDraft.fromFields(stage.fields).toScores(), stage.toScores());
+    });
+
+    test('the bonus follows the members and is null while one is missing', () {
+      expect(const StageDraft(left: 10, middle: 2, right: 3).bonus, 2);
+      expect(const StageDraft(left: 10, right: 3, total: 17).bonus, isNull);
     });
 
     test('round-trips complete scores', () {
@@ -60,7 +70,7 @@ void main() {
       final full = RunDraft.fromScores(referenceScores());
       final draft = RunDraft([
         full.stages[0],
-        StageDraft.fromFields([107065, null, 38123, 21413, 206163]),
+        StageDraft.fromFields([107065, null, 38123, 206163]),
         full.stages[2],
       ]);
       expect(draft.invalidStages, {1});
@@ -69,7 +79,7 @@ void main() {
 
     test('a wrong sum makes the stage invalid but toScores still returns', () {
       final draft = RunDraft([
-        StageDraft.fromFields([1, 2, 3, 4, 11]),
+        StageDraft.fromFields([10, 2, 3, 18]),
         ...RunDraft.fromScores(referenceScores()).stages.skip(1),
       ]);
       expect(draft.invalidStages, {0});
@@ -78,28 +88,37 @@ void main() {
   });
 
   group('StageDraft.fixFor', () {
-    // 1 + 2 + 3 + 4 = 10, read with a wrong total.
-    final stage = StageDraft.fromFields([1, 2, 3, 4, 20]);
+    // 100 + 20 + 30 + 20 = 170, read with a wrong total.
+    final stage = StageDraft.fromFields([100, 20, 30, 200]);
 
-    test('a member or the bonus takes the total minus the other four', () {
-      expect(stage.fixFor(0), 11);
-      expect(stage.fixFor(3), 14);
+    test('a member below the highest takes the total minus the rest', () {
+      expect(stage.fixFor(1), 50);
+    });
+
+    test('a member that becomes the highest also sets the bonus', () {
+      // 125 + 20 + 30 + 25 = 200.
+      expect(stage.fixFor(0), 125);
     });
 
     test('the total takes the sum', () {
-      expect(stage.fixFor(4), 10);
+      expect(stage.fixFor(3), 170);
     });
 
     test('fills the field itself when it is the only empty one', () {
-      expect(StageDraft.fromFields([null, 2, 3, 4, 10]).fixFor(0), 1);
+      expect(StageDraft.fromFields([null, 20, 30, 170]).fixFor(0), 100);
     });
 
     test('is null when another field is empty', () {
-      expect(StageDraft.fromFields([1, null, 3, 4, 20]).fixFor(0), isNull);
+      expect(StageDraft.fromFields([100, null, 30, 200]).fixFor(0), isNull);
     });
 
     test('is null when the result would be negative', () {
-      expect(StageDraft.fromFields([100, 2, 3, 4, 10]).fixFor(1), isNull);
+      expect(StageDraft.fromFields([100, 20, 30, 50]).fixFor(1), isNull);
+    });
+
+    test('is null when no value adds up', () {
+      // 10 + x + 3 + bonus = 30 has no whole solution.
+      expect(StageDraft.fromFields([10, 2, 3, 30]).fixFor(1), isNull);
     });
   });
 

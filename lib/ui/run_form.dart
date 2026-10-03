@@ -12,7 +12,6 @@ List<String> fieldLabels(AppLocalizations l) => [
   l.slotLeft,
   l.slotMiddle,
   l.slotRight,
-  l.fieldBonus,
   l.fieldTotal,
 ];
 
@@ -24,7 +23,8 @@ String stageStatus(AppLocalizations l, StageDraft stage) {
   return l.statusOffBy('${diff > 0 ? '+' : '−'}${formatInt(diff.abs())}');
 }
 
-/// Fifteen fields (3 stages × left, middle, right, bonus, total) with a live sum check.
+/// Twelve fields (3 stages × left, middle, right, total) with each stage's
+/// bonus and a live sum check.
 class RunForm extends StatefulWidget {
   const RunForm({
     super.key,
@@ -166,7 +166,8 @@ class _RunFormState extends State<RunForm> {
 }
 
 /// One stage as a ruled module: a header band with the red numbered tab
-/// and the sum status, then an optional preview and the five score fields.
+/// and the sum status, then an optional preview, the four score fields, and
+/// the bonus the members earn.
 /// While a field of a failing stage has focus, the status gives way to a
 /// quick fix for it. With [onToggleFold], the band folds the stage.
 class _StageSection extends StatelessWidget {
@@ -206,6 +207,20 @@ class _StageSection extends StatelessWidget {
         keyboardType: TextInputType.number,
         textAlign: TextAlign.end,
         decoration: InputDecoration(labelText: labels[f]),
+      ),
+    );
+
+    // Derived from the members, so shown but never typed.
+    final bonus = Expanded(
+      child: InputDecorator(
+        key: Key('bonus-$index'),
+        decoration: InputDecoration(labelText: l.fieldBonus, enabled: false),
+        isEmpty: stage.bonus == null,
+        child: Text(
+          stage.bonus == null ? '' : formatInt(stage.bonus!),
+          textAlign: TextAlign.end,
+          style: text.bodyLarge?.copyWith(color: scheme.onSurfaceVariant),
+        ),
       ),
     );
 
@@ -277,7 +292,7 @@ class _StageSection extends StatelessWidget {
               children: [
                 Row(children: [field(0), gap, field(1), gap, field(2)]),
                 const SizedBox(height: 12),
-                Row(children: [field(3), gap, field(4)]),
+                Row(children: [bonus, gap, field(3)]),
               ],
             ),
           ),

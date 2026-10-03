@@ -42,7 +42,6 @@ namespace d3d = winrt::Windows::Graphics::DirectX::Direct3D11;
 namespace imaging = winrt::Windows::Graphics::Imaging;
 namespace ocr = winrt::Windows::Media::Ocr;
 namespace storage = winrt::Windows::Storage;
-namespace streams = winrt::Windows::Storage::Streams;
 
 constexpr UINT kOcrDone = WM_APP + 0x43;
 
@@ -250,101 +249,28 @@ ocr::OcrEngine CreateEngine() {
   return nullptr;
 }
 
-// Marks every pixel within [radius] of a set pixel, rows then columns. A
-// running count over each window keeps it linear in the pixel count.
-std::vector<uint8_t> Grow(const std::vector<uint8_t>& mask, uint32_t width, uint32_t height,
-                          uint32_t radius) {
-  const auto pass = [radius](const uint8_t* in, uint8_t* out, uint32_t count, size_t step) {
-    uint32_t inside = 0;
-    for (uint32_t i = 0; i < count + radius; ++i) {
-      if (i < count) inside += in[i * step];
-      if (i >= 2 * radius + 1) inside -= in[(i - 2 * radius - 1) * step];
-      if (i >= radius) out[(i - radius) * step] = inside > 0;
-    }
-  };
-  std::vector<uint8_t> rows(mask.size());
-  for (uint32_t y = 0; y < height; ++y) {
-    pass(mask.data() + static_cast<size_t>(y) * width, rows.data() + static_cast<size_t>(y) * width,
-         width, 1);
-  }
-  std::vector<uint8_t> grown(mask.size());
-  for (uint32_t x = 0; x < width; ++x) pass(rows.data() + x, grown.data() + x, height, width);
-  return grown;
-}
-
-// Keeps the bonus pills' text and blanks everything else. Blueness only
-// marks where the pills are: scrcpy's video carries color at half
-// resolution, which blurs a 3 into a 5, so glyph shapes come from
-// brightness.
-imaging::SoftwareBitmap KeyBlue(const imaging::SoftwareBitmap& bitmap) {
-  const auto width = static_cast<uint32_t>(bitmap.PixelWidth());
-  const auto height = static_cast<uint32_t>(bitmap.PixelHeight());
-  const uint32_t size = width * height * 4;
-  streams::Buffer buffer(size);
-  buffer.Length(size);
-  bitmap.CopyToBuffer(buffer);
-  uint8_t* pixels = buffer.data();
-
-  std::vector<uint8_t> blue(static_cast<size_t>(width) * height);
-  for (uint32_t i = 0; i < blue.size(); ++i) {
-    blue[i] = pixels[i * 4] - pixels[i * 4 + 2] > 40;
-  }
-  const auto pills = Grow(blue, width, height, 4);
-
-  for (uint32_t i = 0; i < pills.size(); ++i) {
-    uint8_t* pixel = pixels + i * 4;
-    const int luma = (114 * pixel[0] + 587 * pixel[1] + 299 * pixel[2]) / 1000;
-    const auto value =
-        static_cast<uint8_t>(pills[i] ? std::clamp((luma - 90) * 255 / 160, 0, 255) : 255);
-    pixel[0] = pixel[1] = pixel[2] = value;
-    pixel[3] = 255;
-  }
-  return imaging::SoftwareBitmap::CreateCopyFromBuffer(buffer, imaging::BitmapPixelFormat::Bgra8,
-                                                       width, height,
-                                                       imaging::BitmapAlphaMode::Premultiplied);
-}
-
-// Decodes the frame resized by [scale]. Fant blurs when enlarging, so
-// enlargements use Cubic.
-imaging::SoftwareBitmap Decode(const imaging::BitmapDecoder& decoder, double scale) {
-  imaging::BitmapTransform transform;
-  transform.ScaledWidth(static_cast<uint32_t>(decoder.PixelWidth() * scale));
-  transform.ScaledHeight(static_cast<uint32_t>(decoder.PixelHeight() * scale));
-  transform.InterpolationMode(scale > 1 ? imaging::BitmapInterpolationMode::Cubic
-                                         : imaging::BitmapInterpolationMode::Fant);
-  return decoder
-      .GetSoftwareBitmapAsync(imaging::BitmapPixelFormat::Bgra8,
-                              imaging::BitmapAlphaMode::Premultiplied, transform,
-                              imaging::ExifOrientationMode::IgnoreExifOrientation,
-                              imaging::ColorManagementMode::DoNotColorManage)
-      .get();
-}
-
-// The plain read shrinks tall frames to kReadLongest. The blue read keys the
-// frame enlarged to the engine's limit, which keeps glyph edges a smaller key
-// loses, then reads it at kReadLongest. Boxes come back in the image's own
-// pixels either way.
-EncodableList ReadWords(const ocr::OcrEngine& engine, const std::wstring& path, bool blue_only) {
+// Shrinks tall frames to kReadLongest and returns boxes in the image's own
+// pixels.
+EncodableList ReadWords(const ocr::OcrEngine& engine, const std::wstring& path) {
   const auto file = storage::StorageFile::GetFileFromPathAsync(path).get();
   const auto stream = file.OpenAsync(storage::FileAccessMode::Read).get();
   const auto decoder = imaging::BitmapDecoder::CreateAsync(stream).get();
 
   const uint32_t longest = std::max(decoder.PixelWidth(), decoder.PixelHeight());
-  imaging::SoftwareBitmap bitmap{nullptr};
-  if (blue_only) {
-    const uint32_t limit = ocr::OcrEngine::MaxImageDimension();
-    streams::InMemoryRandomAccessStream keyed;
-    const auto encoder =
-        imaging::BitmapEncoder::CreateAsync(imaging::BitmapEncoder::BmpEncoderId(), keyed).get();
-    encoder.SetSoftwareBitmap(KeyBlue(Decode(decoder, static_cast<double>(limit) / longest)));
-    encoder.FlushAsync().get();
-    bitmap = Decode(imaging::BitmapDecoder::CreateAsync(keyed).get(),
-                    static_cast<double>(kReadLongest) / limit);
-  } else {
-    bitmap = Decode(decoder, std::min(1.0, static_cast<double>(kReadLongest) / longest));
-  }
+  const double scale = std::min(1.0, static_cast<double>(kReadLongest) / longest);
+  imaging::BitmapTransform transform;
+  transform.ScaledWidth(static_cast<uint32_t>(decoder.PixelWidth() * scale));
+  transform.ScaledHeight(static_cast<uint32_t>(decoder.PixelHeight() * scale));
+  transform.InterpolationMode(imaging::BitmapInterpolationMode::Fant);
+
+  const auto bitmap = decoder
+                          .GetSoftwareBitmapAsync(imaging::BitmapPixelFormat::Bgra8,
+                                                  imaging::BitmapAlphaMode::Premultiplied,
+                                                  transform,
+                                                  imaging::ExifOrientationMode::IgnoreExifOrientation,
+                                                  imaging::ColorManagementMode::DoNotColorManage)
+                          .get();
   const auto result = engine.RecognizeAsync(bitmap).get();
-  const double scale = static_cast<double>(bitmap.PixelHeight()) / decoder.PixelHeight();
 
   EncodableList words;
   for (const auto& line : result.Lines()) {
@@ -428,8 +354,7 @@ void WindowCapturePlugin::HandleMethodCall(const flutter::MethodCall<EncodableVa
   } else if (method == "recognize") {
     const auto* path = std::get_if<std::string>(Arg(call, "path"));
     if (!path) return result->Error("bad_args", "path is required");
-    const auto* blue_only = std::get_if<bool>(Arg(call, "blueOnly"));
-    Recognize(Wide(*path), blue_only && *blue_only, std::move(result));
+    Recognize(Wide(*path), std::move(result));
   } else if (method == "ocrAvailable") {
     result->Success(EncodableValue(static_cast<bool>(CreateEngine())));
   } else if (method == "registerHotkey") {
@@ -478,7 +403,7 @@ std::optional<LRESULT> WindowCapturePlugin::HandleWindowMessage(UINT message, WP
   return 0;
 }
 
-void WindowCapturePlugin::Recognize(std::wstring path, bool blue_only, Result result) {
+void WindowCapturePlugin::Recognize(std::wstring path, Result result) {
   path = FullPath(path);
   WPARAM id;
   {
@@ -489,14 +414,14 @@ void WindowCapturePlugin::Recognize(std::wstring path, bool blue_only, Result re
   // WinRT async calls can't block the platform thread, which is single-threaded
   // COM. The worker posts back to the window so the reply leaves from the
   // platform thread.
-  std::thread([this, id, blue_only, root = RootWindow(), path = std::move(path)] {
+  std::thread([this, id, root = RootWindow(), path = std::move(path)] {
     winrt::init_apartment(winrt::apartment_type::multi_threaded);
     EncodableList words;
     std::string error_code;
     std::string error_message;
     try {
       if (const auto engine = CreateEngine()) {
-        words = ReadWords(engine, path, blue_only);
+        words = ReadWords(engine, path);
       } else {
         error_code = "no_language";
       }

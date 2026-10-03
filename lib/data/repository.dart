@@ -169,7 +169,6 @@ class Repository {
           left: s.leftScore,
           middle: s.middleScore,
           right: s.rightScore,
-          bonus: s.bonus,
           total: s.total,
         ),
     ]);

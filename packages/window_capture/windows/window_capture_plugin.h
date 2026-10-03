@@ -43,7 +43,7 @@ class WindowCapturePlugin : public flutter::Plugin {
   // The runner's top-level window, which owns the hotkey, flashing, and z-order.
   HWND RootWindow() const;
 
-  void Recognize(std::wstring path, bool blue_only, Result result);
+  void Recognize(std::wstring path, Result result);
 
   flutter::PluginRegistrarWindows* registrar_;
   std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> methods_;

@@ -27,7 +27,7 @@ Success means a 200–500 run session gets captured with near-zero typing, and n
 
 ## Positioning
 
-The sum check sets concapt apart. Each stage's three member scores plus the crown bonus must equal the stage total, so every saved run has been verified against the game's own arithmetic. A run that fails opens an edit panel over the game while the result is still on screen. concapt replaces a PC script (pyautogui + Tesseract) that had no such check.
+The sum check sets concapt apart. Each stage's three member scores plus the crown bonus (a fifth of the top score) must equal the stage total, so every saved run has been verified against the game's own arithmetic. A run that fails opens an edit panel over the game while the result is still on screen. concapt replaces a PC script (pyautogui + Tesseract) that had no such check.
 
 ## Operating Context
 

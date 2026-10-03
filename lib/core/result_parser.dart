@@ -125,7 +125,7 @@ abstract final class ResultParser {
     return ParsedRun(
       RunDraft([
         for (var i = 0; i < totals.length; i++)
-          _stage(memberRows[i], anchors, bonuses[i]?.value, totals[i].value),
+          _stage(memberRows[i], anchors, totals[i].value),
       ]),
       [for (final b in bounds) PixelRect(left, b.top, right, b.bottom)],
     );
@@ -276,7 +276,7 @@ abstract final class ResultParser {
     ];
   }
 
-  static StageDraft _stage(List<_Token> row, List<double>? anchors, int? bonus, int total) {
+  static StageDraft _stage(List<_Token> row, List<double>? anchors, int total) {
     final slots = List<int?>.filled(_slots, null);
     if (row.length == _slots) {
       for (var s = 0; s < _slots; s++) {
@@ -289,13 +289,7 @@ abstract final class ResultParser {
         slots[slot] = claimed.add(slot) ? t.value : null;
       }
     }
-    return StageDraft(
-      left: slots[0],
-      middle: slots[1],
-      right: slots[2],
-      bonus: bonus,
-      total: total,
-    );
+    return StageDraft(left: slots[0], middle: slots[1], right: slots[2], total: total);
   }
 
   static int _nearest(List<double> anchors, double x) {

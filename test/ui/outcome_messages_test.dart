@@ -10,7 +10,7 @@ void main() {
   final en = lookupAppLocalizations(const Locale('en'));
   final ja = lookupAppLocalizations(const Locale('ja'));
   StageScores stage(int total) =>
-      StageScores(left: 0, middle: 0, right: 0, bonus: total, total: total);
+      StageScores(left: 0, middle: 0, right: 0, total: total);
   final scores = RunScores([stage(312450), stage(298100), stage(1014622)]);
   final toasts = <CaptureOutcome>[
     CaptureSaved(7, scores),

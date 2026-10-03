@@ -1,7 +1,7 @@
 # concapt for Windows — Design Spec
 
 - **Date:** 2026-10-03
-- **Status:** Approved; amended 2026-10-03 after the OCR spike (§5.1)
+- **Status:** Approved; amended 2026-10-03 after the OCR spike and the computed bonus (§5.1)
 - **Platform:** Windows 10 2004+ / Windows 11, alongside the Android app
 - **Builds on:** `2026-10-02-concapt-design.md` (the Android spec). Everything not covered here is unchanged.
 
@@ -17,7 +17,7 @@ Capture rehearsal results on PC, replacing `ref-script/contest.py`. The player r
 - Window picker: capture any visible top-level window
 - Global hotkey trigger, rebindable
 - Windows Graphics Capture (WGC) of the chosen window
-- OCR with `Windows.Media.Ocr`, in two passes (§5.1)
+- OCR with `Windows.Media.Ocr`, one pass, with the bonus computed (§5.1)
 - A capturing view in the main window, with the edit form inline
 - OCR accuracy test on the PC
 
@@ -67,7 +67,7 @@ A new local plugin with C++/WinRT, Windows only. `packages/screen_capture` stays
 | `registerHotkey(key)` | `RegisterHotKey` on the runner window; returns false if the key is taken |
 | `unregisterHotkey()` | Releases the hotkey |
 | `hotkeyPresses` | Event stream, one event per press |
-| `recognize(path, blueOnly)` | `Windows.Media.Ocr` words with bounding boxes in the image's own pixels. With `blueOnly`, reads a copy keyed to the bonus pills' text (§5.1) |
+| `recognize(path)` | `Windows.Media.Ocr` words with bounding boxes in the image's own pixels (§5.1) |
 | `ocrAvailable()` | Whether an OCR language is usable (§7.3) |
 | `flashWindow()` | `FlashWindowEx` on the runner window, taskbar button only |
 | `setAlwaysOnTop(bool)` | Toggles `HWND_TOPMOST` on the runner window |
@@ -96,27 +96,26 @@ The runner opens a narrow window of about 420×860 logical pixels, so the phone-
 
 ## 5. Reading a frame
 
-### 5.1 Two OCR passes
+### 5.1 OCR and the computed bonus
 
 The spike measured `Windows.Media.Ocr` against the corpus and a live scrcpy frame:
 
-| Input | Plain pass | Result |
-|---|---|---|
-| Live scrcpy window, 442 × 984 | Reads all totals and member scores | Misses every bonus |
-| Corpus, 237 images | Drops bonuses, and on phone captures whole member rows | 0 / 237 pass |
+| Input | Result |
+|---|---|
+| Live scrcpy window, 442 × 984 | Reads all totals and member scores; misses every bonus |
+| Corpus, 237 images | Drops bonuses, and on phone captures whole member rows |
 
-The bonus is blue text on a white pill over a portrait. Keying the frame to blue text and enlarging it to the engine's limit reads it. So the reader runs two passes over each frame:
+The bonus no longer needs reading. Every stage's bonus equals its highest member score ÷ 5, rounded down (618 / 618 corpus stages; Android spec §3.1). The sum check computes it, so the reader makes one pass:
 
-1. **Plain:** the frame as captured, shrunk to at most 1300 px on its longest side. Taller frames lose whole member rows.
-2. **Blue:** the frame enlarged to the engine's limit (Cubic), keyed, then read at 1300 px like the plain pass. The key keeps the bonus pills and blanks the rest. Pixels with `blue − red > 40` mark the pills, and that mask grows by 4 px. Inside it, a pixel keeps its brightness, stretched from 90–250 to 0–255; outside it goes white. Its boxes map back to frame pixels.
+- The frame as captured, shrunk to at most 1300 px on its longest side. Taller frames lose whole member rows. Boxes map back to frame pixels.
 
-The key takes glyph shapes from brightness because scrcpy's video, H.264 or H.265, carries color at half resolution. Keys built on blueness alone blurred a live bonus 3 into a 5. Keying at a smaller size, or reading at the engine's limit, lost digits instead. This pipeline reads the live scrcpy test frame correctly and passes 199 / 237 corpus images; the soft blueness key passed 208 but failed live.
+With the computed bonus, this one pass reads 228 / 237 corpus images and both readable live scrcpy frames. A second pass keyed to the blue bonus pills, tried first, scored no higher: scrcpy's video carries color at half resolution, which blurred bonus 3s into 5s.
 
 Window capture grabs the window as drawn, so a taller scrcpy window gives each digit more pixels.
 
 Windows OCR cannot read 7-digit totals such as `1,022,411Pt`, even cropped and enlarged. Those runs fail the sum check and open the edit form.
 
-The reader returns both passes' words together. `ResultParser` is shared with Android and sees what ML Kit would give it, with one fix: a lone `+` joins the number to its right, since the blue pass often reads `+` and `46150` as two words.
+`ResultParser` is shared with Android and sees what ML Kit would give it, with one fix: a lone `+` joins the number to its right, since Windows OCR often reads `+` and `46150` as two words. Bonus words still bound the member row when found.
 
 ### 5.2 Acceptance
 
@@ -181,7 +180,8 @@ The accuracy test reads the corpus in place, so the phone-wipe gotcha doesn't ap
 
 | Risk | Mitigation |
 |---|---|
-| Two-pass OCR still misses too many live bonuses | The live acceptance run (§5.2) decides. Next fallback: Tesseract, after amending this spec |
+| OCR still misreads too many live members or totals | The live acceptance run (§5.2) decides. Next fallback: Tesseract, after amending this spec |
+| The game changes its bonus rule | Every run fails the sum check and opens the edit form; nothing wrong saves silently |
 | OCR word splits differ from ML Kit's and break the parser | Same spike; parser changes must keep both fixture sets green |
 | Black bars or window chrome around the game confuse the parser | Capture crops to the client area; the parser works from positions relative to the totals; the spike covers scrcpy captures |
 | Game runs elevated and blocks hotkeys or capture | `RegisterHotKey` works across integrity levels; if WGC fails on an elevated window, run concapt elevated too and note it in the README |
@@ -196,7 +196,8 @@ The accuracy test reads the corpus in place, so the phone-wipe gotcha doesn't ap
 | Trigger | Global hotkey | Keeps hands and focus on the game |
 | Target | User-picked window | Covers the PC client and scrcpy |
 | Capture | WGC | Captures GPU-rendered and occluded windows |
-| OCR | `Windows.Media.Ocr`, plain pass plus blue-keyed pass | Built in, offline, returns word boxes like ML Kit; the blue pass reads the bonus the plain pass misses |
+| OCR | `Windows.Media.Ocr`, one pass | Built in, offline, returns word boxes like ML Kit |
+| Bonus | Computed: highest member ÷ 5, rounded down | Holds in 618 / 618 stages; reading it was the main source of misses |
 | Acceptance | Live captures | The corpus crops are harder than live windows; the sum check catches every miss |
 | Feedback | Capturing view in the main window | One engine; no multi-window |
 | Failed check | Inline edit form, taskbar flash | Never steals focus from the game |

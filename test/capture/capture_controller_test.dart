@@ -109,7 +109,6 @@ void main() {
           left: s3.left,
           middle: s3.middle,
           right: s3.right,
-          bonus: s3.bonus,
           total: s3.total + 1,
         ),
       ]),

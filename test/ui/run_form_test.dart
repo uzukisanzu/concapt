@@ -46,7 +46,7 @@ RunDraft draftWithStage3Total(int total) {
   return RunDraft([
     full.stages[0],
     full.stages[1],
-    StageDraft(left: s3.left, middle: s3.middle, right: s3.right, bonus: s3.bonus, total: total),
+    StageDraft(left: s3.left, middle: s3.middle, right: s3.right, total: total),
   ]);
 }
 
@@ -54,15 +54,15 @@ void main() {
   test('stageStatus', () {
     final l = en();
     expect(
-      stageStatus(l, const StageDraft(left: 1, middle: 2, right: 3, bonus: 4, total: 10)),
+      stageStatus(l, const StageDraft(left: 10, middle: 2, right: 3, total: 17)),
       'Adds up',
     );
     expect(
-      stageStatus(l, const StageDraft(left: 1, middle: 2, right: 3, bonus: 4, total: 9)),
+      stageStatus(l, const StageDraft(left: 10, middle: 2, right: 3, total: 16)),
       'Off by +1',
     );
     expect(
-      stageStatus(l, const StageDraft(left: 1, middle: 2, right: 3, bonus: 4, total: 1010)),
+      stageStatus(l, const StageDraft(left: 10, middle: 2, right: 3, total: 1017)),
       'Off by −1,000',
     );
     expect(stageStatus(l, const StageDraft(left: 1)), 'Missing values');
@@ -79,9 +79,24 @@ void main() {
   testWidgets('fixing a field updates the status live', (tester) async {
     await pumpForm(tester, draftWithStage3Total(181222));
     expect(find.text('Off by −1'), findsOneWidget);
-    await tester.enterText(find.byKey(const Key('field-2-4')), '181221');
+    await tester.enterText(find.byKey(const Key('field-2-3')), '181221');
     await tester.pump();
     expect(find.text('Adds up'), findsNWidgets(3));
+  });
+
+  testWidgets('the bonus follows the members and cannot be typed', (tester) async {
+    await pumpForm(tester, RunDraft.fromScores(referenceScores()));
+    expect(find.byKey(const Key('bonus-0')), findsOneWidget);
+    expect(find.text('24,183'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('field-0-0')), '125000');
+    await tester.pump();
+    expect(find.text('25,000'), findsOneWidget);
+    expect(find.text('24,183'), findsNothing);
+    expect(
+      find.descendant(of: find.byKey(const Key('bonus-0')), matching: find.byType(EditableText)),
+      findsNothing,
+    );
   });
 
   testWidgets('the quick fix fills the focused field', (tester) async {
@@ -90,7 +105,7 @@ void main() {
     await tester.pump();
     expect(find.byKey(const Key('fix-0')), findsNothing);
 
-    await tester.tap(find.byKey(const Key('field-2-4')));
+    await tester.tap(find.byKey(const Key('field-2-3')));
     await tester.pump();
     expect(find.text('Total → 181,221'), findsOneWidget);
     await tester.tap(find.byKey(const Key('fix-2')));
@@ -116,13 +131,13 @@ void main() {
 
   testWidgets('folding a focused failing stage shows its status again', (tester) async {
     await pumpReview(tester, draftWithStage3Total(181222));
-    await tester.tap(find.byKey(const Key('field-2-4')));
+    await tester.tap(find.byKey(const Key('field-2-3')));
     await tester.pump();
     expect(find.byKey(const Key('fix-2')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('band-2')));
     await tester.pump();
-    expect(find.byKey(const Key('field-2-4')), findsNothing);
+    expect(find.byKey(const Key('field-2-3')), findsNothing);
     expect(find.byKey(const Key('fix-2')), findsNothing);
     expect(find.text('Off by −1'), findsOneWidget);
   });

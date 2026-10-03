@@ -16,9 +16,9 @@ const _reference = 'Screenshot_2026-10-02-12-29-20-517_com.bandainamcoent.idolma
 
 /// The run in `ref-script/result-2026-10/$_reference.jpg`.
 final _referenceScores = RunScores(const [
-  StageScores(left: 734062, middle: 26201, right: 107547, bonus: 146812, total: 1014622),
-  StageScores(left: 309349, middle: 98168, right: 70321, bonus: 61869, total: 539707),
-  StageScores(left: 28951, middle: 121135, right: 44246, bonus: 24227, total: 218559),
+  StageScores(left: 734062, middle: 26201, right: 107547, total: 1014622),
+  StageScores(left: 309349, middle: 98168, right: 70321, total: 539707),
+  StageScores(left: 28951, middle: 121135, right: 44246, total: 218559),
 ]);
 
 /// Real OCR output recorded from the corpus: ML Kit's by

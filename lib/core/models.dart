@@ -1,20 +1,25 @@
+import 'dart:math';
+
+/// The crown bonus the stage's top scorer earns: a fifth of their score,
+/// rounded down.
+int crownBonus(int left, int middle, int right) => max(left, max(middle, right)) ~/ 5;
+
 /// Scores read from one stage of a rehearsal result.
 class StageScores {
   const StageScores({
     required this.left,
     required this.middle,
     required this.right,
-    required this.bonus,
     required this.total,
   });
 
   final int left;
   final int middle;
   final int right;
-  final int bonus;
   final int total;
 
   List<int> get members => [left, middle, right];
+  int get bonus => crownBonus(left, middle, right);
   int get sum => left + middle + right + bonus;
   bool get sumOk => sum == total;
 
@@ -24,11 +29,10 @@ class StageScores {
       other.left == left &&
       other.middle == middle &&
       other.right == right &&
-      other.bonus == bonus &&
       other.total == total;
 
   @override
-  int get hashCode => Object.hash(left, middle, right, bonus, total);
+  int get hashCode => Object.hash(left, middle, right, total);
 
   @override
   String toString() => 'StageScores($left, $middle, $right, +$bonus = $total)';
@@ -65,48 +69,60 @@ class RunScores {
 
 /// A stage as read or typed; any field may be missing.
 class StageDraft {
-  const StageDraft({this.left, this.middle, this.right, this.bonus, this.total});
+  const StageDraft({this.left, this.middle, this.right, this.total});
 
-  /// Fields in [fields] order: left, middle, right, bonus, total.
+  /// Fields in [fields] order: left, middle, right, total.
   factory StageDraft.fromFields(List<int?> f) =>
-      StageDraft(left: f[0], middle: f[1], right: f[2], bonus: f[3], total: f[4]);
+      StageDraft(left: f[0], middle: f[1], right: f[2], total: f[3]);
 
   factory StageDraft.fromScores(StageScores s) =>
-      StageDraft(left: s.left, middle: s.middle, right: s.right, bonus: s.bonus, total: s.total);
+      StageDraft(left: s.left, middle: s.middle, right: s.right, total: s.total);
 
   final int? left;
   final int? middle;
   final int? right;
-  final int? bonus;
   final int? total;
 
-  List<int?> get fields => [left, middle, right, bonus, total];
+  List<int?> get fields => [left, middle, right, total];
+
+  /// Null while a member is missing.
+  int? get bonus {
+    final l = left, m = middle, r = right;
+    return l == null || m == null || r == null ? null : crownBonus(l, m, r);
+  }
 
   StageScores? toScores() {
-    final l = left, m = middle, r = right, b = bonus, t = total;
-    if (l == null || m == null || r == null || b == null || t == null) return null;
-    return StageScores(left: l, middle: m, right: r, bonus: b, total: t);
+    final l = left, m = middle, r = right, t = total;
+    if (l == null || m == null || r == null || t == null) return null;
+    return StageScores(left: l, middle: m, right: r, total: t);
   }
 
   /// Complete and passing the sum check.
   bool get isValid => toScores()?.sumOk ?? false;
 
-  /// The value for [field] that makes the stage add up, given the other four.
-  /// Null when another field is empty or the value would be negative.
+  /// The value for [field] that makes the stage add up, given the other three.
+  /// Null when another field is empty or no non-negative value adds up.
   int? fixFor(int field) {
-    final f = fields;
-    var others = 0;
-    for (var i = 0; i < 4; i++) {
-      if (i == field) continue;
-      final v = f[i];
-      if (v == null) return null;
-      others += v;
+    if (field == 3) {
+      final b = bonus;
+      return b == null ? null : left! + middle! + right! + b;
     }
-    if (field == 4) return others;
-    final total = f[4];
-    if (total == null) return null;
-    final value = total - others;
-    return value < 0 ? null : value;
+    final others = [
+      for (var i = 0; i < 3; i++)
+        if (i != field) fields[i],
+    ];
+    final a = others[0], b = others[1], t = total;
+    if (a == null || b == null || t == null) return null;
+    final highest = max(a, b);
+    final rest = t - a - b;
+
+    // At most the highest of the other two, the member leaves the bonus as is.
+    final below = rest - highest ~/ 5;
+    if (below >= 0 && below <= highest) return below;
+
+    // Above it, the member sets the bonus: x + ⌊x / 5⌋ = rest.
+    final above = (5 * rest + 5) ~/ 6;
+    return above > highest && above + above ~/ 5 == rest ? above : null;
   }
 }
 

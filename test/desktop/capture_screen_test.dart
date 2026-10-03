@@ -53,8 +53,7 @@ class FakePlugin {
           if (captureError != null) throw PlatformException(code: captureError!);
           return null;
         case 'recognize':
-          final blueOnly = (call.arguments as Map)['blueOnly'] == true;
-          return blueOnly ? const [] : [for (final p in pieces) p.toJson()];
+          return [for (final p in pieces) p.toJson()];
       }
       return null;
     });

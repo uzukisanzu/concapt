@@ -39,8 +39,10 @@ All three stages are visible on one screen. Each stage shows:
 |---|---|---|
 | Stage total | `214,882Pt` | Sum check; stored |
 | Member scores (3, left to right) | `120,918  39,482  30,299` | **Statistics**; stored |
-| Crown bonus | `+24183` | Sum check; stored |
+| Crown bonus | `+24183` | Computed, not read; stored |
 | Total power (総合力) | `58929` | Ignored |
+
+**Crown bonus:** the stage's top scorer earns a fifth of their score, rounded down: `bonus = max(left, middle, right) ÷ 5`. This holds in all 618 distinct stages of the corpus, whichever slot holds the top score. The app computes the bonus instead of reading it, so the sum check rests on the members and the total alone.
 
 **Sum check:** `left + middle + right + bonus == total`, per stage. This holds for all three stages of the reference screenshot (`ref-script/result/Wed Jan 28 08_34_17 2026.png`).
 
@@ -141,7 +143,7 @@ Pieces come from ML Kit elements (words), not lines. ML Kit can merge the three 
    - **Bonus:** `+` followed by digits; drop junk before the `+` (the crown icon)
    - **Plain number:** anything else numeric, **100 or more**. Smaller numbers are the 1/2/3 placement badges and the stage labels, and are ignored.
 2. **Find stages.** Require exactly 3 totals. Sort them by y as Stages 1–3. A stage's band runs from its total down to the next total (or the image bottom).
-3. **Find bonus.** The topmost bonus piece in the band.
+3. **Find bonus.** The topmost bonus piece in the band. Only its position is used; the bonus value is computed (§3.1).
 4. **Find members.** Pieces share a row when their vertical centers differ by less than half the median piece height. The member row is the first row of plain numbers below the total and above the bonus.
    - Exactly 3 numbers → sorted by x into left, middle, and right
    - Fewer than 3 → each number goes to the nearest slot, using the average x of each slot from stages that read completely; if no stage read completely, the slots stay empty
@@ -161,7 +163,8 @@ The 総合力 number sits below the bonus, so step 4 never picks it.
 
 ### 5.5 Edit panel
 
-- 15 fields: per stage, left, middle, right, bonus, and total
+- 12 fields: per stage, left, middle, right, and total
+- Each stage shows its bonus, computed from the members and updated as they change
 - Re-runs the sum check as values change
 - Save with all sums passing → save as edited (the app's run editor skips the save when nothing changed)
 - Save with a sum still failing → confirm "Save anyway?", then save as edited
