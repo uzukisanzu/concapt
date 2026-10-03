@@ -74,5 +74,16 @@
   "legendMean": "平均 {value}",
   "legendMedian": "中央値 {value}",
   "windowClosed": "キャプチャ対象のウィンドウがありません。ウィンドウを選び直してください。",
-  "windowMinimized": "キャプチャ対象のウィンドウが最小化されています。元に戻してからもう一度お試しください。"
+  "windowMinimized": "キャプチャ対象のウィンドウが最小化されています。元に戻してからもう一度お試しください。",
+  "windowEntry": "{title} — {process}",
+  "refreshWindows": "ウィンドウ一覧を更新",
+  "pickWindowFirst": "キャプチャするウィンドウを選んでください。",
+  "hotkeyLabel": "ホットキー",
+  "changeHotkey": "変更",
+  "pressHotkey": "F1〜F24、英字、数字のいずれかを押してください。Ctrl・Alt・Shift と組み合わせられます。",
+  "hotkeyTaken": "{key} は他のアプリが使用中です。別のキーを選んでください。",
+  "hotkeyReady": "リザルト画面で {key} を押すとキャプチャします。",
+  "alwaysOnTop": "常に手前に表示",
+  "finishReviewFirst": "先に表示中の記録を保存するかキャンセルしてください。",
+  "ocrMissing": "Windows に英語の文字認識がありません。設定 › 時刻と言語 › 言語と地域 で英語を追加してから、この画面を開き直してください。"
 }

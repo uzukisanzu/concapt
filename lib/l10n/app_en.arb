@@ -92,5 +92,19 @@
   "legendMedian": "Median {value}",
   "@legendMedian": {"placeholders": {"value": {"type": "String"}}},
   "windowClosed": "The captured window is gone. Pick a window.",
-  "windowMinimized": "The captured window is minimized. Restore it and try again."
+  "windowMinimized": "The captured window is minimized. Restore it and try again.",
+  "windowEntry": "{title} — {process}",
+  "@windowEntry": {"placeholders": {"title": {"type": "String"}, "process": {"type": "String"}}},
+  "refreshWindows": "Refresh windows",
+  "pickWindowFirst": "Pick a window to capture.",
+  "hotkeyLabel": "Hotkey",
+  "changeHotkey": "Change",
+  "pressHotkey": "Press F1–F24, a letter, or a digit. Hold Ctrl, Alt, or Shift to add them.",
+  "hotkeyTaken": "{key} is in use by another app. Choose another key.",
+  "@hotkeyTaken": {"placeholders": {"key": {"type": "String"}}},
+  "hotkeyReady": "Press {key} on a result screen to capture.",
+  "@hotkeyReady": {"placeholders": {"key": {"type": "String"}}},
+  "alwaysOnTop": "Keep on top",
+  "finishReviewFirst": "Save or cancel the open run first.",
+  "ocrMissing": "Windows has no English text recognition. Add English in Settings › Time & language › Language & region, then open this screen again."
 }

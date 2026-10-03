@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -9,6 +10,7 @@ import '../core/models.dart';
 import '../core/stats.dart';
 import '../data/database.dart';
 import '../data/repository.dart';
+import '../desktop/capture_screen.dart';
 import '../l10n/app_localizations.dart';
 import 'dialogs.dart';
 import 'format.dart';
@@ -85,7 +87,15 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> with WidgetsB
   Future<void> _toggleCapture() async {
     setState(() => _toggling = true);
     try {
-      if (_capturing) {
+      // On Windows, capture lives in its own screen and ends when it closes.
+      if (defaultTargetPlatform == TargetPlatform.windows) {
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) =>
+                CaptureScreen(repository: widget.repository, sessionId: widget.sessionId),
+          ),
+        );
+      } else if (_capturing) {
         await stopCapture();
       } else {
         await startCapture(context, widget.sessionId);
