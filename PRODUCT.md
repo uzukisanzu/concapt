@@ -4,7 +4,7 @@
 
 ## Platform
 
-android
+android, windows
 
 ## Users
 
@@ -42,7 +42,7 @@ The sum check sets concapt apart. Each stage's three member scores plus the crow
 - **Stats per series:** n, mean (whole number), median, min, max, P25, P75 (Excel `PERCENTILE.INC`). Empty series shows "—".
 - **Capture outcomes:** auto-save on pass; edit panel on a failed sum or missing field; toasts for no result screen, partial reads, and duplicates of the last run.
 - **Out of scope:** auto-tapping, auto-detecting the result screen, sync, recognizing characters by portrait.
-- **Technical:** Android only for now (`minSdk` 26), sideloaded. Two Flutter engines (main app and overlay) share one SQLite database. PC and iOS builds are planned later through platform seams.
+- **Technical:** Android (`minSdk` 26, sideloaded) and Windows (run from the repo). Android runs two Flutter engines (main app and overlay) that share one SQLite database; Windows runs one. iOS is planned later through the same platform seams.
 - **Language:** the app UI ships in English and Japanese. The spec's copy is written in English only; Japanese strings are not yet planned.
 
 ## Brand Commitments

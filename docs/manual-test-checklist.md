@@ -36,3 +36,25 @@ Run on the user's phone (never the emulator) after any change to capture, overla
 | 30 | Strip toggle | Tap stage 1's strip, then "Show capture" | The strip folds to a one-line row and comes back |
 | 31 | Stage fold | Tap stage 2's band, then tap it again | Stage 2 unfolds with its fields and a folded "Show capture" row, then folds again |
 | 32 | Panel handle | Open the panel, unfold every stage, scroll; then tap the grip at the panel top and drag the panel | The list scrolls; after tapping the grip (it turns red), the next drag moves the panel and lifting the finger returns to scrolling |
+
+## Windows
+
+Run on the developer's PC with `flutter run -d windows`.
+
+| # | Area | Steps | Expected |
+|---|---|---|---|
+| W0 | Live acceptance (gate) | Capture about 20 real results, from the game window and from scrcpy, including one scrcpy window enlarged to most of the screen height | Count runs saved without the edit form; report the count before closing the branch |
+| W1 | Open | With the game open, open a session and Start capturing | Capture screen; the picker lists the game as "title — process"; the bottom line reads "Press F9 on a result screen to capture." |
+| W2 | Auto-save | Pick the game, focus it, open a rehearsal result, press F9 | "Run 1 saved" over three totals that match the game; the game keeps focus |
+| W3 | scrcpy | Pick a scrcpy window mirroring the phone on a result, press F9 | Run saved; totals match |
+| W4 | Overlap | Drag concapt over the game's scores, press F9 | Saved correctly; concapt is not in the frame |
+| W5 | Failed check | Press F9 while the result screen is still animating | The run form replaces the controls with capture strips; the taskbar button flashes; the game keeps focus; F9 again shows "Save or cancel the open run first." |
+| W6 | Minimized | Minimize the game, press F9 | "The captured window is minimized…"; nothing saved |
+| W7 | Closed | Close scrcpy, press F9 | "The captured window is gone…"; picker empty; after reopening scrcpy, Refresh lists it |
+| W8 | Hotkey conflict | Bind F9 in another app first, then Start capturing | "F9 is in use by another app…"; Change, press F10, and F10 captures |
+| W9 | Remembered | Leave the screen, restart the app, Start capturing | The game window is preselected; the rebound key is kept |
+| W10 | Keep on top | Turn it on, click the game; then leave the screen | concapt stays above the game; after leaving, it no longer does |
+| W11 | Mixed scaling | Put the game on a monitor with different display scaling than concapt's, force a failed check | The capture strips show each stage, not an offset crop |
+| W12 | Japanese | Set the Windows display language to 日本語, repeat W1 and W2 | Every string on the capture screen is Japanese |
+| W13 | CSV | Export CSV from a session | Windows' share sheet offers the CSV; note the result if it can't save to a file |
+| W14 | Elevated game | If the game runs as administrator, press F9 | Captures; if not, rerun concapt as administrator and note it in the README |

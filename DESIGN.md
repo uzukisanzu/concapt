@@ -274,6 +274,9 @@ Stroke-gray bars with 1px gaps, a secondary-gray axis, a solid 2px utility-red m
 ### Overlay
 The capture bubble is a 56dp utility-red circle with a white 24dp glyph or spinner. The glyph is the launcher icon's viewfinder corners and histogram, without the mean line. The bubble is the same in both themes because it sits on the game, not the app's ground. The edit panel (340 × 560dp) is white with a 1px stroke-gray border and 4dp corners, and it reuses the run form.
 
+### Capture Screen (Windows)
+The Windows counterpart to the overlay, in the main window (the runner opens at 420 × 860 so it sits beside the game). From the top: a window picker with a refresh button, the hotkey row with Change, the Keep on top switch, and a runs band whose tab counts the runs, over the last run's member scores. An outcome line under a hairline rule closes the screen and replaces the toasts. A failed check swaps the controls for the run form with capture strips, flashes the taskbar button, and leaves focus with the game.
+
 ## Do's and Don'ts
 
 ### Do:

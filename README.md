@@ -1,6 +1,6 @@
 # concapt
 
-An Android app that floats a capture bubble over Gakuen Idolmaster. A tap on a contest rehearsal result screen reads the nine member scores with on-device OCR, checks each stage's sum, and adds the run to a session. Sessions show per-slot statistics, histograms, and CSV export.
+An Android and Windows app that captures Gakuen Idolmaster contest rehearsal results. On Android a floating bubble triggers the capture; on Windows a global hotkey captures a chosen window. Each capture reads the nine member scores with on-device OCR, checks each stage's sum, and adds the run to a session. Sessions show per-slot statistics, histograms, and CSV export.
 
 ## Build
 
@@ -8,9 +8,10 @@ An Android app that floats a capture bubble over Gakuen Idolmaster. A tap on a c
 flutter pub get
 flutter test
 flutter build apk --release
+flutter run -d windows
 ```
 
-Android only, `minSdk` 26.
+Android (`minSdk` 26) and Windows 10 1903+. The Windows build runs from the repo.
 
 ## Docs
 

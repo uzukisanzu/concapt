@@ -68,16 +68,19 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 # Project: concapt
 
-An Android app that floats a capture bubble over Gakuen Idolmaster. A tap on a contest rehearsal result screen reads the 9 member scores with on-device OCR, checks each stage's sum, and adds the run to a session. Sessions show per-slot statistics, histograms, and CSV export.
+An Android and Windows app that captures Gakuen Idolmaster contest rehearsal results. On Android a floating bubble triggers the capture; on Windows a global hotkey captures a chosen window. Each capture reads the 9 member scores with on-device OCR, checks each stage's sum, and adds the run to a session. Sessions show per-slot statistics, histograms, and CSV export.
 
 - Spec: `docs/superpowers/specs/2026-10-02-concapt-design.md`
 - Plan: `docs/superpowers/plans/2026-10-02-concapt-android.md`
+- Windows spec: `docs/superpowers/specs/2026-10-03-concapt-windows-design.md`
+- Windows plan: `docs/superpowers/plans/2026-10-03-concapt-windows.md`
 
 ## Stack
 
-- Flutter 3.41.4 / Dart 3.11.1, Android only for now (app id `dev.concapt.app`, `minSdk` 26)
+- Flutter 3.41.4 / Dart 3.11.1, Android (app id `dev.concapt.app`, `minSdk` 26) and Windows 10 1903+ (run from the repo)
 - Kotlin for screen capture (local plugin `packages/screen_capture`, MediaProjection foreground service)
 - `flutter_overlay_window` for the bubble, `google_mlkit_text_recognition` (Latin) for OCR
+- C++/WinRT for Windows capture, hotkey, and two-pass OCR (local plugin `packages/window_capture`)
 - `drift` + `drift_flutter` (SQLite), `shared_preferences`, `path_provider`, `share_plus`
 - `flutter_localizations` + `intl`, with English and Japanese ARB files
 
@@ -91,6 +94,8 @@ An Android app that floats a capture bubble over Gakuen Idolmaster. A tap on a c
 | Lint | `flutter analyze` |
 | Device tests | `flutter test integration_test/<file>.dart -d <device-id>` |
 | Run on phone | `flutter run -d <device-id>` |
+| Run on PC | `flutter run -d windows` |
+| Windows device tests | `flutter test integration_test/<file>.dart -d windows` |
 
 ## Layout
 
@@ -100,9 +105,11 @@ An Android app that floats a capture bubble over Gakuen Idolmaster. A tap on a c
 | `lib/data/` | drift schema and `Repository` |
 | `lib/capture/` | Capture pipeline: source, text reader, controller, session handoff |
 | `lib/overlay/` | The overlay engine's app: bubble and edit panel |
+| `lib/desktop/` | The Windows capture screen |
 | `lib/ui/` | Main app screens and shared widgets |
 | `packages/screen_capture/` | Local Flutter plugin with the Kotlin capture service |
-| `test/fixtures/ocr/` | Real ML Kit output recorded from the corpus |
+| `packages/window_capture/` | Local Flutter plugin with the C++/WinRT capture, hotkey, and OCR |
+| `test/fixtures/ocr/`, `ocr-windows/` | Real ML Kit and Windows OCR output recorded from the corpus |
 | `ref-script/` | Local only, gitignored: the original PC script and the rehearsal result captures (OCR test corpus) |
 | `docs/` | Spec, plan, spike notes, manual test checklist |
 
@@ -123,6 +130,8 @@ See `PRODUCT.md` for users, terminology, and brand commitments.
 - Never use the Android emulator. Ask the user to connect their phone, then check `adb devices`.
 - In Git Bash, prefix `adb` commands that take `/sdcard/...` paths with `MSYS_NO_PATHCONV=1`, or the path gets rewritten to a Windows path.
 - The app runs two Flutter engines. Native code both engines need must live in a plugin package; code in `MainActivity` is invisible to the overlay engine.
+- On Windows, the Android-only plugins (`screen_capture`, `flutter_overlay_window`, ML Kit) throw `MissingPluginException`. Guard their calls with `defaultTargetPlatform`.
+- `packages/window_capture` builds as C++20: under C++17, C++/WinRT pulls in MSVC's removed experimental coroutines.
 - `flutter test integration_test/ocr_accuracy_test.dart` reinstalls the app and wipes the corpus on the phone. Run it as an APK instead; the test's doc comment has the steps.
 - Both engines open the same SQLite file. Drift streams don't cross engines, so screens re-query on resume.
 - The app id, Gradle `namespace`, and `MainActivity` package are all `dev.concapt.app`. The manifest's `.MainActivity` resolves against `namespace`, so changing one without the others crashes the app on launch.
@@ -131,4 +140,4 @@ See `PRODUCT.md` for users, terminology, and brand commitments.
 
 - `flutter analyze` and `flutter test` pass before every commit.
 - Changes to capture, overlay, or screens also go through `docs/manual-test-checklist.md` on the user's phone.
-- Parser changes must keep `test/core/fixture_test.dart` green, so captures that read correctly on the phone keep reading correctly.
+- Parser changes must keep `test/core/fixture_test.dart` green for both fixture sets, so captures that read correctly with ML Kit or Windows OCR keep reading correctly.
