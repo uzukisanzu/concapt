@@ -1,7 +1,7 @@
 import 'package:concapt/capture/capture_controller.dart';
 import 'package:concapt/core/models.dart';
 import 'package:concapt/l10n/app_localizations.dart';
-import 'package:concapt/overlay/outcome_messages.dart';
+import 'package:concapt/ui/outcome_messages.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 

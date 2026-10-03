@@ -14,10 +14,10 @@ import '../core/pixel_rect.dart';
 import '../data/database.dart';
 import '../data/repository.dart';
 import '../l10n/app_localizations.dart';
+import '../ui/capture_strip.dart';
+import '../ui/outcome_messages.dart';
 import '../ui/run_form.dart';
 import '../ui/theme.dart';
-import 'capture_strip.dart';
-import 'outcome_messages.dart';
 import 'overlay_sizes.dart';
 import 'viewfinder_glyph.dart';
 

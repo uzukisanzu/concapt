@@ -1,5 +1,5 @@
 import 'package:concapt/core/pixel_rect.dart';
-import 'package:concapt/overlay/capture_strip.dart';
+import 'package:concapt/ui/capture_strip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

@@ -1,7 +1,7 @@
 import '../capture/capture_controller.dart';
 import '../core/models.dart';
 import '../l10n/app_localizations.dart';
-import '../ui/format.dart';
+import 'format.dart';
 
 String outcomeMessage(AppLocalizations l, CaptureOutcome outcome) => switch (outcome) {
   CaptureSaved(:final seq, :final scores) => savedMessage(l, seq, scores),
