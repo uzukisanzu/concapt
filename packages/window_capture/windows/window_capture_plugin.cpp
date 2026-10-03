@@ -41,6 +41,14 @@ std::wstring Wide(const std::string& utf8) { return std::wstring(winrt::to_hstri
 
 std::string Utf8(std::wstring_view wide) { return winrt::to_string(wide); }
 
+// StorageFile takes only absolute paths with backslashes and no `.` or `..`.
+std::wstring FullPath(const std::wstring& path) {
+  const DWORD size = GetFullPathNameW(path.c_str(), 0, nullptr, nullptr);
+  std::wstring full(size, L'\0');
+  full.resize(GetFullPathNameW(path.c_str(), size, full.data(), nullptr));
+  return full;
+}
+
 // en-US first, then any installed Latin-script language.
 ocr::OcrEngine CreateEngine() {
   if (auto engine = ocr::OcrEngine::TryCreateFromLanguage(
@@ -151,7 +159,7 @@ std::optional<LRESULT> WindowCapturePlugin::HandleWindowMessage(UINT message, WP
 }
 
 void WindowCapturePlugin::Recognize(std::wstring path, Result result) {
-  std::replace(path.begin(), path.end(), L'/', L'\\');
+  path = FullPath(path);
   WPARAM id;
   {
     std::lock_guard lock(jobs_mutex_);
