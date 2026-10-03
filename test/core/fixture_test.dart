@@ -21,45 +21,51 @@ final _referenceScores = RunScores(const [
   StageScores(left: 28951, middle: 121135, right: 44246, bonus: 24227, total: 218559),
 ]);
 
-/// Real ML Kit output recorded from the corpus by integration_test/ocr_accuracy_test.dart.
+/// Real OCR output recorded from the corpus: ML Kit's by
+/// integration_test/ocr_accuracy_test.dart, Windows OCR's by
+/// integration_test/windows_ocr_accuracy_test.dart.
 void main() {
-  final files = Directory(
-    'test/fixtures/ocr',
-  ).listSync().whereType<File>().where((f) => f.path.endsWith('.json')).toList();
+  for (final dir in ['test/fixtures/ocr', 'test/fixtures/ocr-windows']) {
+    final files = Directory(
+      dir,
+    ).listSync().whereType<File>().where((f) => f.path.endsWith('.json')).toList();
 
-  test('fixtures are present', () => expect(files, isNotEmpty));
+    group(dir, () {
+      test('fixtures are present', () => expect(files, isNotEmpty));
+
+      test('every capture that passed when recorded still passes', () {
+        final regressions = <String>[];
+        for (final f in files) {
+          final json = _load(f);
+          if (json['passed'] != true) continue;
+          final result = ResultParser.parse(_pieces(json));
+          final ok = result is ParsedRun && (result.draft.toScores()?.allSumsOk ?? false);
+          if (!ok) regressions.add(f.uri.pathSegments.last);
+        }
+        expect(regressions, isEmpty);
+      });
+
+      test('stage bounds stack top to bottom without overlapping', () {
+        for (final f in files) {
+          final json = _load(f);
+          if (json['passed'] != true) continue;
+          final bounds = (ResultParser.parse(_pieces(json)) as ParsedRun).stageBounds;
+          final name = f.uri.pathSegments.last;
+          for (var i = 0; i < bounds.length; i++) {
+            expect(bounds[i].width, greaterThan(0), reason: name);
+            expect(bounds[i].height, greaterThan(0), reason: name);
+            if (i + 1 < bounds.length) {
+              expect(bounds[i].bottom, lessThanOrEqualTo(bounds[i + 1].top), reason: name);
+            }
+          }
+        }
+      });
+    });
+  }
 
   test('reference screenshot parses to its known values', () {
     final json = _load(File('test/fixtures/ocr/$_reference.json'));
     final result = ResultParser.parse(_pieces(json));
     expect((result as ParsedRun).draft.toScores(), _referenceScores);
-  });
-
-  test('every capture that passed on the phone still passes', () {
-    final regressions = <String>[];
-    for (final f in files) {
-      final json = _load(f);
-      if (json['passed'] != true) continue;
-      final result = ResultParser.parse(_pieces(json));
-      final ok = result is ParsedRun && (result.draft.toScores()?.allSumsOk ?? false);
-      if (!ok) regressions.add(f.uri.pathSegments.last);
-    }
-    expect(regressions, isEmpty);
-  });
-
-  test('stage bounds stack top to bottom without overlapping', () {
-    for (final f in files) {
-      final json = _load(f);
-      if (json['passed'] != true) continue;
-      final bounds = (ResultParser.parse(_pieces(json)) as ParsedRun).stageBounds;
-      final name = f.uri.pathSegments.last;
-      for (var i = 0; i < bounds.length; i++) {
-        expect(bounds[i].width, greaterThan(0), reason: name);
-        expect(bounds[i].height, greaterThan(0), reason: name);
-        if (i + 1 < bounds.length) {
-          expect(bounds[i].bottom, lessThanOrEqualTo(bounds[i + 1].top), reason: name);
-        }
-      }
-    }
   });
 }

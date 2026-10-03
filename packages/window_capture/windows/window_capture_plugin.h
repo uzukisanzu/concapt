@@ -42,7 +42,7 @@ class WindowCapturePlugin : public flutter::Plugin {
   // The runner's top-level window.
   HWND RootWindow() const;
 
-  void Recognize(std::wstring path, Result result);
+  void Recognize(std::wstring path, bool blue_only, Result result);
 
   flutter::PluginRegistrarWindows* registrar_;
   std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> methods_;

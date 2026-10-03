@@ -27,6 +27,7 @@ using flutter::EncodableValue;
 namespace imaging = winrt::Windows::Graphics::Imaging;
 namespace ocr = winrt::Windows::Media::Ocr;
 namespace storage = winrt::Windows::Storage;
+namespace streams = winrt::Windows::Storage::Streams;
 
 constexpr UINT kOcrDone = WM_APP + 0x43;
 
@@ -61,16 +62,39 @@ ocr::OcrEngine CreateEngine() {
   return nullptr;
 }
 
-// Images over the engine's size limit are scaled down to fit; boxes come
-// back in the image's own pixels either way.
-EncodableList ReadWords(const ocr::OcrEngine& engine, const std::wstring& path) {
+// Black where a pixel has the bonus pills' blue, white elsewhere.
+imaging::SoftwareBitmap KeyBlue(const imaging::SoftwareBitmap& bitmap) {
+  const auto width = static_cast<uint32_t>(bitmap.PixelWidth());
+  const auto height = static_cast<uint32_t>(bitmap.PixelHeight());
+  const uint32_t size = width * height * 4;
+  streams::Buffer buffer(size);
+  buffer.Length(size);
+  bitmap.CopyToBuffer(buffer);
+  uint8_t* pixels = buffer.data();
+  for (uint32_t i = 0; i < size; i += 4) {
+    const int blue = pixels[i];
+    const int red = pixels[i + 2];
+    const uint8_t value = blue > 150 && blue - red > 80 ? 0 : 255;
+    pixels[i] = pixels[i + 1] = pixels[i + 2] = value;
+    pixels[i + 3] = 255;
+  }
+  return imaging::SoftwareBitmap::CreateCopyFromBuffer(buffer, imaging::BitmapPixelFormat::Bgra8,
+                                                       width, height,
+                                                       imaging::BitmapAlphaMode::Premultiplied);
+}
+
+// Images over the engine's size limit are scaled down to fit. The blue read
+// enlarges every image to the limit, since the bonus text is small. Boxes
+// come back in the image's own pixels either way.
+EncodableList ReadWords(const ocr::OcrEngine& engine, const std::wstring& path, bool blue_only) {
   const auto file = storage::StorageFile::GetFileFromPathAsync(path).get();
   const auto stream = file.OpenAsync(storage::FileAccessMode::Read).get();
   const auto decoder = imaging::BitmapDecoder::CreateAsync(stream).get();
 
   const uint32_t limit = ocr::OcrEngine::MaxImageDimension();
   const uint32_t longest = std::max(decoder.PixelWidth(), decoder.PixelHeight());
-  const double scale = longest > limit ? static_cast<double>(limit) / longest : 1.0;
+  const double scale =
+      blue_only || longest > limit ? static_cast<double>(limit) / longest : 1.0;
   imaging::BitmapTransform transform;
   transform.ScaledWidth(static_cast<uint32_t>(decoder.PixelWidth() * scale));
   transform.ScaledHeight(static_cast<uint32_t>(decoder.PixelHeight() * scale));
@@ -83,7 +107,7 @@ EncodableList ReadWords(const ocr::OcrEngine& engine, const std::wstring& path) 
                                                   imaging::ExifOrientationMode::IgnoreExifOrientation,
                                                   imaging::ColorManagementMode::DoNotColorManage)
                           .get();
-  const auto result = engine.RecognizeAsync(bitmap).get();
+  const auto result = engine.RecognizeAsync(blue_only ? KeyBlue(bitmap) : bitmap).get();
 
   EncodableList words;
   for (const auto& line : result.Lines()) {
@@ -135,7 +159,8 @@ void WindowCapturePlugin::HandleMethodCall(const flutter::MethodCall<EncodableVa
   if (method == "recognize") {
     const auto* path = std::get_if<std::string>(Arg(call, "path"));
     if (!path) return result->Error("bad_args", "path is required");
-    Recognize(Wide(*path), std::move(result));
+    const auto* blue_only = std::get_if<bool>(Arg(call, "blueOnly"));
+    Recognize(Wide(*path), blue_only && *blue_only, std::move(result));
   } else if (method == "ocrAvailable") {
     result->Success(EncodableValue(static_cast<bool>(CreateEngine())));
   } else {
@@ -158,7 +183,7 @@ std::optional<LRESULT> WindowCapturePlugin::HandleWindowMessage(UINT message, WP
   return 0;
 }
 
-void WindowCapturePlugin::Recognize(std::wstring path, Result result) {
+void WindowCapturePlugin::Recognize(std::wstring path, bool blue_only, Result result) {
   path = FullPath(path);
   WPARAM id;
   {
@@ -169,14 +194,14 @@ void WindowCapturePlugin::Recognize(std::wstring path, Result result) {
   // WinRT async calls can't block the platform thread, which is single-threaded
   // COM. The worker posts back to the window so the reply leaves from the
   // platform thread.
-  std::thread([this, id, root = RootWindow(), path = std::move(path)] {
+  std::thread([this, id, blue_only, root = RootWindow(), path = std::move(path)] {
     winrt::init_apartment(winrt::apartment_type::multi_threaded);
     EncodableList words;
     std::string error_code;
     std::string error_message;
     try {
       if (const auto engine = CreateEngine()) {
-        words = ReadWords(engine, path);
+        words = ReadWords(engine, path, blue_only);
       } else {
         error_code = "no_language";
       }

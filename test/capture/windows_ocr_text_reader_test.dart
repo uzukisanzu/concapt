@@ -8,27 +8,32 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const channel = MethodChannel('concapt/window_capture');
   final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-  late List<MethodCall> calls;
+  late List<Map<Object?, Object?>> calls;
 
   setUp(() {
     calls = [];
     messenger.setMockMethodCallHandler(channel, (call) async {
-      calls.add(call);
-      return [
-        {'text': '1,014,622Pt', 'l': 10.0, 't': 20.0, 'r': 110.0, 'b': 50.0},
-      ];
+      final args = call.arguments as Map<Object?, Object?>;
+      calls.add(args);
+      return args['blueOnly'] == true
+          ? [
+              {'text': '+24183', 'l': 12.0, 't': 60.0, 'r': 80.0, 'b': 76.0},
+            ]
+          : [
+              {'text': '1,014,622Pt', 'l': 10.0, 't': 20.0, 'r': 110.0, 'b': 50.0},
+            ];
     });
   });
 
   tearDown(() => messenger.setMockMethodCallHandler(channel, null));
 
-  test('sends an absolute path and maps words to pieces', () async {
+  test('reads the plain frame, then its blue text, from an absolute path', () async {
     final pieces = await WindowsOcrTextReader().read('frame.png');
 
-    final path = (calls.single.arguments as Map)['path'] as String;
-    expect(File(path).isAbsolute, isTrue);
-    final piece = pieces.single;
-    expect(piece.text, '1,014,622Pt');
-    expect([piece.left, piece.top, piece.right, piece.bottom], [10, 20, 110, 50]);
+    expect(calls.map((c) => c['blueOnly']), [false, true]);
+    expect(calls.every((c) => File(c['path']! as String).isAbsolute), isTrue);
+    expect(pieces.map((p) => p.text), ['1,014,622Pt', '+24183']);
+    final bonus = pieces.last;
+    expect([bonus.left, bonus.top, bonus.right, bonus.bottom], [12, 60, 80, 76]);
   });
 }
