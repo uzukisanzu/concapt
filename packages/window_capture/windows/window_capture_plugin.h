@@ -4,6 +4,7 @@
 #include <windows.h>
 
 #include <flutter/encodable_value.h>
+#include <flutter/event_channel.h>
 #include <flutter/method_channel.h>
 #include <flutter/plugin_registrar_windows.h>
 
@@ -39,13 +40,15 @@ class WindowCapturePlugin : public flutter::Plugin {
   void HandleMethodCall(const flutter::MethodCall<flutter::EncodableValue>& call, Result result);
   std::optional<LRESULT> HandleWindowMessage(UINT message, WPARAM wparam);
 
-  // The runner's top-level window.
+  // The runner's top-level window, which owns the hotkey, flashing, and z-order.
   HWND RootWindow() const;
 
   void Recognize(std::wstring path, bool blue_only, Result result);
 
   flutter::PluginRegistrarWindows* registrar_;
   std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> methods_;
+  std::unique_ptr<flutter::EventChannel<flutter::EncodableValue>> hotkey_channel_;
+  std::unique_ptr<flutter::EventSink<flutter::EncodableValue>> hotkey_sink_;
   int window_proc_id_ = -1;
 
   std::mutex jobs_mutex_;
