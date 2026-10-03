@@ -574,6 +574,15 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ### Task 2: OCR accuracy spike (gate)
 
+> **Amended 2026-10-03 after the spike (spec §5).** Single-pass Windows OCR read 0/237. The developer chose two passes and a live gate. Steps 1–3 below ran as written. Steps 4–6 are replaced by:
+>
+> - **4a.** Parser test first in `test/core/result_parser_test.dart`: a lone `+` piece followed by a number piece to its right reads as that stage's bonus. Fix `_continues` in `lib/core/result_parser.dart` so a left piece ending in `+` joins a digit-led right piece.
+> - **4b.** `recognize(path, {bool blueOnly = false})` in the plugin. With `blueOnly`, the native side scales the image to `MaxImageDimension`, keys blue text (BGRA: `b > 150 && b - r > 80` → black, else white), and OCRs that copy. Boxes map back to the image's own pixels. Extend the reader test: the reader calls both passes and returns the plain words first.
+> - **4c.** Rerun the accuracy test, record `test/fixtures/ocr-windows/`, and extend `fixture_test.dart` as in the original Step 4. The pass rate is reported, not gated (the test's 90% expectation is dropped).
+> - **Gate:** live captures in Task 8 (manual row W0), per spec §5.2.
+>
+> Task 3's full-file replacements keep `blueOnly` and the blue pass.
+
 **Files:**
 - Create: `integration_test/windows_ocr_accuracy_test.dart`
 - Create: `test/fixtures/ocr-windows/*.json` (recorded)
@@ -2863,6 +2872,7 @@ Run on the developer's PC with `flutter run -d windows`.
 
 | # | Area | Steps | Expected |
 |---|---|---|---|
+| W0 | Live acceptance (gate) | Capture about 20 real results, from the game window or scrcpy | Count runs saved without the edit form; report the count before closing the branch |
 | W1 | Open | With the game open, open a session and Start capturing | Capture screen; the picker lists the game as "title — process"; the bottom line reads "Press F9 on a result screen to capture." |
 | W2 | Auto-save | Pick the game, focus it, open a rehearsal result, press F9 | "Run 1 saved" over three totals that match the game; the game keeps focus |
 | W3 | scrcpy | Pick a scrcpy window mirroring the phone on a result, press F9 | Run saved; totals match |

@@ -1,7 +1,7 @@
 # concapt for Windows — Design Spec
 
 - **Date:** 2026-10-03
-- **Status:** Draft for review
+- **Status:** Approved; amended 2026-10-03 after the OCR spike (§5.1)
 - **Platform:** Windows 10 1903+ / Windows 11, alongside the Android app
 - **Builds on:** `2026-10-02-concapt-design.md` (the Android spec). Everything not covered here is unchanged.
 
@@ -17,7 +17,7 @@ Capture rehearsal results on PC, replacing `ref-script/contest.py`. The player r
 - Window picker: capture any visible top-level window
 - Global hotkey trigger, rebindable
 - Windows Graphics Capture (WGC) of the chosen window
-- OCR with `Windows.Media.Ocr`
+- OCR with `Windows.Media.Ocr`, in two passes (§5.1)
 - A capturing view in the main window, with the edit form inline
 - OCR accuracy test on the PC
 
@@ -67,8 +67,8 @@ A new local plugin with C++/WinRT, Windows only. `packages/screen_capture` stays
 | `registerHotkey(key)` | `RegisterHotKey` on the runner window; returns false if the key is taken |
 | `unregisterHotkey()` | Releases the hotkey |
 | `hotkeyPresses` | Event stream, one event per press |
-| `recognize(path)` | `Windows.Media.Ocr` words with bounding boxes |
-| `ocrAvailable()` | Whether an OCR language is usable (§6.3) |
+| `recognize(path, blueOnly)` | `Windows.Media.Ocr` words with bounding boxes in the image's own pixels. With `blueOnly`, reads a copy keyed to blue text and enlarged to the engine's size limit (§5.1) |
+| `ocrAvailable()` | Whether an OCR language is usable (§7.3) |
 | `flashWindow()` | `FlashWindowEx` on the runner window, taskbar button only |
 | `setAlwaysOnTop(bool)` | Toggles `HWND_TOPMOST` on the runner window |
 
@@ -77,7 +77,7 @@ A new local plugin with C++/WinRT, Windows only. `packages/screen_capture` stays
 | Path | Role |
 |---|---|
 | `lib/capture/window_capture_source.dart` | `CaptureSource` for one window handle; throws a typed error when the window is closed or minimized |
-| `lib/capture/windows_ocr_text_reader.dart` | `TextReader` over `recognize`, one `TextPiece` per OCR word |
+| `lib/capture/windows_ocr_text_reader.dart` | `TextReader` over `recognize`: both passes' words as `TextPiece`s, plain pass first |
 | `lib/capture/window_target.dart` | Remembered window (process name + title) in `shared_preferences`; matching logic |
 | `lib/desktop/capture_screen.dart` | The capturing view (§5) |
 | `lib/ui/capture_strip.dart` | Moved from `lib/overlay/`; used by both the overlay panel and the capture screen |
@@ -94,7 +94,29 @@ A new local plugin with C++/WinRT, Windows only. `packages/screen_capture` stays
 
 The runner opens a narrow window of about 420×860 logical pixels, so the phone-shaped layouts fit beside the game unchanged.
 
-## 5. Capture screen
+## 5. Reading a frame
+
+### 5.1 Two OCR passes
+
+The spike measured `Windows.Media.Ocr` against the corpus and a live scrcpy frame:
+
+| Input | Plain pass | Result |
+|---|---|---|
+| Live scrcpy window, 442 × 984 | Reads all totals and member scores | Misses every bonus |
+| Corpus, 237 images | Drops bonuses, and on phone captures whole member rows | 0 / 237 pass |
+
+The bonus is blue text on a white pill over a portrait. Keying the frame to blue text (blue > 150 and blue − red > 80 become black, the rest white) and enlarging it to the engine's limit reads it exactly. So the reader runs two passes over each frame:
+
+1. **Plain:** the frame as captured.
+2. **Blue:** the keyed, enlarged copy. Its boxes map back to frame pixels.
+
+The reader returns both passes' words together. `ResultParser` is shared with Android and sees what ML Kit would give it, with one fix: a lone `+` joins the number to its right, since the blue pass often reads `+` and `46150` as two words.
+
+### 5.2 Acceptance
+
+The gate is live captures, not the corpus. The 461 × 764 corpus crops read worse than live windows. The developer captures about 20 real results through the finished pipeline; most should save without the edit form. Every miss is caught by the sum check and opens the edit form, so none reaches the statistics. The corpus accuracy test stays as a regression measure and records fixtures.
+
+## 6. Capture screen
 
 Shown while a session is capturing.
 
@@ -111,13 +133,13 @@ Shown while a session is capturing.
 
 Remembered-window matching tries process name and title first, then process name alone if exactly one window matches.
 
-## 6. Error handling
+## 7. Error handling
 
-### 6.1 New outcome
+### 7.1 New outcome
 
 `CaptureWindowUnavailable` joins the sealed `CaptureOutcome` family, with a reason of `closed` or `minimized`. Nothing is saved. On `closed` the picker opens.
 
-### 6.2 Cases
+### 7.2 Cases
 
 | Case | Behavior |
 |---|---|
@@ -128,37 +150,38 @@ Remembered-window matching tries process name and title first, then process name
 | Hotkey while the edit form is open | Ignored; the outcome line asks to save or discard first |
 | Remembered window not found | Picker opens with nothing selected |
 
-### 6.3 OCR language
+### 7.3 OCR language
 
 The reader prefers `en-US`, then any installed Latin-script OCR language. If neither exists, `ocrAvailable()` is false and the capture screen explains how to add English in Windows Settings. A session cannot start capturing until then.
 
-## 7. CSV export
+## 8. CSV export
 
 Export stays shared. If `share_plus` can't hand a file over on Windows, Windows writes the CSV through a save dialog (`file_selector`). The plan verifies this first.
 
-## 8. Testing
+## 9. Testing
 
 | Test | Runs on | Checks |
 |---|---|---|
 | Existing host suites | `flutter test` | Unchanged |
 | Window target unit | Host | Matching by process + title, process alone, ambiguous, missing |
-| Windows OCR accuracy | `flutter test integration_test/windows_ocr_accuracy_test.dart -d windows` | Every image in `ref-script/result/` (206 PC crops) and `ref-script/result-2026-10/` (phone captures) through `WindowsOcrTextReader`, `ResultParser`, and the sum check. Reports the pass rate; writes fixture JSON to `test/fixtures/ocr-windows/` |
+| Windows OCR accuracy | `flutter test integration_test/windows_ocr_accuracy_test.dart -d windows` | Every image in `ref-script/result/` (206 PC crops) and `ref-script/result-2026-10/` (phone captures) through `WindowsOcrTextReader`, `ResultParser`, and the sum check. Reports the pass rate as a regression measure, not a gate; writes fixture JSON to `test/fixtures/ocr-windows/` |
+| Live acceptance | The developer's PC | About 20 real results captured through the finished pipeline (§5.2) |
 | Fixture test | Host | `fixture_test.dart` also loads `ocr-windows/`, so parser changes keep both readers green |
 | Manual | The developer's PC | New Windows section in `docs/manual-test-checklist.md`: game window, scrcpy window, overlapping windows, minimized and closed target, hotkey conflict, failed check flashes without taking focus, always on top |
 
 The accuracy test reads the corpus in place, so the phone-wipe gotcha doesn't apply.
 
-## 9. Risks
+## 10. Risks
 
 | Risk | Mitigation |
 |---|---|
-| `Windows.Media.Ocr` reads the corpus worse than ML Kit | Plan task 1 is the accuracy spike. The developer decides whether to go on. Fallbacks in order: upscale the frame before OCR, then Tesseract. A fallback amends this spec first |
+| Two-pass OCR still misses too many live bonuses | The live acceptance run (§5.2) decides. Next fallback: Tesseract, after amending this spec |
 | OCR word splits differ from ML Kit's and break the parser | Same spike; parser changes must keep both fixture sets green |
 | Black bars or window chrome around the game confuse the parser | Capture crops to the client area; the parser works from positions relative to the totals; the spike covers scrcpy captures |
 | Game runs elevated and blocks hotkeys or capture | `RegisterHotKey` works across integrity levels; if WGC fails on an elevated window, run concapt elevated too and note it in the README |
 | WGC yellow border shows on Windows 10 | Cosmetic; `IsBorderRequired = false` removes it on Windows 11 |
 
-## 10. Decisions
+## 11. Decisions
 
 | Decision | Choice | Reason |
 |---|---|---|
@@ -167,7 +190,8 @@ The accuracy test reads the corpus in place, so the phone-wipe gotcha doesn't ap
 | Trigger | Global hotkey | Keeps hands and focus on the game |
 | Target | User-picked window | Covers the PC client and scrcpy |
 | Capture | WGC | Captures GPU-rendered and occluded windows |
-| OCR | `Windows.Media.Ocr` | Built in, offline, returns word boxes like ML Kit |
+| OCR | `Windows.Media.Ocr`, plain pass plus blue-keyed pass | Built in, offline, returns word boxes like ML Kit; the blue pass reads the bonus the plain pass misses |
+| Acceptance | Live captures | The corpus crops are harder than live windows; the sum check catches every miss |
 | Feedback | Capturing view in the main window | One engine; no multi-window |
 | Failed check | Inline edit form, taskbar flash | Never steals focus from the game |
 | Distribution | Run from the repo | Developer only for now |
