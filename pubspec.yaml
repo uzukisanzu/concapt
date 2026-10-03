@@ -127,3 +127,6 @@ flutter_launcher_icons:
   adaptive_icon_foreground: assets/icon/foreground.png
   adaptive_icon_foreground_inset: 0
   adaptive_icon_monochrome: assets/icon/monochrome.png
+  windows:
+    generate: true
+    icon_size: 256

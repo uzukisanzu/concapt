@@ -1,0 +1,40 @@
+# Releasing
+
+`tool/package.ps1` builds both packages into `dist/` (gitignored):
+
+| Package | File | Install |
+|---|---|---|
+| Android | `concapt-<version>.apk` | Sideload; allow installs from the source app |
+| Windows | `concapt-<version>-windows-x64.zip` | Unzip anywhere, run `concapt.exe` |
+
+## One-time setup: Android signing key
+
+Every release must be signed with the same key, or phones refuse the update. Create the key once, then back up the keystore and its password outside the repo. Losing either means users must uninstall to update, which deletes their sessions.
+
+```
+keytool -genkeypair -v -keystore android/app/concapt-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias concapt
+```
+
+Then create `android/key.properties`:
+
+```
+storeFile=app/concapt-release.jks
+storePassword=<password>
+keyAlias=concapt
+keyPassword=<password>
+```
+
+`storeFile` resolves against `android/`. Git ignores both files. Without `key.properties`, release builds fall back to the debug key, and the package script refuses to build the APK.
+
+## Each release
+
+1. Bump `version` in `pubspec.yaml`. The part after `+` is Android's `versionCode` and must increase every release.
+2. `flutter analyze` and `flutter test` pass, and `docs/manual-test-checklist.md` passes on a phone and on Windows.
+3. Run `powershell -ExecutionPolicy Bypass -File tool/package.ps1` (or `-Android` / `-Windows` for one).
+4. Install the APK over the previous release to confirm the signature matches, and run the unzipped Windows build on a machine without the repo.
+
+## Notes
+
+- The zip bundles the MSVC runtime DLLs from `System32`, so users don't need the Visual C++ redistributable.
+- The Windows build isn't code-signed, so SmartScreen warns on first run ("More info" → "Run anyway").
+- The APK is universal (arm64, armv7, x86_64), about 85 MB. `flutter build apk --split-per-abi` gives one APK per ABI at about a third of the size.

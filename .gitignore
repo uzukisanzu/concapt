@@ -52,3 +52,6 @@ app.*.map.json
 
 # Local OCR corpus and the original PC script (game captures aren't redistributable)
 /ref-script/
+
+# Release packages from tool/package.ps1
+/dist/

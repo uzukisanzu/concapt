@@ -77,7 +77,7 @@ An Android and Windows app that captures Gakuen Idolmaster contest rehearsal res
 
 ## Stack
 
-- Flutter 3.41.4 / Dart 3.11.1, Android (app id `dev.concapt.app`, `minSdk` 26) and Windows 10 2004+ (run from the repo)
+- Flutter 3.41.4 / Dart 3.11.1, Android (app id `dev.concapt.app`, `minSdk` 26) and Windows 10 2004+ (shipped as a portable zip)
 - Kotlin for screen capture (local plugin `packages/screen_capture`, MediaProjection foreground service)
 - `flutter_overlay_window` for the bubble, `google_mlkit_text_recognition` (Latin) for OCR
 - C++/WinRT for Windows capture, hotkey, and OCR (local plugin `packages/window_capture`)
@@ -96,6 +96,7 @@ An Android and Windows app that captures Gakuen Idolmaster contest rehearsal res
 | Run on phone | `flutter run -d <device-id>` |
 | Run on PC | `flutter run -d windows` |
 | Windows device tests | `flutter test integration_test/<file>.dart -d windows` |
+| Package releases | `powershell -ExecutionPolicy Bypass -File tool/package.ps1` (see `docs/releasing.md`) |
 
 ## Layout
 
@@ -109,6 +110,7 @@ An Android and Windows app that captures Gakuen Idolmaster contest rehearsal res
 | `lib/ui/` | Main app screens and shared widgets |
 | `packages/screen_capture/` | Local Flutter plugin with the Kotlin capture service |
 | `packages/window_capture/` | Local Flutter plugin with the C++/WinRT capture, hotkey, and OCR |
+| `tool/` | Release packaging script |
 | `test/fixtures/ocr/`, `ocr-windows/` | Real ML Kit and Windows OCR output recorded from the corpus |
 | `ref-script/` | Local only, gitignored: the original PC script and the rehearsal result captures (OCR test corpus) |
 | `docs/` | Spec, plan, spike notes, manual test checklist |
