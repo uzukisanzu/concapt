@@ -105,10 +105,12 @@ The spike measured `Windows.Media.Ocr` against the corpus and a live scrcpy fram
 | Live scrcpy window, 442 × 984 | Reads all totals and member scores | Misses every bonus |
 | Corpus, 237 images | Drops bonuses, and on phone captures whole member rows | 0 / 237 pass |
 
-The bonus is blue text on a white pill over a portrait. Keying the frame to blue text (blue > 150 and blue − red > 80 become black, the rest white) and enlarging it to the engine's limit reads it exactly. So the reader runs two passes over each frame:
+The bonus is blue text on a white pill over a portrait. Keying the frame to blue text and enlarging it to the engine's limit reads it. So the reader runs two passes over each frame:
 
-1. **Plain:** the frame as captured.
-2. **Blue:** the keyed, enlarged copy. Its boxes map back to frame pixels.
+1. **Plain:** the frame as captured, shrunk to at most 1300 px on its longest side. Taller frames lose whole member rows.
+2. **Blue:** a soft key, where a pixel's darkness follows its blueness (`255 − 3 × (blue − red − 30)`, clamped), enlarged to the engine's limit. Its boxes map back to frame pixels.
+
+A hard threshold key read a bonus 3 as 5 in 52 of 615 corpus stages and in most live misses; the soft key reads none that way.
 
 The reader returns both passes' words together. `ResultParser` is shared with Android and sees what ML Kit would give it, with one fix: a lone `+` joins the number to its right, since the blue pass often reads `+` and `46150` as two words.
 

@@ -45,6 +45,9 @@ namespace storage = winrt::Windows::Storage;
 namespace streams = winrt::Windows::Storage::Streams;
 
 constexpr UINT kOcrDone = WM_APP + 0x43;
+
+// Longest side for the plain read. Taller frames lose whole member rows.
+constexpr uint32_t kPlainLongest = 1300;
 constexpr int kHotkeyId = 1;
 
 const EncodableValue* Arg(const flutter::MethodCall<EncodableValue>& call, const char* key) {
@@ -247,7 +250,9 @@ ocr::OcrEngine CreateEngine() {
   return nullptr;
 }
 
-// Black where a pixel has the bonus pills' blue, white elsewhere.
+// Dark where a pixel has the bonus pills' blue, white elsewhere. The shade
+// follows how blue the pixel is, so anti-aliased edges keep a 3 from
+// thinning into a 5.
 imaging::SoftwareBitmap KeyBlue(const imaging::SoftwareBitmap& bitmap) {
   const auto width = static_cast<uint32_t>(bitmap.PixelWidth());
   const auto height = static_cast<uint32_t>(bitmap.PixelHeight());
@@ -257,9 +262,8 @@ imaging::SoftwareBitmap KeyBlue(const imaging::SoftwareBitmap& bitmap) {
   bitmap.CopyToBuffer(buffer);
   uint8_t* pixels = buffer.data();
   for (uint32_t i = 0; i < size; i += 4) {
-    const int blue = pixels[i];
-    const int red = pixels[i + 2];
-    const uint8_t value = blue > 150 && blue - red > 80 ? 0 : 255;
+    const int blueness = pixels[i] - pixels[i + 2];
+    const auto value = static_cast<uint8_t>(std::clamp(255 - (blueness - 30) * 3, 0, 255));
     pixels[i] = pixels[i + 1] = pixels[i + 2] = value;
     pixels[i + 3] = 255;
   }
@@ -268,9 +272,9 @@ imaging::SoftwareBitmap KeyBlue(const imaging::SoftwareBitmap& bitmap) {
                                                        imaging::BitmapAlphaMode::Premultiplied);
 }
 
-// Images over the engine's size limit are scaled down to fit. The blue read
-// enlarges every image to the limit, since the bonus text is small. Boxes
-// come back in the image's own pixels either way.
+// The plain read shrinks tall images to kPlainLongest. The blue read
+// enlarges every image to the engine's limit, since the bonus text is small.
+// Boxes come back in the image's own pixels either way.
 EncodableList ReadWords(const ocr::OcrEngine& engine, const std::wstring& path, bool blue_only) {
   const auto file = storage::StorageFile::GetFileFromPathAsync(path).get();
   const auto stream = file.OpenAsync(storage::FileAccessMode::Read).get();
@@ -278,8 +282,8 @@ EncodableList ReadWords(const ocr::OcrEngine& engine, const std::wstring& path, 
 
   const uint32_t limit = ocr::OcrEngine::MaxImageDimension();
   const uint32_t longest = std::max(decoder.PixelWidth(), decoder.PixelHeight());
-  const double scale =
-      blue_only || longest > limit ? static_cast<double>(limit) / longest : 1.0;
+  const double scale = blue_only ? static_cast<double>(limit) / longest
+                                 : std::min(1.0, static_cast<double>(kPlainLongest) / longest);
   imaging::BitmapTransform transform;
   transform.ScaledWidth(static_cast<uint32_t>(decoder.PixelWidth() * scale));
   transform.ScaledHeight(static_cast<uint32_t>(decoder.PixelHeight() * scale));

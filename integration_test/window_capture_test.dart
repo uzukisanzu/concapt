@@ -66,6 +66,24 @@ void main() {
     expect((result as ParsedRun).draft.stages[2].isValid, isTrue);
   });
 
+  testWidgets('a full-resolution phone frame reads every stage', (tester) async {
+    // Tall frames lose member rows unless the plain pass shrinks them.
+    final pieces = await WindowsOcrTextReader().read(phoneShot);
+    final result = ResultParser.parse(pieces) as ParsedRun;
+
+    expect(result.draft.invalidStages, isEmpty);
+  });
+
+  testWidgets('reads a bonus with a 3 in it as a 3', (tester) async {
+    // A hard blue key thins the 3's upper curve until OCR reads a 5.
+    final pieces = await WindowsOcrTextReader().read(
+      '$repo/ref-script/result/Wed Jan 28 08_38_15 2026.png',
+    );
+    final result = ResultParser.parse(pieces) as ParsedRun;
+
+    expect(result.draft.stages[0].bonus, 40310);
+  });
+
   testWidgets('binds and releases a hotkey', (tester) async {
     expect(await WindowCapture.registerHotkey(0x87, 0), isTrue); // F24
     await WindowCapture.unregisterHotkey();
