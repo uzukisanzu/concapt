@@ -54,4 +54,4 @@ Work set aside when the Android and Windows branches wrapped up (2026-10-03), wi
 - The bubble-failed toast (3c049ba)
 - The save, export, and load failure snackbars, which need a failing database or file system to trigger
 - Windows W12 (Japanese display language): this PC runs Windows 11 Home Single Language. Host tests cover the strings; Windows passing a Japanese locale to Flutter is unverified
-- Windows W14 (elevated game) and the PC game client versions of W1, W2, and W4: the game isn't installed; all four passed against scrcpy where they apply
+- Windows W14 (elevated game) and the PC game client versions of W1, W2, and W4: the game isn't installed. W1, W2, and W4 passed against scrcpy
