@@ -254,7 +254,7 @@ void main() {
   });
 
   test("a dropped total line leaves that stage's total empty", () {
-    for (final (stage, total) in [(2, '181,221Pt'), (1, '206,163Pt')]) {
+    for (final (stage, total) in [(2, '181,221Pt'), (1, '206,163Pt'), (0, '214,882Pt')]) {
       final pieces = screenPieces(referenceScores()).where((p) => p.text != total).toList();
       final draft = parsedDraft(pieces);
       final expected = referenceScores().stages[stage];
@@ -265,11 +265,31 @@ void main() {
     }
   });
 
-  test('two totals without a third member row is an incomplete screen', () {
-    final y = stageTops[2];
+  test('one total is not enough to recover the stages', () {
     final pieces = screenPieces(
       referenceScores(),
-    ).where((p) => p.top < y - 30).toList();
+    ).where((p) => p.text != '181,221Pt' && p.text != '206,163Pt').toList();
+    expect(ResultParser.parse(pieces), isA<IncompleteScreen>());
+  });
+
+  test('totals that sit unevenly above their rows are not recovered', () {
+    // Stage 2's member row pushed 60 px further from its total than stage 1's.
+    final y = stageTops[1];
+    final pieces = [
+      for (final p in screenPieces(referenceScores()))
+        if (p.text == '181,221Pt')
+          null
+        else if (p.top == y + 38)
+          TextPiece(p.text, p.left, p.top + 60, p.right, p.bottom + 60)
+        else
+          p,
+    ].nonNulls.toList();
+    expect(ResultParser.parse(pieces), isA<IncompleteScreen>());
+  });
+
+  test('two totals without a third member row is an incomplete screen', () {
+    final y = stageTops[2];
+    final pieces = screenPieces(referenceScores()).where((p) => p.top < y - 30).toList();
     final result = ResultParser.parse(pieces);
     expect(result, isA<IncompleteScreen>());
     expect((result as IncompleteScreen).totalsFound, 2);

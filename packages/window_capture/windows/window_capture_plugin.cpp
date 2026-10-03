@@ -258,8 +258,13 @@ EncodableList ReadWords(const ocr::OcrEngine& engine, const std::wstring& path,
   const auto decoder = imaging::BitmapDecoder::CreateAsync(stream).get();
 
   const uint32_t longest = std::max(decoder.PixelWidth(), decoder.PixelHeight());
+  // OCR reads past MaxImageDimension come back as junk, so a region's
+  // enlargement stops where its longest side reaches it.
   const double scale =
-      region ? region->scale : std::min(1.0, static_cast<double>(kReadLongest) / longest);
+      region ? std::min(region->scale,
+                        ocr::OcrEngine::MaxImageDimension() /
+                            std::max(region->right - region->left, region->bottom - region->top))
+             : std::min(1.0, static_cast<double>(kReadLongest) / longest);
   const auto width = static_cast<uint32_t>(decoder.PixelWidth() * scale);
   const auto height = static_cast<uint32_t>(decoder.PixelHeight() * scale);
   imaging::BitmapTransform transform;

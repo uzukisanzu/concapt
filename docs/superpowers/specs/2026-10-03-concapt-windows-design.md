@@ -113,7 +113,7 @@ With the computed bonus, this one pass reads 228 / 237 corpus images and both re
 
 Window capture grabs the window as drawn, so a taller scrcpy window gives each digit more pixels.
 
-Windows OCR drops or garbles totals holding `444` (`204,444Pt` vanishes, `444,386Pt` reads as `3` `86pt`), yet reads them once a crop cuts off `Pt`. So when a stage fails the sum check but has all three members, the controller re-reads its total line: the crop's right edge sweeps leftward in steps of a sixth of the line's height, each crop read at 2× and 3×. A reading counts only if it equals the members plus the bonus. A total still missing opens the edit form with that field empty (Android spec §5.4). Live samples: 3 of 3 `444` frames recover; `206,666Pt` and `411,599Pt` read without help.
+Windows OCR drops or garbles totals holding `444` (`204,444Pt` vanishes, `444,386Pt` reads as `3` `86pt`), yet reads them once a crop cuts off `Pt`. So when a stage fails the sum check but has all three members, the controller re-reads its total line: the crop's right edge sweeps leftward in steps of a sixth of the line's height, each crop read at 2× and 3× (capped so the crop stays within the engine's size limit). A reading counts only if it equals the members plus the bonus. The re-read stops starting reads at the capture's read timeout and keeps the totals it confirmed; a failed read counts as no reading. A total still missing opens the edit form with that field empty (Android spec §5.4). Live samples: 3 of 3 `444` frames recover; `206,666Pt` and `411,599Pt` read without help.
 
 Windows OCR cannot read 7-digit totals such as `1,022,411Pt`, even cropped and enlarged. Those runs fail the sum check and open the edit form.
 

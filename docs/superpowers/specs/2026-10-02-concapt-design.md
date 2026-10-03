@@ -142,7 +142,7 @@ Pieces come from ML Kit elements (words), not lines. ML Kit can merge the three 
    - **Total:** a number with `Pt` attached or as the adjacent piece
    - **Bonus:** `+` followed by digits; drop junk before the `+` (the crown icon)
    - **Plain number:** anything else numeric, **100 or more**. Smaller numbers are the 1/2/3 placement badges and the stage labels, and are ignored.
-2. **Find stages.** Sort the totals by y as Stages 1–3. A stage's band runs from its total down to the next total (or the image bottom). With 1–2 totals, fall back to member rows: if exactly 3 rows hold two or more plain numbers, and each total sits above a different one, the row without a total is a stage whose total line OCR dropped. Its total stays empty, and its line sits where the others do relative to their rows.
+2. **Find stages.** Sort the totals by y as Stages 1–3. A stage's band runs from its total down to the next total (or the image bottom). With 2 totals, fall back to member rows: if exactly 3 rows hold two or more plain numbers, and both totals sit above different rows at the same distance, the row without a total is a stage whose total line OCR dropped. Its total stays empty, and its line sits where the others do relative to their rows.
 3. **Find bonus.** The topmost bonus piece in the band. Only its position is used; the bonus value is computed (§3.1).
 4. **Find members.** Pieces share a row when their vertical centers differ by less than half the median piece height. The member row is the first row of plain numbers below the total and above the bonus.
    - Exactly 3 numbers → sorted by x into left, middle, and right

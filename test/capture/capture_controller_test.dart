@@ -45,14 +45,20 @@ class FakeReader implements TextReader {
   }
 }
 
-/// Reads [pieces] for the frame and the reference stage 3 total in any region.
+/// Reads [pieces] for the frame and [regionText] in any region.
 class FakeRegionTextReader extends FakeReader implements RegionReader {
-  FakeRegionTextReader(super.pieces);
+  FakeRegionTextReader(super.pieces, {this.regionText = '181,221', this.delay = Duration.zero});
+
+  final String regionText;
+  final Duration delay;
+  int regionReads = 0;
 
   @override
-  Future<List<TextPiece>> readRegion(String imagePath, PixelRect region, double scale) async => [
-    TextPiece('181,221', region.left, region.top, region.right, region.bottom),
-  ];
+  Future<List<TextPiece>> readRegion(String imagePath, PixelRect region, double scale) async {
+    regionReads++;
+    await Future<void>.delayed(delay);
+    return [TextPiece(regionText, region.left, region.top, region.right, region.bottom)];
+  }
 }
 
 void main() {
@@ -161,6 +167,28 @@ void main() {
     ).trigger();
     expect(outcome, isA<CaptureSaved>());
     expect((outcome as CaptureSaved).scores, referenceScores());
+  });
+
+  test('a re-read that runs out of time sends no reads after the capture returns', () async {
+    final regionReader = FakeRegionTextReader(
+      screenPieces(referenceScores()).where((x) => x.text != '181,221Pt').toList(),
+      regionText: '181,222',
+      delay: const Duration(milliseconds: 30),
+    );
+    final outcome = await CaptureController(
+      source: source,
+      reader: regionReader,
+      repository: repo,
+      sessionId: sessionId,
+      hideBubble: () async {},
+      showBubble: () async {},
+      readTimeout: const Duration(milliseconds: 100),
+    ).trigger();
+    expect(outcome, isA<CaptureNeedsReview>());
+
+    final reads = regionReader.regionReads;
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    expect(regionReader.regionReads, reads);
   });
 
   test('a reader error is a read failure', () async {

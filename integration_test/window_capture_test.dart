@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:concapt/capture/total_reread.dart';
 import 'package:concapt/capture/windows_ocr_text_reader.dart';
+import 'package:concapt/core/pixel_rect.dart';
 import 'package:concapt/core/result_parser.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -92,6 +93,17 @@ void main() {
       expect(draft.invalidStages, isEmpty, reason: name);
       if (reread != null) expect(draft.stages[reread.$1].total, reread.$2, reason: name);
     }
+  });
+
+  testWidgets('a region read past the OCR size limit still reads', (tester) async {
+    // 474 × 1080 at 3× is 3240 px tall, over OcrEngine's 2600 limit.
+    final pieces = await WindowsOcrTextReader().readRegion(
+      '$repo/ref-script/result-live/99pt.png',
+      const PixelRect(0, 0, 474, 1080),
+      3,
+    );
+
+    expect(pieces.map((p) => p.text.replaceAll(RegExp(r'\D'), '')), contains('710968'));
   });
 
   testWidgets('binds and releases a hotkey', (tester) async {

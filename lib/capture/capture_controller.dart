@@ -131,14 +131,15 @@ class CaptureController {
   }
 
   /// The run with failing totals re-read, when the reader can read regions.
-  Future<RunDraft> _reread(String path, ParsedRun run) async {
+  Future<RunDraft> _reread(String path, ParsedRun run) {
     final reader = this.reader;
-    if (reader is! RegionReader || run.draft.invalidStages.isEmpty) return run.draft;
-    try {
-      return await rereadTotals(reader as RegionReader, path, run).timeout(readTimeout);
-    } catch (_) {
-      return run.draft;
-    }
+    if (reader is! RegionReader || run.draft.invalidStages.isEmpty) return Future.value(run.draft);
+    return rereadTotals(
+      reader as RegionReader,
+      path,
+      run,
+      deadline: DateTime.now().add(readTimeout),
+    );
   }
 
   /// Saves a run the user corrected in the edit panel.

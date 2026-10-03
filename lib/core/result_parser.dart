@@ -146,15 +146,15 @@ abstract final class ResultParser {
   }
 
   /// Finds the stages from their member rows when OCR dropped a total line:
-  /// three rows of two or more plain numbers, with each total found above a
-  /// different one. A dropped total sits where the others do relative to
-  /// their rows. Null when the rows don't line up that way.
+  /// three rows of two or more plain numbers, and two totals found above
+  /// different rows at the same distance. The dropped total sits that
+  /// distance above its row. Null when the rows don't line up that way.
   static List<({_Token? total, double y})>? _recoverStages(
     List<_Token> tokens,
     List<_Token> totals,
     double tolerance,
   ) {
-    if (totals.length > RunScores.stageCount) return null;
+    if (totals.length != RunScores.stageCount - 1) return null;
     final rows = _groupRows(
       tokens.where((t) => t.kind == _Kind.number),
       tolerance,
@@ -163,9 +163,11 @@ abstract final class ResultParser {
 
     final owners = [for (final t in totals) rows.indexWhere((r) => r.first.centerY > t.centerY)];
     if (owners.contains(-1) || owners.toSet().length != owners.length) return null;
-    final offset = _median([
+    final offsets = [
       for (var i = 0; i < totals.length; i++) rows[owners[i]].first.centerY - totals[i].centerY,
-    ]);
+    ];
+    if ((offsets[0] - offsets[1]).abs() > tolerance) return null;
+    final offset = _median(offsets);
     return [
       for (var r = 0; r < rows.length; r++)
         owners.contains(r)

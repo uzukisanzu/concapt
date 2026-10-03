@@ -9,15 +9,17 @@ import '../helpers/sample.dart';
 import '../helpers/screen.dart';
 
 class FakeRegionReader implements RegionReader {
-  FakeRegionReader(this.answer);
+  FakeRegionReader(this.answer, {this.delay = Duration.zero});
 
-  /// What OCR reads in [region] at [scale].
+  /// What OCR reads in [region] at [scale]; throws to fail the read.
   final String Function(PixelRect region, double scale) answer;
+  final Duration delay;
   final regions = <PixelRect>[];
 
   @override
   Future<List<TextPiece>> readRegion(String imagePath, PixelRect region, double scale) async {
     regions.add(region);
+    await Future<void>.delayed(delay);
     final text = answer(region, scale);
     return text.isEmpty
         ? const []
@@ -78,5 +80,45 @@ void main() {
     await rereadTotals(reader, 'frame.png', run);
 
     expect(reader.regions, isEmpty);
+  });
+
+  test('stops at the deadline and keeps the totals it confirmed', () async {
+    // Stage 2 misread, stage 3 dropped.
+    final run = parse([
+      for (final p in screenPieces(referenceScores()))
+        if (p.text == '206,163Pt')
+          TextPiece('206,168Pt', p.left, p.top, p.right, p.bottom)
+        else if (p.text != '181,221Pt')
+          p,
+    ]);
+    final stage2 = run.totalLines[1];
+    final reader = FakeRegionReader(
+      (region, scale) => region.top == stage2.top ? '206,163' : '',
+      delay: const Duration(milliseconds: 40),
+    );
+
+    final draft = await rereadTotals(
+      reader,
+      'frame.png',
+      run,
+      deadline: DateTime.now().add(const Duration(milliseconds: 150)),
+    );
+
+    expect(draft.stages[1].total, 206163);
+    expect(draft.stages[2].total, isNull);
+    expect(reader.regions.length, lessThan(6));
+  });
+
+  test('a failed read counts as no reading', () async {
+    final run = withoutStage3Total();
+    var reads = 0;
+    final reader = FakeRegionReader((region, scale) {
+      if (reads++ == 0) throw Exception('locked');
+      return '181,221';
+    });
+
+    final draft = await rereadTotals(reader, 'frame.png', run);
+
+    expect(draft.stages[2].total, 181221);
   });
 }
