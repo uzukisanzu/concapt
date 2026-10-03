@@ -67,7 +67,7 @@ A new local plugin with C++/WinRT, Windows only. `packages/screen_capture` stays
 | `registerHotkey(key)` | `RegisterHotKey` on the runner window; returns false if the key is taken |
 | `unregisterHotkey()` | Releases the hotkey |
 | `hotkeyPresses` | Event stream, one event per press |
-| `recognize(path, blueOnly)` | `Windows.Media.Ocr` words with bounding boxes in the image's own pixels. With `blueOnly`, reads a copy keyed to blue text and enlarged to the engine's size limit (§5.1) |
+| `recognize(path, blueOnly)` | `Windows.Media.Ocr` words with bounding boxes in the image's own pixels. With `blueOnly`, reads a copy keyed to the bonus pills' text (§5.1) |
 | `ocrAvailable()` | Whether an OCR language is usable (§7.3) |
 | `flashWindow()` | `FlashWindowEx` on the runner window, taskbar button only |
 | `setAlwaysOnTop(bool)` | Toggles `HWND_TOPMOST` on the runner window |
@@ -108,9 +108,13 @@ The spike measured `Windows.Media.Ocr` against the corpus and a live scrcpy fram
 The bonus is blue text on a white pill over a portrait. Keying the frame to blue text and enlarging it to the engine's limit reads it. So the reader runs two passes over each frame:
 
 1. **Plain:** the frame as captured, shrunk to at most 1300 px on its longest side. Taller frames lose whole member rows.
-2. **Blue:** a soft key, where a pixel's darkness follows its blueness (`255 − 3 × (blue − red − 30)`, clamped), enlarged to the engine's limit. Its boxes map back to frame pixels.
+2. **Blue:** the frame enlarged to the engine's limit (Cubic), keyed, then read at 1300 px like the plain pass. The key keeps the bonus pills and blanks the rest. Pixels with `blue − red > 40` mark the pills, and that mask grows by 4 px. Inside it, a pixel keeps its brightness, stretched from 90–250 to 0–255; outside it goes white. Its boxes map back to frame pixels.
 
-A hard threshold key read a bonus 3 as 5 in 52 of 615 corpus stages and in most live misses; the soft key reads none that way.
+The key takes glyph shapes from brightness because scrcpy's video, H.264 or H.265, carries color at half resolution. Keys built on blueness alone blurred a live bonus 3 into a 5. Keying at a smaller size, or reading at the engine's limit, lost digits instead. This pipeline reads the live scrcpy test frame correctly and passes 199 / 237 corpus images; the soft blueness key passed 208 but failed live.
+
+Window capture grabs the window as drawn, so a taller scrcpy window gives each digit more pixels.
+
+Windows OCR cannot read 7-digit totals such as `1,022,411Pt`, even cropped and enlarged. Those runs fail the sum check and open the edit form.
 
 The reader returns both passes' words together. `ResultParser` is shared with Android and sees what ML Kit would give it, with one fix: a lone `+` joins the number to its right, since the blue pass often reads `+` and `46150` as two words.
 

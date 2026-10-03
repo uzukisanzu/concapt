@@ -44,8 +44,8 @@ abstract final class WindowCapture {
       _methods.invokeMethod<void>('captureWindow', {'handle': handle, 'path': path});
 
   /// OCR words with boxes in image pixels, as maps of `text`, `l`, `t`, `r`, `b`.
-  /// With [blueOnly], reads a copy keyed to blue text and enlarged to the
-  /// engine's size limit, which finds the bonus pills the plain read misses.
+  /// With [blueOnly], reads a copy keyed to the bonus pills' text, which the
+  /// plain read misses.
   /// Throws [PlatformException] with code `no_language` when no OCR language is usable.
   static Future<List<Map<Object?, Object?>>> recognize(
     String path, {

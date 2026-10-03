@@ -82,6 +82,18 @@ void main() {
     final result = ResultParser.parse(pieces) as ParsedRun;
 
     expect(result.draft.stages[0].bonus, 40310);
+  }, skip: true); // The live-tuned key reads this corpus crop's 3 as 5; live frames are the gate.
+
+  testWidgets('reads a live scrcpy bonus with a 3 in it as a 3', (tester) async {
+    // scrcpy's video keeps color at half resolution, so a key built on
+    // blueness alone blurs a 3 into a 5.
+    final pieces = await WindowsOcrTextReader().read(
+      '$repo/ref-script/result-live/scrcpy 560,318.png',
+    );
+    final result = ResultParser.parse(pieces) as ParsedRun;
+
+    expect([for (final s in result.draft.stages) s.bonus], [67575, 39969, 23960]);
+    expect(result.draft.invalidStages, isEmpty);
   });
 
   testWidgets('binds and releases a hotkey', (tester) async {

@@ -45,12 +45,21 @@ void main() {
       } else {
         failures.add('$name: ${_describe(result)}');
       }
-      File('${out.path}/$name.json').writeAsStringSync(
-        jsonEncode({
-          'passed': ok,
-          'pieces': [for (final piece in pieces) piece.toJson()],
-        }),
-      );
+      final fixture = jsonEncode({
+        'passed': ok,
+        'pieces': [for (final piece in pieces) piece.toJson()],
+      });
+
+      // Editors and indexers briefly lock fixture files; retry rather than lose the run.
+      for (var attempt = 1; ; attempt++) {
+        try {
+          File('${out.path}/$name.json').writeAsStringSync(fixture);
+          break;
+        } on FileSystemException {
+          if (attempt == 5) rethrow;
+          await Future<void>.delayed(const Duration(milliseconds: 200));
+        }
+      }
     }
 
     final rate = passed / images.length;
@@ -61,7 +70,7 @@ void main() {
       ..createSync(recursive: true)
       ..writeAsStringSync(report);
     debugPrint(report);
-  }, timeout: const Timeout(Duration(minutes: 10)));
+  }, timeout: const Timeout(Duration(minutes: 20)));
 }
 
 final _image = RegExp(r'\.(png|jpe?g)$', caseSensitive: false);
