@@ -10,6 +10,7 @@ import 'package:concapt/ui/run_form.dart';
 import 'package:concapt/ui/session_detail_screen.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,6 +27,9 @@ const _hotkey = EventChannel('concapt/window_capture/hotkey');
 /// Stands in for the native plugin and records what the screen asks of it.
 class FakePlugin {
   final calls = <String>[];
+
+  /// The windows sent to `setHotkeyWindow`, in order.
+  final hotkeyWindows = <int?>[];
   bool ocr = true;
   bool registers = true;
   String? captureError;
@@ -48,6 +52,8 @@ class FakePlugin {
           ];
         case 'registerHotkey':
           return registers;
+        case 'setHotkeyWindow':
+          hotkeyWindows.add((call.arguments as Map)['handle'] as int?);
         case 'captureWindow':
           await captureGate?.future;
           if (captureError != null) throw PlatformException(code: captureError!);
@@ -238,6 +244,52 @@ void main() {
 
     expect(plugin.count('captureWindow'), 0);
     expect(find.text('Pick a window to capture.'), findsWidgets);
+  });
+
+  testWidgets('the hotkey follows the picked window', (tester) async {
+    await open(tester);
+    expect(plugin.hotkeyWindows.last, 7);
+
+    plugin.captureError = 'closed';
+    await press(tester);
+    expect(plugin.hotkeyWindows.last, isNull);
+  });
+
+  testWidgets('a side-button click binds the side button', (tester) async {
+    await openDatabase(tester);
+    // Pushed over another route, so a stray pop would leave the screen.
+    await tester.pumpWidget(localizedApp(const SizedBox()));
+    unawaited(
+      tester
+          .state<NavigatorState>(find.byType(Navigator))
+          .push(
+            MaterialPageRoute<void>(
+              builder: (_) => CaptureScreen(
+                repository: repo,
+                sessionId: sessionId,
+                cacheDirectory: () async => Directory.systemTemp,
+              ),
+            ),
+          ),
+    );
+    await tester.pumpAndSettle();
+    await settle(tester);
+    await tester.tap(find.text('Change'));
+    await tester.pumpAndSettle();
+
+    final gesture = await tester.createGesture(
+      kind: PointerDeviceKind.mouse,
+      buttons: kBackMouseButton,
+    );
+    // Outside the dialog box, on the barrier.
+    await gesture.down(const Offset(4, 4));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    await settle(tester);
+
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.byType(CaptureScreen), findsOneWidget);
+    expect(find.text('Press Mouse 4 on a result screen to capture.'), findsOneWidget);
   });
 
   testWidgets('a taken hotkey says so', (tester) async {

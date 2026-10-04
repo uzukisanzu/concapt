@@ -80,7 +80,7 @@
   "pickWindowFirst": "キャプチャするウィンドウを選んでください。",
   "hotkeyLabel": "ホットキー",
   "changeHotkey": "変更",
-  "pressHotkey": "F1〜F24、英字、数字のいずれかを押してください。Ctrl・Alt・Shift と組み合わせられます。",
+  "pressHotkey": "F1〜F24、英字、数字のいずれかを押してください。Ctrl・Alt・Shift と組み合わせられます。マウスのサイドボタンも使えます。",
   "hotkeyTaken": "{key} は他のアプリが使用中です。別のキーを選んでください。",
   "hotkeyReady": "リザルト画面で {key} を押すとキャプチャします。",
   "alwaysOnTop": "常に手前に表示",

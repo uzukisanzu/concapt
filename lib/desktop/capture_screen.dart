@@ -102,8 +102,8 @@ class _CaptureScreenState extends State<CaptureScreen> {
       _ocrReady = ocrReady;
       _hotkey = hotkey;
       _windows = windows;
-      _window = remembered?.findIn(windows);
     });
+    _target(remembered?.findIn(windows));
     if (!ocrReady) return;
     _presses = WindowCapture.hotkeyPresses.listen((_) => _capture());
     await _bind(hotkey);
@@ -180,10 +180,10 @@ class _CaptureScreenState extends State<CaptureScreen> {
         setState(() {
           _busy = false;
           _windows = windows;
-          _window = null;
           _message = outcomeMessage(l, outcome);
           _failed = true;
         });
+        _target(null);
       default:
         await _reloadRuns();
         if (!mounted) return;
@@ -226,19 +226,23 @@ class _CaptureScreenState extends State<CaptureScreen> {
     frame?.dispose();
   }
 
+  /// Captures from [window] and points the side-button hotkey at it.
+  void _target(WindowInfo? window) {
+    setState(() => _window = window);
+    unawaited(WindowCapture.setHotkeyWindow(window?.handle));
+  }
+
   void _pick(int? handle) {
     final window = _windows.where((w) => w.handle == handle).firstOrNull;
-    setState(() => _window = window);
+    _target(window);
     if (window != null) unawaited(RememberedWindow.of(window).save());
   }
 
   Future<void> _refreshWindows() async {
     final windows = await WindowCapture.listWindows();
     if (!mounted) return;
-    setState(() {
-      _windows = windows;
-      _window = windows.where((w) => w.handle == _window?.handle).firstOrNull;
-    });
+    setState(() => _windows = windows);
+    _target(windows.where((w) => w.handle == _window?.handle).firstOrNull);
   }
 
   Future<void> _rebind() async {
@@ -247,6 +251,9 @@ class _CaptureScreenState extends State<CaptureScreen> {
     if (!mounted) return;
     final picked = await showDialog<Hotkey>(
       context: context,
+      // The barrier dismisses on any button, so a side-button click on it
+      // would pop this screen after the dialog.
+      barrierDismissible: false,
       builder: (_) => const _HotkeyDialog(),
     );
     if (picked != null) {
@@ -402,33 +409,42 @@ class _OutcomeLine extends StatelessWidget {
   }
 }
 
-/// Waits for the next bindable key press and returns it as a [Hotkey].
+/// Waits for the next bindable key press or side-button click and returns it
+/// as a [Hotkey].
 class _HotkeyDialog extends StatelessWidget {
   const _HotkeyDialog();
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    return AlertDialog(
-      title: Text(l.hotkeyLabel),
-      content: Focus(
-        autofocus: true,
-        onKeyEvent: (_, event) {
-          if (event is! KeyDownEvent) return KeyEventResult.ignored;
-          final keyboard = HardwareKeyboard.instance;
-          final hotkey = Hotkey.fromKey(
-            event.logicalKey,
-            control: keyboard.isControlPressed,
-            alt: keyboard.isAltPressed,
-            shift: keyboard.isShiftPressed,
-          );
-          if (hotkey == null) return KeyEventResult.ignored;
-          Navigator.of(context).pop(hotkey);
-          return KeyEventResult.handled;
-        },
-        child: Text(l.pressHotkey),
+    return Listener(
+      // Opaque, so a side-button click counts anywhere on the barrier too.
+      behavior: HitTestBehavior.opaque,
+      onPointerDown: (event) {
+        final hotkey = Hotkey.fromMouseButtons(event.buttons);
+        if (hotkey != null) Navigator.of(context).pop(hotkey);
+      },
+      child: AlertDialog(
+        title: Text(l.hotkeyLabel),
+        content: Focus(
+          autofocus: true,
+          onKeyEvent: (_, event) {
+            if (event is! KeyDownEvent) return KeyEventResult.ignored;
+            final keyboard = HardwareKeyboard.instance;
+            final hotkey = Hotkey.fromKey(
+              event.logicalKey,
+              control: keyboard.isControlPressed,
+              alt: keyboard.isAltPressed,
+              shift: keyboard.isShiftPressed,
+            );
+            if (hotkey == null) return KeyEventResult.ignored;
+            Navigator.of(context).pop(hotkey);
+            return KeyEventResult.handled;
+          },
+          child: Text(l.pressHotkey),
+        ),
+        actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l.cancel))],
       ),
-      actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l.cancel))],
     );
   }
 }

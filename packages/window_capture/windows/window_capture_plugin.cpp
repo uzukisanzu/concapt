@@ -49,6 +49,56 @@ constexpr UINT kOcrDone = WM_APP + 0x43;
 constexpr uint32_t kReadLongest = 1300;
 constexpr int kHotkeyId = 1;
 
+// A side-button hotkey. The low-level hook takes no context, so its state
+// lives here; the hook runs on the platform thread that installed it.
+struct MouseHotkey {
+  HHOOK hook = nullptr;
+  HWND root = nullptr;
+  HWND target = nullptr;  // Where the button captures; null for nowhere.
+  WORD button = 0;        // XBUTTON1 or XBUTTON2.
+  bool held = false;      // The down was swallowed, so the up is too.
+};
+MouseHotkey g_mouse;
+
+// Swallows the button while the target is in front and posts the press as a
+// WM_HOTKEY. Windows drops hooks that run long, so it does nothing more.
+LRESULT CALLBACK MouseHook(int code, WPARAM message, LPARAM lparam) {
+  if (code == HC_ACTION && (message == WM_XBUTTONDOWN || message == WM_XBUTTONUP)) {
+    const auto* info = reinterpret_cast<const MSLLHOOKSTRUCT*>(lparam);
+    if (HIWORD(info->mouseData) == g_mouse.button) {
+      if (message == WM_XBUTTONDOWN && g_mouse.target &&
+          GetForegroundWindow() == g_mouse.target) {
+        g_mouse.held = true;
+        PostMessageW(g_mouse.root, WM_HOTKEY, kHotkeyId, 0);
+        return 1;
+      }
+      if (message == WM_XBUTTONUP && g_mouse.held) {
+        g_mouse.held = false;
+        return 1;
+      }
+    }
+  }
+  return CallNextHookEx(nullptr, code, message, lparam);
+}
+
+void UnbindHotkey(HWND root) {
+  UnregisterHotKey(root, kHotkeyId);
+  if (g_mouse.hook) UnhookWindowsHookEx(g_mouse.hook);
+  g_mouse.hook = nullptr;
+  g_mouse.held = false;
+}
+
+bool BindMouseHotkey(HWND root, WORD button) {
+  HMODULE module = nullptr;
+  GetModuleHandleExW(
+      GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+      reinterpret_cast<LPCWSTR>(&MouseHook), &module);
+  g_mouse.root = root;
+  g_mouse.button = button;
+  g_mouse.hook = SetWindowsHookExW(WH_MOUSE_LL, MouseHook, module, 0);
+  return g_mouse.hook != nullptr;
+}
+
 const EncodableValue* Arg(const flutter::MethodCall<EncodableValue>& call, const char* key) {
   const auto* args = std::get_if<EncodableMap>(call.arguments());
   if (!args) return nullptr;
@@ -399,13 +449,25 @@ void WindowCapturePlugin::HandleMethodCall(const flutter::MethodCall<EncodableVa
     const auto* key = Arg(call, "key");
     const auto* modifiers = Arg(call, "modifiers");
     if (!key || !modifiers) return result->Error("bad_args", "key and modifiers are required");
-    UnregisterHotKey(RootWindow(), kHotkeyId);
-    const bool bound = RegisterHotKey(RootWindow(), kHotkeyId,
-                                      static_cast<UINT>(modifiers->LongValue()) | MOD_NOREPEAT,
-                                      static_cast<UINT>(key->LongValue())) != 0;
+    UnbindHotkey(RootWindow());
+    const auto virtual_key = static_cast<UINT>(key->LongValue());
+    bool bound;
+    if (virtual_key == VK_XBUTTON1 || virtual_key == VK_XBUTTON2) {
+      bound = BindMouseHotkey(RootWindow(), virtual_key == VK_XBUTTON1 ? XBUTTON1 : XBUTTON2);
+    } else {
+      bound = RegisterHotKey(RootWindow(), kHotkeyId,
+                             static_cast<UINT>(modifiers->LongValue()) | MOD_NOREPEAT,
+                             virtual_key) != 0;
+    }
     result->Success(EncodableValue(bound));
+  } else if (method == "setHotkeyWindow") {
+    const auto* handle = Arg(call, "handle");
+    g_mouse.target = handle && !handle->IsNull()
+                         ? reinterpret_cast<HWND>(static_cast<intptr_t>(handle->LongValue()))
+                         : nullptr;
+    result->Success();
   } else if (method == "unregisterHotkey") {
-    UnregisterHotKey(RootWindow(), kHotkeyId);
+    UnbindHotkey(RootWindow());
     result->Success();
   } else if (method == "flashWindow") {
     FLASHWINFO info{sizeof(info), RootWindow(), FLASHW_TRAY | FLASHW_TIMERNOFG, 0, 0};

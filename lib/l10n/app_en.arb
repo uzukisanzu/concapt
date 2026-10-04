@@ -99,7 +99,7 @@
   "pickWindowFirst": "Pick a window to capture.",
   "hotkeyLabel": "Hotkey",
   "changeHotkey": "Change",
-  "pressHotkey": "Press F1–F24, a letter, or a digit. Hold Ctrl, Alt, or Shift to add them.",
+  "pressHotkey": "Press F1–F24, a letter, or a digit. Hold Ctrl, Alt, or Shift to add them. Or click a mouse side button.",
   "hotkeyTaken": "{key} is in use by another app. Choose another key.",
   "@hotkeyTaken": {"placeholders": {"key": {"type": "String"}}},
   "hotkeyReady": "Press {key} on a result screen to capture.",

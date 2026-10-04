@@ -1,9 +1,11 @@
 import 'dart:convert';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// The global capture hotkey: a Win32 virtual-key code and `MOD_*` bits.
+/// A mouse side button is `VK_XBUTTON1` or `VK_XBUTTON2`, with no modifiers.
 class Hotkey {
   const Hotkey(this.virtualKey, this.modifiers, this.label);
 
@@ -71,6 +73,13 @@ class Hotkey {
       ].join('+'),
     );
   }
+
+  /// The side button held in pointer [buttons], or null for any other button.
+  static Hotkey? fromMouseButtons(int buttons) => switch (buttons) {
+    kBackMouseButton => const Hotkey(0x05, 0, 'Mouse 4'),
+    kForwardMouseButton => const Hotkey(0x06, 0, 'Mouse 5'),
+    _ => null,
+  };
 
   static int? _virtualKey(LogicalKeyboardKey key) {
     final function = _functionKeys.indexOf(key);

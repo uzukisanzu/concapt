@@ -64,12 +64,18 @@ abstract final class WindowCapture {
 
   /// Binds [virtualKey] with Win32 `MOD_*` [modifiers] system-wide, replacing
   /// any earlier binding. False when another app holds the combination.
+  /// A mouse side button (`VK_XBUTTON1`, `VK_XBUTTON2`) fires only while the
+  /// [setHotkeyWindow] window is in front, and that window never sees it.
   static Future<bool> registerHotkey(int virtualKey, int modifiers) async =>
       await _methods.invokeMethod<bool>('registerHotkey', {
         'key': virtualKey,
         'modifiers': modifiers,
       }) ??
       false;
+
+  /// The window a mouse side-button hotkey works in, or null for none.
+  static Future<void> setHotkeyWindow(int? handle) =>
+      _methods.invokeMethod<void>('setHotkeyWindow', {'handle': handle});
 
   static Future<void> unregisterHotkey() => _methods.invokeMethod<void>('unregisterHotkey');
 

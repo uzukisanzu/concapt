@@ -1,4 +1,5 @@
 import 'package:concapt/capture/hotkey.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
@@ -24,6 +25,12 @@ void main() {
     expect(hotkey.modifiers, 0x2 | 0x4);
     expect(hotkey.label, 'Ctrl+Shift+Q');
     expect(Hotkey.fromKey(LogicalKeyboardKey.f9, alt: true)!.modifiers, 0x1);
+  });
+
+  test('side buttons map to XBUTTON virtual keys', () {
+    expect(Hotkey.fromMouseButtons(kBackMouseButton), const Hotkey(0x05, 0, 'Mouse 4'));
+    expect(Hotkey.fromMouseButtons(kForwardMouseButton), const Hotkey(0x06, 0, 'Mouse 5'));
+    expect(Hotkey.fromMouseButtons(kPrimaryMouseButton), isNull);
   });
 
   test('loads F9 until another key is saved', () async {

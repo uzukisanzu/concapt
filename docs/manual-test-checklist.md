@@ -58,3 +58,4 @@ Run on the developer's PC with `flutter run -d windows`.
 | W12 | Japanese | Set the Windows display language to 日本語, repeat W1 and W2 | Every string on the capture screen is Japanese |
 | W13 | CSV | Export CSV from a session | A Save As dialog suggests `<session>.csv`; the saved file opens in Excel or a text editor with every run |
 | W14 | Elevated game | If the game runs as administrator, press F9 | Captures; if not, rerun concapt as administrator and note it in the README |
+| W15 | Side button | Change, click Mouse 4 outside the dialog box; press it with the game in front, then in a browser; repeat W14 with it | The capture screen stays open; the game captures and doesn't react to the click; the browser goes Back and nothing captures |
