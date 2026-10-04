@@ -94,6 +94,7 @@ class Repository {
     });
   }
 
+  /// The session's runs, newest first.
   Future<List<RunRecord>> runs(int sessionId) async {
     final rows =
         await (_db.select(_db.runs)

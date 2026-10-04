@@ -207,8 +207,10 @@ void main() {
 
   testWidgets('the last run shows its number', (tester) async {
     await open(tester);
+    await tester.runAsync(() => repo.addRun(sessionId, scoresWithLeft(1), edited: false));
     await press(tester);
-    expect(find.text('Run 1'), findsOneWidget);
+    expect(find.text('Run 2'), findsOneWidget);
+    expect(find.text('Run 1'), findsNothing);
     expect(find.text('No runs yet'), findsNothing);
   });
 

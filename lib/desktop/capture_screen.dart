@@ -116,7 +116,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
     setState(() {
       _sessionName = session.name;
       _runCount = runs.length;
-      _lastRun = runs.isEmpty ? null : runs.last;
+      _lastRun = runs.isEmpty ? null : runs.first;
     });
   }
 
