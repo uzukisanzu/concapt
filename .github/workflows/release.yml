@@ -11,6 +11,9 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: release-${{ github.ref }}
+
 env:
   FLUTTER_VERSION: 3.41.4
 
