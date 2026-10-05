@@ -128,6 +128,14 @@ void main() {
     expect(find.byKey(const Key('fix-2')), findsNothing);
   });
 
+  testWidgets('in a narrow form the quick fix shortens the stage label', (tester) async {
+    await pumpReview(tester, draftWithStage3Total(181222));
+    tester.view.physicalSize = const Size(840, 2800);
+    await tester.tap(find.byKey(const Key('field-2-3')));
+    await tester.pump();
+    expect(find.byKey(const Key('fix-2')), findsOneWidget);
+  });
+
   testWidgets('review folds passing stages and opens failing ones', (tester) async {
     await pumpReview(tester, draftWithStage3Total(181222));
     expect(find.byKey(const Key('field-0-0')), findsNothing);

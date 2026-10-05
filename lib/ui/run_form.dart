@@ -260,8 +260,18 @@ class _StageSection extends StatelessWidget {
       tab: ExcludeSemantics(child: ModuleTab(twoDigits(index + 1))),
       child: Row(
         children: [
-          Semantics(header: true, child: Text(l.stageLabel(index + 1), style: text.titleSmall)),
-          const Spacer(),
+          // The tab carries the number, so the label is the part that gives way.
+          Expanded(
+            child: Semantics(
+              header: true,
+              child: Text(
+                l.stageLabel(index + 1),
+                style: text.titleSmall,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
           if (fix != null)
             // Inside the fields' tap region, so tapping it keeps their focus.
             TextFieldTapRegion(
